@@ -29,30 +29,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Handle redirect result on app load
-    handleRedirectResult().catch(console.error);
-
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
+    // Demo mode - simulate authentication
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      // Simulate a user object
+      const mockUser = {
+        uid: 'demo-user-123',
+        email: 'demo@example.com',
+        displayName: 'Demo User',
+        photoURL: null,
+        emailVerified: true,
+        getIdToken: async () => storedToken
+      } as User;
       
-      if (user) {
-        try {
-          const idToken = await user.getIdToken();
-          setToken(idToken);
-          localStorage.setItem('authToken', idToken);
-        } catch (error) {
-          console.error('Error getting ID token:', error);
-        }
-      } else {
-        setToken(null);
-        localStorage.removeItem('authToken');
-      }
-      
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+      setUser(mockUser);
+      setToken(storedToken);
+    }
+    setLoading(false);
   }, []);
 
   return (
