@@ -63,6 +63,8 @@ export class MemStorage implements IStorage {
     const onboarding: OnboardingData = {
       ...data,
       id,
+      goals: data.goals || null,
+      lifestyle: data.lifestyle || null,
       completedAt: new Date(),
     };
     this.onboardingData.set(data.userId, onboarding);
@@ -78,6 +80,7 @@ export class MemStorage implements IStorage {
     const chatMessage: ChatMessage = {
       ...message,
       id,
+      ingredients: message.ingredients || null,
       createdAt: new Date(),
     };
     

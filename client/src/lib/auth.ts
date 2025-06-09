@@ -5,7 +5,12 @@ const provider = new GoogleAuthProvider();
 
 export async function signInWithGoogle() {
   try {
-    await signInWithRedirect(auth, provider);
+    // Demo mode - simulate successful login
+    const mockToken = "demo-token-" + Date.now();
+    localStorage.setItem('authToken', mockToken);
+    
+    // Simulate redirect to dashboard
+    window.location.href = '/onboarding';
   } catch (error) {
     console.error("Error signing in with Google:", error);
     throw error;

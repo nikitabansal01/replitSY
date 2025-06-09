@@ -1,44 +1,23 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type IngredientRecommendation, type ChatResponse } from "@shared/schema";
+import { insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type IngredientRecommendation, type ChatResponse, type User } from "@shared/schema";
 import { z } from "zod";
 
+interface AuthenticatedRequest extends Request {
+  user: User;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Mock Firebase token verification (replace with actual Firebase Admin SDK in production)
-  function verifyFirebaseToken(token: string): { uid: string; email: string; name: string } | null {
-    // Mock verification - in production, use Firebase Admin SDK
-    if (token && token.startsWith("mock-firebase-token")) {
-      return {
-        uid: "mock-uid-12345",
-        email: "user@example.com",
-        name: "Sarah Johnson"
-      };
-    }
-    return null;
-  }
-
-  // Middleware to verify Firebase token
+  // Demo mode - bypass Firebase authentication for development
   async function requireAuth(req: any, res: any, next: any) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Missing or invalid authorization header' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decodedToken = verifyFirebaseToken(token);
-    
-    if (!decodedToken) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    // Get or create user
-    let user = await storage.getUserByFirebaseUid(decodedToken.uid);
+    // In demo mode, create a default user for testing
+    let user = await storage.getUserByFirebaseUid("demo-user-123");
     if (!user) {
       user = await storage.createUser({
-        firebaseUid: decodedToken.uid,
-        email: decodedToken.email,
-        name: decodedToken.name,
+        firebaseUid: "demo-user-123",
+        email: "demo@example.com",
+        name: "Demo User",
         profilePicture: null,
       });
     }
@@ -48,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Onboarding endpoint
-  app.post('/api/onboarding', requireAuth, async (req, res) => {
+  app.post('/api/onboarding', requireAuth, async (req: any, res: any) => {
     try {
       const validatedData = insertOnboardingSchema.parse({
         ...req.body,
@@ -66,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chat endpoint
-  app.post('/api/chat', requireAuth, async (req, res) => {
+  app.post('/api/chat', requireAuth, async (req: any, res: any) => {
     try {
       const { message } = req.body;
       if (!message || typeof message !== 'string') {
@@ -94,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get chat history
-  app.get('/api/chat/history', requireAuth, async (req, res) => {
+  app.get('/api/chat/history', requireAuth, async (req: any, res: any) => {
     try {
       const history = await storage.getChatHistory(req.user.id);
       res.json(history);
@@ -104,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user profile
-  app.get('/api/profile', requireAuth, async (req, res) => {
+  app.get('/api/profile', requireAuth, async (req: any, res: any) => {
     try {
       const onboardingData = await storage.getOnboardingData(req.user.id);
       res.json({
