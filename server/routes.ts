@@ -116,50 +116,36 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
   };
 }
 
-// Fast OpenAI response with user context
-async function generateResearchBackedResponse(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
-  try {
-    // Skip research lookup for faster responses - use OpenAI's knowledge base
-    const researchContext = 'Use your evidence-based knowledge of women\'s health, nutrition, and hormonal wellness.';
-
-    const userContext = onboardingData ? `
+// OpenAI ChatGPT integration for personalized health responses
+async function generateChatGPTResponse(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
+  const userContext = onboardingData ? `
 User Profile:
 - Age: ${onboardingData.age}
 - Diet: ${onboardingData.diet}
-- Primary symptoms: ${onboardingData.symptoms?.join(', ') || 'Not specified'}
+- Symptoms: ${onboardingData.symptoms?.join(', ') || 'Not specified'}
 - Goals: ${onboardingData.goals?.join(', ') || 'General wellness'}
-` : 'No profile data available';
+` : '';
 
-    const systemPrompt = `You are Winnie, a friendly women's health coach specializing in hormonal wellness and nutrition. Provide evidence-based recommendations using natural ingredients.
+  const systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients and nutrition for hormonal health.
 
-IMPORTANT: You must respond with a JSON object in this exact format:
+Respond with exactly this JSON format:
 {
-  "message": "Your personalized response message here",
+  "message": "Your helpful response (include disclaimer about consulting healthcare providers)",
   "ingredients": [
     {
       "name": "Ingredient Name",
-      "description": "Brief evidence-based explanation of benefits",
+      "description": "Health benefits explanation",
       "emoji": "🌿",
-      "lazy": "Quick/convenient way to consume",
-      "tasty": "Delicious way to incorporate",
-      "healthy": "Optimal preparation method"
+      "lazy": "Easy way to use",
+      "tasty": "Delicious preparation",
+      "healthy": "Optimal method"
     }
   ]
 }
 
-Guidelines:
-- Always provide 2-4 ingredient recommendations
-- Base recommendations on the research context when available
-- Consider dietary restrictions
-- Include appropriate emojis for each ingredient
-- Always include disclaimer about consulting healthcare providers
+Always provide 2-3 ingredient recommendations.${userContext}`;
 
-Research Context:
-${researchContext}
-
-${userContext}`;
-
-    console.log('Making OpenAI API call...');
+  try {
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -167,43 +153,29 @@ ${userContext}`;
         { role: "user", content: question }
       ],
       temperature: 0.7,
-      max_tokens: 800,
+      max_tokens: 600,
     });
-    console.log('OpenAI API call completed');
 
-    const responseContent = completion.choices[0]?.message?.content;
-    if (!responseContent) {
-      throw new Error('No response from OpenAI');
-    }
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error('No OpenAI response');
 
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseContent);
-    } catch (parseError) {
-      return generateDemoResponse(question, onboardingData);
-    }
-
-    if (!parsedResponse.message || !Array.isArray(parsedResponse.ingredients)) {
-      return generateDemoResponse(question, onboardingData);
-    }
-
-    const validatedIngredients = parsedResponse.ingredients.map((ing: any) => ({
-      name: ing.name || 'Unknown',
-      description: ing.description || 'No description available',
-      emoji: ing.emoji || '🌿',
-      lazy: ing.lazy || 'Use as recommended',
-      tasty: ing.tasty || 'Enjoy as preferred',
-      healthy: ing.healthy || 'Follow preparation guidelines'
-    }));
-
+    const parsed = JSON.parse(content);
+    
     return {
-      message: parsedResponse.message,
-      ingredients: validatedIngredients
+      message: parsed.message,
+      ingredients: parsed.ingredients.map((ing: any) => ({
+        name: ing.name || 'Unknown',
+        description: ing.description || 'Natural ingredient',
+        emoji: ing.emoji || '🌿',
+        lazy: ing.lazy || 'Use as directed',
+        tasty: ing.tasty || 'Add to meals',
+        healthy: ing.healthy || 'Follow guidelines'
+      }))
     };
 
   } catch (error) {
-    console.error('Error generating research-backed response:', error);
-    return generateDemoResponse(question, onboardingData);
+    console.error('ChatGPT API error:', error);
+    throw error;
   }
 }
 
@@ -281,15 +253,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      // Try OpenAI first, fallback to demo if it fails
+      // Try ChatGPT with fast timeout, fallback to demo if needed
       let response;
       try {
         response = await Promise.race([
-          generateResearchBackedResponse(openai, message, onboardingData),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+          generateChatGPTResponse(openai, message, onboardingData),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
         ]) as ChatResponse;
       } catch (error) {
-        console.error('OpenAI API failed, using demo response:', error);
+        console.error('ChatGPT API failed, using demo response:', error);
         response = generateDemoResponse(message, onboardingData);
       }
 
