@@ -283,14 +283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      let response;
-      
-      // Use demo mode for development/testing
-      if (req.user.id === 1 && process.env.NODE_ENV === 'development') {
-        response = generateDemoResponse(message, onboardingData);
-      } else {
-        response = await generateResearchBackedResponse(openai, message, onboardingData);
-      }
+      // Always use OpenAI for real responses
+      const response = await generateResearchBackedResponse(openai, message, onboardingData);
 
       await storage.saveChatMessage({
         userId: req.user.id,
