@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type IngredientRecommendation, type ChatResponse, type User } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from 'openai';
+import { researchService } from './research';
 
 interface AuthenticatedRequest extends Request {
   user: User;
@@ -61,8 +62,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user's onboarding data for personalization
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      // Generate AI response with OpenAI GPT-4
-      const response = await generateHealthResponseWithAI(openai, message, onboardingData);
+      // Generate AI response with research-backed RAG
+      const response = await generateResearchBackedResponse(openai, message, onboardingData);
 
       // Save chat message
       await storage.saveChatMessage({
