@@ -32,55 +32,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   useEffect(() => {
-    const checkAuthState = () => {
-      const storedToken = localStorage.getItem('authToken');
-      if (storedToken === 'demo-token') {
-        // Simulate a user object for demo mode
-        const mockUser = {
-          uid: 'demo-user-123',
-          email: 'demo@example.com',
-          displayName: 'Demo User',
-          photoURL: null,
-          emailVerified: true,
-          getIdToken: async () => storedToken
-        } as User;
-        
-        setUser(mockUser);
-        setToken(storedToken);
-        setLoading(false);
-      } else {
-        // Real Firebase auth would go here
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-          if (firebaseUser) {
-            setUser(firebaseUser);
-            const idToken = await firebaseUser.getIdToken();
-            setToken(idToken);
-          } else {
-            setUser(null);
-            setToken(null);
-          }
-          setLoading(false);
-        });
-
-        return () => unsubscribe();
-      }
-    };
-
-    // Initial check
-    checkAuthState();
-
-    // Listen for storage changes (for demo mode)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'authToken') {
-        checkAuthState();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
+    const storedToken = localStorage.getItem('authToken');
     
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    if (storedToken === 'demo-token') {
+      // Demo mode - create mock user
+      const mockUser = {
+        uid: 'demo-user-123',
+        email: 'demo@example.com',
+        displayName: 'Demo User',
+        photoURL: null,
+        emailVerified: true,
+        getIdToken: async () => storedToken
+      } as User;
+      
+      setUser(mockUser);
+      setToken(storedToken);
+      setLoading(false);
+    } else if (storedToken) {
+      // Real Firebase token exists
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          const idToken = await firebaseUser.getIdToken();
+          setToken(idToken);
+        } else {
+          setUser(null);
+          setToken(null);
+        }
+        setLoading(false);
+      });
+      
+      return () => unsubscribe();
+    } else {
+      // No token - user not authenticated
+      setUser(null);
+      setToken(null);
+      setLoading(false);
+    }
   }, []);
 
   return (
