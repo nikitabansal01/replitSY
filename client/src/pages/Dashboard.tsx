@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isInitializingResearch, setIsInitializingResearch] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {

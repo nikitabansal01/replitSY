@@ -10,100 +10,114 @@ interface AuthenticatedRequest extends Request {
   user: User;
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize OpenAI client
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+// Research-backed RAG response using Firecrawl + Pinecone + OpenAI
+async function generateResearchBackedResponse(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
+  try {
+    // Search for relevant research articles in vector database
+    const relevantResearch = await researchService.searchRelevantResearch(question, 3);
+    
+    // Build research context from retrieved articles
+    const researchContext = relevantResearch.length > 0 
+      ? relevantResearch.map((match: any) => 
+          `Research: ${match.metadata?.title}\nContent: ${match.metadata?.content}\nSource: ${match.metadata?.source}\n`
+        ).join('\n')
+      : 'No specific research articles found. Use general evidence-based knowledge.';
 
-  // Demo mode - bypass Firebase authentication for development
-  async function requireAuth(req: any, res: any, next: any) {
-    // In demo mode, create a default user for testing
-    let user = await storage.getUserByFirebaseUid("demo-user-123");
-    if (!user) {
-      user = await storage.createUser({
-        firebaseUid: "demo-user-123",
-        email: "demo@example.com",
-        name: "Demo User",
-        profilePicture: null,
-      });
+    // Build user profile context
+    const userContext = onboardingData ? `
+User Profile:
+- Age: ${onboardingData.age}
+- Diet: ${onboardingData.diet}
+- Primary symptoms: ${onboardingData.symptoms?.join(', ') || 'Not specified'}
+- Goals: ${onboardingData.goals?.join(', ') || 'General wellness'}
+` : 'No profile data available';
+
+    const systemPrompt = `You are Winnie, a friendly and knowledgeable women's health coach specializing in hormonal wellness and nutrition. You provide evidence-based, personalized recommendations using natural ingredients and lifestyle approaches.
+
+IMPORTANT: You must respond with a JSON object in this exact format:
+{
+  "message": "Your personalized response message here",
+  "ingredients": [
+    {
+      "name": "Ingredient Name",
+      "description": "Brief evidence-based explanation of benefits based on research",
+      "emoji": "🌿",
+      "lazy": "Quick/convenient way to consume",
+      "tasty": "Delicious way to incorporate",
+      "healthy": "Optimal preparation method"
+    }
+  ]
+}
+
+Guidelines:
+- Always provide 2-4 ingredient recommendations
+- Base recommendations on the research context provided below when available
+- Consider the user's dietary restrictions (vegetarian/vegan/etc.)
+- Provide practical, actionable advice
+- Include appropriate emojis for each ingredient
+- Keep descriptions concise but informative
+- Reference research findings when available
+- Always include disclaimer about consulting healthcare providers
+
+Research Context:
+${researchContext}
+
+${userContext}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: question }
+      ],
+      temperature: 0.7,
+      max_tokens: 1200,
+    });
+
+    const responseContent = completion.choices[0]?.message?.content;
+    if (!responseContent) {
+      throw new Error('No response from OpenAI');
     }
 
-    req.user = user;
-    next();
+    // Parse the JSON response
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(responseContent);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response as JSON:', responseContent);
+      // Fallback response if JSON parsing fails
+      return {
+        message: "I apologize, but I'm having trouble processing your request right now. Please try rephrasing your question or contact support if the issue persists.",
+        ingredients: []
+      };
+    }
+
+    // Validate the response structure
+    if (!parsedResponse.message || !Array.isArray(parsedResponse.ingredients)) {
+      throw new Error('Invalid response structure from OpenAI');
+    }
+
+    // Ensure each ingredient has required fields
+    const validatedIngredients = parsedResponse.ingredients.map((ing: any) => ({
+      name: ing.name || 'Unknown',
+      description: ing.description || 'No description available',
+      emoji: ing.emoji || '🌿',
+      lazy: ing.lazy || 'Use as recommended',
+      tasty: ing.tasty || 'Enjoy as preferred',
+      healthy: ing.healthy || 'Follow preparation guidelines'
+    }));
+
+    return {
+      message: parsedResponse.message,
+      ingredients: validatedIngredients
+    };
+
+  } catch (error) {
+    console.error('Error generating research-backed response:', error);
+    
+    // Fallback to basic AI response if research retrieval fails
+    return await generateHealthResponseWithAI(openai, question, onboardingData);
   }
-
-  // Onboarding endpoint
-  app.post('/api/onboarding', requireAuth, async (req: any, res: any) => {
-    try {
-      const validatedData = insertOnboardingSchema.parse({
-        ...req.body,
-        userId: req.user.id
-      });
-
-      const onboardingData = await storage.saveOnboardingData(validatedData);
-      res.json({ success: true, data: onboardingData });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: 'Invalid input data', details: error.errors });
-      }
-      res.status(500).json({ error: 'Failed to save onboarding data' });
-    }
-  });
-
-  // Chat endpoint
-  app.post('/api/chat', requireAuth, async (req: any, res: any) => {
-    try {
-      const { message } = req.body;
-      if (!message || typeof message !== 'string') {
-        return res.status(400).json({ error: 'Message is required' });
-      }
-
-      // Get user's onboarding data for personalization
-      const onboardingData = await storage.getOnboardingData(req.user.id);
-      
-      // Generate AI response with research-backed RAG
-      const response = await generateResearchBackedResponse(openai, message, onboardingData);
-
-      // Save chat message
-      await storage.saveChatMessage({
-        userId: req.user.id,
-        message,
-        response: response.message,
-        ingredients: response.ingredients
-      });
-
-      res.json(response);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to process chat message' });
-    }
-  });
-
-  // Get chat history
-  app.get('/api/chat/history', requireAuth, async (req: any, res: any) => {
-    try {
-      const history = await storage.getChatHistory(req.user.id);
-      res.json(history);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get chat history' });
-    }
-  });
-
-  // Get user profile
-  app.get('/api/profile', requireAuth, async (req: any, res: any) => {
-    try {
-      const onboardingData = await storage.getOnboardingData(req.user.id);
-      res.json({
-        user: req.user,
-        onboarding: onboardingData
-      });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get profile' });
-    }
-  });
-
-  const httpServer = createServer(app);
-  return httpServer;
 }
 
 // AI-powered health response using OpenAI GPT-4 with structured output
@@ -137,12 +151,11 @@ IMPORTANT: You must respond with a JSON object in this exact format:
 
 Guidelines:
 - Always provide 2-4 ingredient recommendations
-- Base recommendations on peer-reviewed research when possible
 - Consider the user's dietary restrictions (vegetarian/vegan/etc.)
 - Provide practical, actionable advice
 - Include appropriate emojis for each ingredient
 - Keep descriptions concise but informative
-- Always include the disclaimer about consulting healthcare providers for serious concerns
+- Always include disclaimer about consulting healthcare providers
 
 ${userContext}`;
 
@@ -195,21 +208,154 @@ ${userContext}`;
     };
 
   } catch (error) {
-    console.error('Error generating AI health response:', error);
+    console.error('Error generating health response:', error);
     
-    // Fallback response in case of API failure
+    // Return a safe fallback response
     return {
-      message: "I'm experiencing some technical difficulties right now. Please try again in a moment, or feel free to ask about specific symptoms like bloating, cramps, or fatigue.",
+      message: "I'm here to help with your health questions! Please try asking about specific symptoms or health concerns you'd like natural ingredient recommendations for.",
       ingredients: [
         {
           name: "Ginger",
-          description: "Natural anti-inflammatory with digestive benefits",
+          description: "Natural anti-inflammatory properties that may help with digestive issues",
           emoji: "🫚",
-          lazy: "Ginger tea bags",
-          tasty: "Fresh ginger in smoothies",
-          healthy: "Raw ginger with lemon water"
+          lazy: "Add ginger tea bags to hot water",
+          tasty: "Fresh ginger in smoothies or stir-fries",
+          healthy: "Steep fresh ginger root in hot water for 10 minutes"
         }
       ]
     };
   }
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize OpenAI client
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  async function requireAuth(req: any, res: any, next: any) {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+      // For demo purposes, accept "demo-token" or validate Firebase token
+      if (token === 'demo-token') {
+        req.user = {
+          id: 1,
+          firebaseUid: 'demo-user-123',
+          email: 'demo@example.com',
+          name: 'Demo User'
+        };
+      } else {
+        // In production, validate Firebase token here
+        // For now, treat any other token as invalid
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+      
+      next();
+    } catch (error) {
+      res.status(401).json({ error: 'Invalid token' });
+    }
+  }
+
+  // Register or login user
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
+    try {
+      const { firebaseUid, email, name } = insertUserSchema.parse(req.body);
+      
+      let user = await storage.getUserByFirebaseUid(firebaseUid);
+      
+      if (!user) {
+        user = await storage.createUser({ firebaseUid, email, name });
+      }
+      
+      res.json({ user });
+    } catch (error) {
+      res.status(400).json({ error: 'Failed to register user' });
+    }
+  });
+
+  // Save onboarding data
+  app.post('/api/onboarding', requireAuth, async (req: any, res: any) => {
+    try {
+      const data = insertOnboardingSchema.parse({
+        ...req.body,
+        userId: req.user.id
+      });
+      
+      const onboarding = await storage.saveOnboardingData(data);
+      res.json({ success: true, data: onboarding });
+    } catch (error) {
+      res.status(400).json({ error: 'Failed to save onboarding data' });
+    }
+  });
+
+  // Chat endpoint
+  app.post('/api/chat', requireAuth, async (req: any, res: any) => {
+    try {
+      const { message } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+
+      // Get user's onboarding data for personalization
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      // Generate AI response with research-backed RAG
+      const response = await generateResearchBackedResponse(openai, message, onboardingData);
+
+      // Save chat message
+      await storage.saveChatMessage({
+        userId: req.user.id,
+        message,
+        response: response.message,
+        ingredients: response.ingredients
+      });
+
+      res.json(response);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to process chat message' });
+    }
+  });
+
+  // Get chat history
+  app.get('/api/chat/history', requireAuth, async (req: any, res: any) => {
+    try {
+      const history = await storage.getChatHistory(req.user.id);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get chat history' });
+    }
+  });
+
+  // Get user profile
+  app.get('/api/profile', requireAuth, async (req: any, res: any) => {
+    try {
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      res.json({
+        user: req.user,
+        onboarding: onboardingData
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get profile' });
+    }
+  });
+
+  // Initialize research database endpoint
+  app.post('/api/research/initialize', requireAuth, async (req: any, res: any) => {
+    try {
+      await researchService.initializeResearchDatabase();
+      res.json({ success: true, message: 'Research database initialized' });
+    } catch (error) {
+      console.error('Error initializing research database:', error);
+      res.status(500).json({ error: 'Failed to initialize research database' });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
 }
