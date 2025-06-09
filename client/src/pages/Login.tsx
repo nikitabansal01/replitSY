@@ -26,8 +26,8 @@ export default function Login() {
   const handleDemoMode = () => {
     // Set demo token in localStorage for authentication
     localStorage.setItem('authToken', 'demo-token');
-    // Trigger context refresh by reloading the page
-    window.location.reload();
+    // Force page reload to ensure auth context picks up the token
+    window.location.href = '/onboarding';
   };
 
   if (loading) {
