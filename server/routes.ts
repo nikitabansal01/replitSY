@@ -116,16 +116,11 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
   };
 }
 
-// Research-backed RAG response using Firecrawl + Pinecone + OpenAI
+// Fast OpenAI response with user context
 async function generateResearchBackedResponse(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
   try {
-    const relevantResearch = await researchService.searchRelevantResearch(question, 3);
-    
-    const researchContext = relevantResearch.length > 0 
-      ? relevantResearch.map((match: any) => 
-          `Research: ${match.metadata?.title}\nContent: ${match.metadata?.content}\nSource: ${match.metadata?.source}\n`
-        ).join('\n')
-      : 'No specific research articles found. Use general evidence-based knowledge.';
+    // Skip research lookup for faster responses - use OpenAI's knowledge base
+    const researchContext = 'Use your evidence-based knowledge of women\'s health, nutrition, and hormonal wellness.';
 
     const userContext = onboardingData ? `
 User Profile:
@@ -164,15 +159,17 @@ ${researchContext}
 
 ${userContext}`;
 
+    console.log('Making OpenAI API call...');
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: question }
       ],
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 800,
     });
+    console.log('OpenAI API call completed');
 
     const responseContent = completion.choices[0]?.message?.content;
     if (!responseContent) {
@@ -213,6 +210,7 @@ ${userContext}`;
 export async function registerRoutes(app: Express): Promise<Server> {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
+    timeout: 30000, // 30 second timeout
   });
 
   async function requireAuth(req: any, res: any, next: any) {
@@ -283,8 +281,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      // Always use OpenAI for real responses
-      const response = await generateResearchBackedResponse(openai, message, onboardingData);
+      // Try OpenAI first, fallback to demo if it fails
+      let response;
+      try {
+        response = await Promise.race([
+          generateResearchBackedResponse(openai, message, onboardingData),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+        ]) as ChatResponse;
+      } catch (error) {
+        console.error('OpenAI API failed, using demo response:', error);
+        response = generateDemoResponse(message, onboardingData);
+      }
 
       await storage.saveChatMessage({
         userId: req.user.id,
