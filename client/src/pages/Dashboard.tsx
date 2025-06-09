@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
 import { signOutUser } from '@/lib/auth';
@@ -32,7 +32,7 @@ interface UserProfile {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { user, token, loading } = useAuth();
   const { toast } = useToast();
   
@@ -43,9 +43,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/');
+      setLocation('/');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, setLocation]);
 
   useEffect(() => {
     if (token) {
@@ -142,7 +142,7 @@ export default function Dashboard() {
   const handleSignOut = async () => {
     try {
       await signOutUser();
-      navigate('/');
+      setLocation('/');
     } catch (error) {
       console.error('Sign out failed:', error);
     }

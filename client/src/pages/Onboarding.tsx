@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ interface OnboardingData {
 }
 
 export default function Onboarding() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { user, token, loading } = useAuth();
   const { toast } = useToast();
   
@@ -35,9 +35,9 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/');
+      setLocation('/');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, setLocation]);
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -63,7 +63,7 @@ export default function Onboarding() {
         title: "Profile Complete!",
         description: "Your health profile has been saved successfully.",
       });
-      navigate('/dashboard');
+      setLocation('/dashboard');
     } catch (error) {
       toast({
         title: "Error",

@@ -1,19 +1,19 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { signInWithGoogle } from '@/lib/auth';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function Login() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { user, loading } = useAuth();
 
   useEffect(() => {
     if (user && !loading) {
-      navigate('/onboarding');
+      setLocation('/onboarding');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, setLocation]);
 
   const handleGoogleSignIn = async () => {
     try {
