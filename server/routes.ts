@@ -3,12 +3,18 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type IngredientRecommendation, type ChatResponse, type User } from "@shared/schema";
 import { z } from "zod";
+import OpenAI from 'openai';
 
 interface AuthenticatedRequest extends Request {
   user: User;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize OpenAI client
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
   // Demo mode - bypass Firebase authentication for development
   async function requireAuth(req: any, res: any, next: any) {
     // In demo mode, create a default user for testing
@@ -55,8 +61,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user's onboarding data for personalization
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      // Generate AI response with ingredients (mock RAG system)
-      const response = generateHealthResponse(message, onboardingData);
+      // Generate AI response with OpenAI GPT-4
+      const response = await generateHealthResponseWithAI(openai, message, onboardingData);
 
       // Save chat message
       await storage.saveChatMessage({
@@ -99,171 +105,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Mock RAG system - generates health responses based on user profile and question
-function generateHealthResponse(question: string, onboardingData: any): ChatResponse {
-  const questionLower = question.toLowerCase();
-  
-  // Common ingredient databases based on health concerns
-  const ingredientDatabase = {
-    cramps: [
-      {
-        name: "Ginger",
-        description: "Anti-inflammatory properties help reduce prostaglandin production",
-        emoji: "🫚",
-        lazy: "Ginger tea bags",
-        tasty: "Ginger lemon honey drink",
-        healthy: "Fresh ginger in stir-fry"
-      },
-      {
-        name: "Dark Chocolate",
-        description: "Magnesium content helps relax muscles and reduce pain",
-        emoji: "🍫",
-        lazy: "Dark chocolate squares (70%+)",
-        tasty: "Chocolate avocado mousse",
-        healthy: "Raw cacao in smoothie"
-      },
-      {
-        name: "Turmeric",
-        description: "Curcumin reduces inflammation and pain",
-        emoji: "🟡",
-        lazy: "Turmeric supplements",
-        tasty: "Golden milk latte",
-        healthy: "Fresh turmeric in curry"
-      }
-    ],
-    pms: [
-      {
-        name: "Leafy Greens",
-        description: "High in magnesium and B vitamins to support mood",
-        emoji: "🥬",
-        lazy: "Pre-washed spinach salad",
-        tasty: "Green smoothie bowl",
-        healthy: "Sautéed kale with garlic"
-      },
-      {
-        name: "Salmon",
-        description: "Omega-3 fatty acids reduce inflammation and support mood",
-        emoji: "🐟",
-        lazy: "Canned salmon on crackers",
-        tasty: "Teriyaki salmon bowl",
-        healthy: "Grilled salmon with herbs"
-      },
-      {
-        name: "Chamomile",
-        description: "Natural calming properties to reduce anxiety and promote sleep",
-        emoji: "🌼",
-        lazy: "Chamomile tea bags",
-        tasty: "Chamomile honey ice cream",
-        healthy: "Fresh chamomile tea"
-      }
-    ],
-    bloating: [
-      {
-        name: "Fennel",
-        description: "Natural digestive aid that reduces gas and bloating",
-        emoji: "🌿",
-        lazy: "Fennel tea bags",
-        tasty: "Fennel orange salad",
-        healthy: "Roasted fennel with lemon"
-      },
-      {
-        name: "Peppermint",
-        description: "Soothes digestive system and reduces intestinal spasms",
-        emoji: "🌱",
-        lazy: "Peppermint tea",
-        tasty: "Chocolate peppermint smoothie",
-        healthy: "Fresh mint in water"
-      },
-      {
-        name: "Papaya",
-        description: "Digestive enzymes help break down food and reduce bloating",
-        emoji: "🥭",
-        lazy: "Pre-cut papaya chunks",
-        tasty: "Papaya coconut bowl",
-        healthy: "Fresh papaya with lime"
-      }
-    ],
-    fatigue: [
-      {
-        name: "Iron-rich Foods",
-        description: "Combat iron deficiency anemia common in women",
-        emoji: "🥩",
-        lazy: "Iron supplements",
-        tasty: "Spinach and berry smoothie",
-        healthy: "Lentil and vegetable curry"
-      },
-      {
-        name: "B-Complex Vitamins",
-        description: "Support energy metabolism and reduce fatigue",
-        emoji: "🥚",
-        lazy: "B-complex supplements",
-        tasty: "Avocado toast with egg",
-        healthy: "Quinoa Buddha bowl"
-      }
-    ]
-  };
+// AI-powered health response using OpenAI GPT-4 with structured output
+async function generateHealthResponseWithAI(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
+  try {
+    // Build user profile context
+    const userContext = onboardingData ? `
+User Profile:
+- Age: ${onboardingData.age}
+- Diet: ${onboardingData.diet}
+- Primary symptoms: ${onboardingData.symptoms?.join(', ') || 'Not specified'}
+- Goals: ${onboardingData.goals?.join(', ') || 'General wellness'}
+` : 'No profile data available';
 
-  let selectedIngredients: IngredientRecommendation[] = [];
-  let responseMessage = "";
+    const systemPrompt = `You are Winnie, a friendly and knowledgeable women's health coach specializing in hormonal wellness and nutrition. You provide evidence-based, personalized recommendations using natural ingredients and lifestyle approaches.
 
-  // Determine which ingredients to recommend based on question and profile
-  if (questionLower.includes('cramp') || questionLower.includes('pain')) {
-    selectedIngredients = ingredientDatabase.cramps.slice(0, 3);
-    responseMessage = "Here are some evidence-based ingredients that can help reduce menstrual cramps:";
-  } else if (questionLower.includes('pms') || questionLower.includes('mood')) {
-    selectedIngredients = ingredientDatabase.pms.slice(0, 3);
-    responseMessage = "These ingredients can help manage PMS symptoms and support emotional balance:";
-  } else if (questionLower.includes('bloat') || questionLower.includes('digest')) {
-    selectedIngredients = ingredientDatabase.bloating.slice(0, 3);
-    responseMessage = "For bloating and digestive issues, try these natural remedies:";
-  } else if (questionLower.includes('tired') || questionLower.includes('fatigue') || questionLower.includes('energy')) {
-    selectedIngredients = ingredientDatabase.fatigue.slice(0, 3);
-    responseMessage = "To combat fatigue and boost energy naturally:";
-  } else {
-    // General health response
-    selectedIngredients = [
-      ...ingredientDatabase.cramps.slice(0, 1),
-      ...ingredientDatabase.pms.slice(0, 1),
-      ...ingredientDatabase.bloating.slice(0, 1)
-    ];
-    responseMessage = "Based on your profile, here are some beneficial ingredients for overall hormonal health:";
-  }
-
-  // Personalize based on diet preferences
-  if (onboardingData?.diet === 'vegetarian') {
-    selectedIngredients = selectedIngredients.filter(ing => 
-      !['Salmon'].includes(ing.name)
-    );
-    // Add vegetarian alternatives if needed
-    if (selectedIngredients.length < 3) {
-      selectedIngredients.push({
-        name: "Flax Seeds",
-        description: "Plant-based omega-3s for vegetarians",
-        emoji: "🌾",
-        lazy: "Ground flaxseed in yogurt",
-        tasty: "Flax seed muffins",
-        healthy: "Fresh ground flax in smoothie"
-      });
+IMPORTANT: You must respond with a JSON object in this exact format:
+{
+  "message": "Your personalized response message here",
+  "ingredients": [
+    {
+      "name": "Ingredient Name",
+      "description": "Brief evidence-based explanation of benefits",
+      "emoji": "🌿",
+      "lazy": "Quick/convenient way to consume",
+      "tasty": "Delicious way to incorporate",
+      "healthy": "Optimal preparation method"
     }
-  }
+  ]
+}
 
-  if (onboardingData?.diet === 'vegan') {
-    selectedIngredients = selectedIngredients.filter(ing => 
-      !['Salmon', 'Dark Chocolate'].includes(ing.name)
-    );
-    // Add more plant-based options
-    selectedIngredients.push({
-      name: "Chia Seeds",
-      description: "Complete protein and omega-3s for vegans",
-      emoji: "⚫",
-      lazy: "Chia seed pudding cups",
-      tasty: "Chia berry parfait",
-      healthy: "Chia seeds in water"
+Guidelines:
+- Always provide 2-4 ingredient recommendations
+- Base recommendations on peer-reviewed research when possible
+- Consider the user's dietary restrictions (vegetarian/vegan/etc.)
+- Provide practical, actionable advice
+- Include appropriate emojis for each ingredient
+- Keep descriptions concise but informative
+- Always include the disclaimer about consulting healthcare providers for serious concerns
+
+${userContext}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: question }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000,
     });
-  }
 
-  return {
-    message: responseMessage,
-    ingredients: selectedIngredients.slice(0, 4) // Limit to 4 ingredients max
-  };
+    const responseContent = completion.choices[0]?.message?.content;
+    if (!responseContent) {
+      throw new Error('No response from OpenAI');
+    }
+
+    // Parse the JSON response
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(responseContent);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response as JSON:', responseContent);
+      // Fallback response if JSON parsing fails
+      return {
+        message: "I apologize, but I'm having trouble processing your request right now. Please try rephrasing your question or contact support if the issue persists.",
+        ingredients: []
+      };
+    }
+
+    // Validate the response structure
+    if (!parsedResponse.message || !Array.isArray(parsedResponse.ingredients)) {
+      throw new Error('Invalid response structure from OpenAI');
+    }
+
+    // Ensure each ingredient has required fields
+    const validatedIngredients = parsedResponse.ingredients.map((ing: any) => ({
+      name: ing.name || 'Unknown',
+      description: ing.description || 'No description available',
+      emoji: ing.emoji || '🌿',
+      lazy: ing.lazy || 'Use as recommended',
+      tasty: ing.tasty || 'Enjoy as preferred',
+      healthy: ing.healthy || 'Follow preparation guidelines'
+    }));
+
+    return {
+      message: parsedResponse.message,
+      ingredients: validatedIngredients
+    };
+
+  } catch (error) {
+    console.error('Error generating AI health response:', error);
+    
+    // Fallback response in case of API failure
+    return {
+      message: "I'm experiencing some technical difficulties right now. Please try again in a moment, or feel free to ask about specific symptoms like bloating, cramps, or fatigue.",
+      ingredients: [
+        {
+          name: "Ginger",
+          description: "Natural anti-inflammatory with digestive benefits",
+          emoji: "🫚",
+          lazy: "Ginger tea bags",
+          tasty: "Fresh ginger in smoothies",
+          healthy: "Raw ginger with lemon water"
+        }
+      ]
+    };
+  }
 }
