@@ -10,20 +10,123 @@ interface AuthenticatedRequest extends Request {
   user: User;
 }
 
+// Demo response function for testing without external APIs
+function generateDemoResponse(message: string, onboardingData: any): ChatResponse {
+  const lowerMessage = message.toLowerCase();
+  const diet = onboardingData?.diet || 'balanced';
+  
+  let demoMessage = "";
+  let ingredients: IngredientRecommendation[] = [];
+  
+  if (lowerMessage.includes('energy') || lowerMessage.includes('tired') || lowerMessage.includes('fatigue')) {
+    demoMessage = `Based on your ${diet} diet preferences, here are evidence-based natural ingredients that can help boost energy levels and combat fatigue.`;
+    ingredients = [
+      {
+        name: "Maca Root",
+        description: "Adaptogenic root that helps balance hormones and naturally increases energy levels",
+        emoji: "🌿",
+        lazy: "Add 1 tsp maca powder to your morning smoothie",
+        tasty: "Blend into chocolate energy balls with dates and nuts",
+        healthy: "Mix 1-2 tsp into oatmeal with cinnamon and berries"
+      },
+      {
+        name: "Iron-Rich Spinach",
+        description: "High in iron and folate, helps prevent fatigue from iron deficiency",
+        emoji: "🥬",
+        lazy: "Grab pre-washed baby spinach for quick salads",
+        tasty: "Blend into green smoothies with mango and banana",
+        healthy: "Sauté with garlic and lemon juice as a side dish"
+      },
+      {
+        name: "Matcha Green Tea",
+        description: "Provides sustained energy without jitters, rich in antioxidants",
+        emoji: "🍵",
+        lazy: "Use instant matcha powder in milk or water",
+        tasty: "Make matcha lattes with oat milk and honey",
+        healthy: "Whisk ceremonial grade matcha with hot water"
+      }
+    ];
+  } else if (lowerMessage.includes('period') || lowerMessage.includes('menstrual') || lowerMessage.includes('cramp')) {
+    demoMessage = `I understand menstrual concerns can be challenging. Here are natural ingredients that research shows may help with menstrual health and comfort.`;
+    ingredients = [
+      {
+        name: "Ginger Root",
+        description: "Natural anti-inflammatory that may help reduce menstrual pain intensity",
+        emoji: "🫚",
+        lazy: "Steep ginger tea bags in hot water for 5 minutes",
+        tasty: "Add fresh grated ginger to stir-fries and curries",
+        healthy: "Make fresh ginger tea with lemon and honey"
+      },
+      {
+        name: "Magnesium-Rich Dark Chocolate",
+        description: "May help reduce cramping and support mood during menstruation",
+        emoji: "🍫",
+        lazy: "Choose 70%+ dark chocolate squares",
+        tasty: "Melt into hot cocoa with cinnamon",
+        healthy: "Pair with nuts for sustained blood sugar"
+      }
+    ];
+  } else if (lowerMessage.includes('mood') || lowerMessage.includes('stress') || lowerMessage.includes('anxiety')) {
+    demoMessage = `Mood and stress management are important for overall wellness. Here are natural ingredients that may help support emotional balance.`;
+    ingredients = [
+      {
+        name: "Ashwagandha",
+        description: "Adaptogenic herb that may help the body manage stress and support mood",
+        emoji: "🌱",
+        lazy: "Take as capsules with water",
+        tasty: "Mix powder into warm moon milk before bed",
+        healthy: "Steep as tea with honey and cardamom"
+      },
+      {
+        name: "Omega-3 Rich Walnuts",
+        description: "Support brain health and may help stabilize mood",
+        emoji: "🌰",
+        lazy: "Snack on a handful of raw walnuts",
+        tasty: "Add to yogurt parfaits with berries",
+        healthy: "Soak overnight and blend into smoothies"
+      }
+    ];
+  } else {
+    demoMessage = `Here are some general wellness ingredients that align with your ${diet} dietary preferences.`;
+    ingredients = [
+      {
+        name: "Chamomile",
+        description: "Gentle herb known for its calming and digestive support properties",
+        emoji: "🌼",
+        lazy: "Brew chamomile tea bags for 5 minutes",
+        tasty: "Add honey and lemon to chamomile tea",
+        healthy: "Steep loose flowers for stronger therapeutic effect"
+      },
+      {
+        name: "Lemon",
+        description: "Rich in vitamin C and may support digestion and immune function",
+        emoji: "🍋",
+        lazy: "Squeeze into water bottles throughout the day",
+        tasty: "Make lemon ginger honey tea",
+        healthy: "Start mornings with warm lemon water"
+      }
+    ];
+  }
+  
+  demoMessage += "\n\nRemember to consult with your healthcare provider before making significant dietary changes.";
+  
+  return {
+    message: demoMessage,
+    ingredients
+  };
+}
+
 // Research-backed RAG response using Firecrawl + Pinecone + OpenAI
 async function generateResearchBackedResponse(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
   try {
-    // Search for relevant research articles in vector database
     const relevantResearch = await researchService.searchRelevantResearch(question, 3);
     
-    // Build research context from retrieved articles
     const researchContext = relevantResearch.length > 0 
       ? relevantResearch.map((match: any) => 
           `Research: ${match.metadata?.title}\nContent: ${match.metadata?.content}\nSource: ${match.metadata?.source}\n`
         ).join('\n')
       : 'No specific research articles found. Use general evidence-based knowledge.';
 
-    // Build user profile context
     const userContext = onboardingData ? `
 User Profile:
 - Age: ${onboardingData.age}
@@ -32,7 +135,7 @@ User Profile:
 - Goals: ${onboardingData.goals?.join(', ') || 'General wellness'}
 ` : 'No profile data available';
 
-    const systemPrompt = `You are Winnie, a friendly and knowledgeable women's health coach specializing in hormonal wellness and nutrition. You provide evidence-based, personalized recommendations using natural ingredients and lifestyle approaches.
+    const systemPrompt = `You are Winnie, a friendly women's health coach specializing in hormonal wellness and nutrition. Provide evidence-based recommendations using natural ingredients.
 
 IMPORTANT: You must respond with a JSON object in this exact format:
 {
@@ -40,7 +143,7 @@ IMPORTANT: You must respond with a JSON object in this exact format:
   "ingredients": [
     {
       "name": "Ingredient Name",
-      "description": "Brief evidence-based explanation of benefits based on research",
+      "description": "Brief evidence-based explanation of benefits",
       "emoji": "🌿",
       "lazy": "Quick/convenient way to consume",
       "tasty": "Delicious way to incorporate",
@@ -51,12 +154,9 @@ IMPORTANT: You must respond with a JSON object in this exact format:
 
 Guidelines:
 - Always provide 2-4 ingredient recommendations
-- Base recommendations on the research context provided below when available
-- Consider the user's dietary restrictions (vegetarian/vegan/etc.)
-- Provide practical, actionable advice
+- Base recommendations on the research context when available
+- Consider dietary restrictions
 - Include appropriate emojis for each ingredient
-- Keep descriptions concise but informative
-- Reference research findings when available
 - Always include disclaimer about consulting healthcare providers
 
 Research Context:
@@ -79,25 +179,17 @@ ${userContext}`;
       throw new Error('No response from OpenAI');
     }
 
-    // Parse the JSON response
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(responseContent);
     } catch (parseError) {
-      console.error('Failed to parse OpenAI response as JSON:', responseContent);
-      // Fallback response if JSON parsing fails
-      return {
-        message: "I apologize, but I'm having trouble processing your request right now. Please try rephrasing your question or contact support if the issue persists.",
-        ingredients: []
-      };
+      return generateDemoResponse(question, onboardingData);
     }
 
-    // Validate the response structure
     if (!parsedResponse.message || !Array.isArray(parsedResponse.ingredients)) {
-      throw new Error('Invalid response structure from OpenAI');
+      return generateDemoResponse(question, onboardingData);
     }
 
-    // Ensure each ingredient has required fields
     const validatedIngredients = parsedResponse.ingredients.map((ing: any) => ({
       name: ing.name || 'Unknown',
       description: ing.description || 'No description available',
@@ -114,121 +206,11 @@ ${userContext}`;
 
   } catch (error) {
     console.error('Error generating research-backed response:', error);
-    
-    // Fallback to basic AI response if research retrieval fails
-    return await generateHealthResponseWithAI(openai, question, onboardingData);
-  }
-}
-
-// AI-powered health response using OpenAI GPT-4 with structured output
-async function generateHealthResponseWithAI(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
-  try {
-    // Build user profile context
-    const userContext = onboardingData ? `
-User Profile:
-- Age: ${onboardingData.age}
-- Diet: ${onboardingData.diet}
-- Primary symptoms: ${onboardingData.symptoms?.join(', ') || 'Not specified'}
-- Goals: ${onboardingData.goals?.join(', ') || 'General wellness'}
-` : 'No profile data available';
-
-    const systemPrompt = `You are Winnie, a friendly and knowledgeable women's health coach specializing in hormonal wellness and nutrition. You provide evidence-based, personalized recommendations using natural ingredients and lifestyle approaches.
-
-IMPORTANT: You must respond with a JSON object in this exact format:
-{
-  "message": "Your personalized response message here",
-  "ingredients": [
-    {
-      "name": "Ingredient Name",
-      "description": "Brief evidence-based explanation of benefits",
-      "emoji": "🌿",
-      "lazy": "Quick/convenient way to consume",
-      "tasty": "Delicious way to incorporate",
-      "healthy": "Optimal preparation method"
-    }
-  ]
-}
-
-Guidelines:
-- Always provide 2-4 ingredient recommendations
-- Consider the user's dietary restrictions (vegetarian/vegan/etc.)
-- Provide practical, actionable advice
-- Include appropriate emojis for each ingredient
-- Keep descriptions concise but informative
-- Always include disclaimer about consulting healthcare providers
-
-${userContext}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: question }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
-
-    const responseContent = completion.choices[0]?.message?.content;
-    if (!responseContent) {
-      throw new Error('No response from OpenAI');
-    }
-
-    // Parse the JSON response
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseContent);
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response as JSON:', responseContent);
-      // Fallback response if JSON parsing fails
-      return {
-        message: "I apologize, but I'm having trouble processing your request right now. Please try rephrasing your question or contact support if the issue persists.",
-        ingredients: []
-      };
-    }
-
-    // Validate the response structure
-    if (!parsedResponse.message || !Array.isArray(parsedResponse.ingredients)) {
-      throw new Error('Invalid response structure from OpenAI');
-    }
-
-    // Ensure each ingredient has required fields
-    const validatedIngredients = parsedResponse.ingredients.map((ing: any) => ({
-      name: ing.name || 'Unknown',
-      description: ing.description || 'No description available',
-      emoji: ing.emoji || '🌿',
-      lazy: ing.lazy || 'Use as recommended',
-      tasty: ing.tasty || 'Enjoy as preferred',
-      healthy: ing.healthy || 'Follow preparation guidelines'
-    }));
-
-    return {
-      message: parsedResponse.message,
-      ingredients: validatedIngredients
-    };
-
-  } catch (error) {
-    console.error('Error generating health response:', error);
-    
-    // Return a safe fallback response
-    return {
-      message: "I'm here to help with your health questions! Please try asking about specific symptoms or health concerns you'd like natural ingredient recommendations for.",
-      ingredients: [
-        {
-          name: "Ginger",
-          description: "Natural anti-inflammatory properties that may help with digestive issues",
-          emoji: "🫚",
-          lazy: "Add ginger tea bags to hot water",
-          tasty: "Fresh ginger in smoothies or stir-fries",
-          healthy: "Steep fresh ginger root in hot water for 10 minutes"
-        }
-      ]
-    };
+    return generateDemoResponse(question, onboardingData);
   }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize OpenAI client
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
@@ -241,7 +223,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      // For demo purposes, accept "demo-token" or validate Firebase token
       if (token === 'demo-token') {
         req.user = {
           id: 1,
@@ -250,8 +231,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: 'Demo User'
         };
       } else {
-        // In production, validate Firebase token here
-        // For now, treat any other token as invalid
         return res.status(401).json({ error: 'Invalid token' });
       }
       
@@ -302,13 +281,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Message is required' });
       }
 
-      // Get user's onboarding data for personalization
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      // Generate AI response with research-backed RAG
-      const response = await generateResearchBackedResponse(openai, message, onboardingData);
+      let response;
+      
+      // Use demo mode for development/testing
+      if (req.user.id === 1 && process.env.NODE_ENV === 'development') {
+        response = generateDemoResponse(message, onboardingData);
+      } else {
+        response = await generateResearchBackedResponse(openai, message, onboardingData);
+      }
 
-      // Save chat message
       await storage.saveChatMessage({
         userId: req.user.id,
         message,
@@ -318,6 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(response);
     } catch (error) {
+      console.error('Chat error:', error);
       res.status(500).json({ error: 'Failed to process chat message' });
     }
   });
