@@ -18,6 +18,9 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
   const lowerMessage = message.toLowerCase();
   const diet = onboardingData?.diet || 'balanced';
   
+  // Check if this is a diet/nutrition question vs general health information
+  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add)\b/i.test(message);
+  
   // Check if user is asking for meal plans
   if (lowerMessage.includes('meal plan') || lowerMessage.includes('what to eat') || 
       lowerMessage.includes('food plan') || lowerMessage.includes('diet plan') ||
@@ -35,6 +38,70 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
           healthy: "Get evidence-based meal timing, portion guidance, and therapeutic food combinations"
         }
       ]
+    };
+  }
+
+  // Handle general health information questions (no diet recommendations)
+  if (!isDietQuestion) {
+    if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
+      return {
+        message: `PCOS (Polycystic Ovary Syndrome) is a hormonal disorder affecting reproductive-aged women.
+
+**Types of PCOS:**
+- **Classic PCOS**: High androgens + irregular periods + polycystic ovaries
+- **Non-PCO PCOS**: High androgens + irregular periods but normal-appearing ovaries  
+- **Ovulatory PCOS**: High androgens + polycystic ovaries but regular periods
+- **Lean PCOS**: Normal weight but with PCOS symptoms (20-30% of cases)
+
+**Common symptoms:** irregular periods, excess hair growth, acne, weight gain, insulin resistance, and difficulty conceiving.
+
+**When to see a doctor:** If you experience irregular periods for several months, excessive hair growth, persistent acne, or difficulty losing weight despite healthy lifestyle changes.
+
+It's important to consult with healthcare providers for proper diagnosis and treatment planning.`,
+        ingredients: []
+      };
+    } else if (lowerMessage.includes('endometriosis')) {
+      return {
+        message: `Endometriosis is a condition where tissue similar to the uterine lining grows outside the uterus.
+
+**Common symptoms:** Severe menstrual cramps, chronic pelvic pain, pain during intercourse, heavy periods, and sometimes infertility.
+
+**Types:** Superficial endometriosis, ovarian endometriomas (chocolate cysts), and deep infiltrating endometriosis.
+
+**Risk factors:** Family history, never giving birth, early menstruation, late menopause, and shorter menstrual cycles.
+
+Diagnosis typically requires pelvic examination, imaging, and sometimes laparoscopy. Treatment options vary based on severity and symptoms.
+
+It's important to consult with healthcare providers for proper diagnosis and treatment planning.`,
+        ingredients: []
+      };
+    } else if (lowerMessage.includes('thyroid')) {
+      return {
+        message: `Thyroid disorders affect how your body uses energy and can impact many body functions.
+
+**Types:**
+- **Hypothyroidism**: Underactive thyroid (more common in women)
+- **Hyperthyroidism**: Overactive thyroid
+- **Hashimoto's**: Autoimmune condition causing hypothyroidism
+- **Graves' disease**: Autoimmune condition causing hyperthyroidism
+
+**Common symptoms of hypothyroidism:** Fatigue, weight gain, cold sensitivity, dry skin, hair loss, constipation, and depression.
+
+**Common symptoms of hyperthyroidism:** Weight loss, rapid heartbeat, anxiety, heat sensitivity, tremors, and difficulty sleeping.
+
+Regular blood tests (TSH, T3, T4) help diagnose and monitor thyroid function.
+
+It's important to consult with healthcare providers for proper diagnosis and treatment planning.`,
+        ingredients: []
+      };
+    }
+    
+    // Default general health response
+    return {
+      message: `I can provide general health information and answer questions about women's health conditions. For specific dietary and supplement recommendations, please ask about what you'd like to eat, add to your diet, or specific nutrition questions.
+
+It's important to consult with healthcare providers for proper diagnosis and treatment planning.`,
+      ingredients: []
     };
   }
   
@@ -233,7 +300,13 @@ Use this scientific information to provide evidence-based recommendations.`;
     console.log('Research service unavailable, proceeding with general knowledge');
   }
 
-  const systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients and nutrition for hormonal health.
+  // Determine if this is a diet/nutrition question vs general health information
+  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add)\b/i.test(question);
+  
+  let systemPrompt;
+  
+  if (isDietQuestion) {
+    systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients and nutrition for hormonal health.
 
 ${ENHANCED_TRAINING_PROMPT}
 
@@ -273,6 +346,27 @@ Respond with exactly this JSON format:
 }
 
 Always provide 2-3 ingredient recommendations.${userContext}${researchContext}`;
+  } else {
+    systemPrompt = `You are a knowledgeable women's health coach. Provide evidence-based educational information about women's health conditions, symptoms, and general health knowledge.
+
+Focus on explaining:
+- What the condition is
+- Common symptoms and signs
+- Types or classifications if applicable
+- Risk factors and causes
+- When to seek medical attention
+- General lifestyle considerations
+
+Do NOT provide specific dietary recommendations, supplements, or ingredients unless specifically asked about nutrition.
+
+Respond with exactly this JSON format:
+{
+  "message": "Your informative response about the health topic (include disclaimer about consulting healthcare providers)",
+  "ingredients": []
+}
+
+Keep ingredients array empty for general health information questions.${userContext}${researchContext}`;
+  }
 
   try {
     const completion = await openai.chat.completions.create({
@@ -288,7 +382,23 @@ Always provide 2-3 ingredient recommendations.${userContext}${researchContext}`;
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error('No OpenAI response');
 
-    const parsed = JSON.parse(content);
+    // Clean and parse the JSON response
+    let cleanContent = content.trim();
+    
+    // Remove any markdown code blocks if present
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    // Attempt to extract JSON if response contains extra text
+    const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanContent = jsonMatch[0];
+    }
+
+    const parsed = JSON.parse(cleanContent);
     
     // Validate and enhance ingredient recommendations
     const validatedIngredients = parsed.ingredients.map((ing: any) => {
