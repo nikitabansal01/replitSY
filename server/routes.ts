@@ -6,6 +6,7 @@ import { z } from "zod";
 import OpenAI from 'openai';
 import { researchService } from './research';
 import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
+import { nutritionistService, type DailyMealPlan } from './nutritionist';
 
 interface AuthenticatedRequest extends Request {
   user: User;
@@ -424,6 +425,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error checking research database status:', error);
       res.status(500).json({ error: 'Failed to check research database status' });
+    }
+  });
+
+  // Generate personalized meal plan
+  app.post('/api/nutrition/meal-plan', requireAuth, async (req: any, res: any) => {
+    try {
+      const { cuisinePreference } = req.body;
+      
+      if (!cuisinePreference) {
+        return res.status(400).json({ error: 'Cuisine preference is required' });
+      }
+
+      // Get user's onboarding data for health assessment
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to get personalized meal plans' });
+      }
+
+      // Extract health conditions from user profile
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      // Generate personalized meal plan
+      const mealPlan = await nutritionistService.generateMealPlan(
+        healthConditions,
+        cuisinePreference,
+        onboardingData
+      );
+
+      // Generate shopping list
+      const shoppingList = nutritionistService.generateShoppingList(mealPlan);
+
+      res.json({
+        success: true,
+        mealPlan,
+        shoppingList,
+        detectedConditions: healthConditions,
+        message: `Personalized ${cuisinePreference} meal plan generated for your health needs`
+      });
+
+    } catch (error) {
+      console.error('Error generating meal plan:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate meal plan', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Get available cuisines and health conditions
+  app.get('/api/nutrition/options', requireAuth, async (req: any, res: any) => {
+    try {
+      res.json({
+        success: true,
+        cuisines: [
+          { id: 'indian', name: 'Indian', description: 'Spice-rich, turmeric-based healing cuisine' },
+          { id: 'mediterranean', name: 'Mediterranean', description: 'Anti-inflammatory, omega-3 rich foods' },
+          { id: 'japanese', name: 'Japanese', description: 'Fermented foods, seaweed, clean eating' },
+          { id: 'mexican', name: 'Mexican', description: 'Bean-rich, antioxidant-packed vegetables' }
+        ],
+        supportedConditions: [
+          { id: 'pcos', name: 'PCOS', focus: 'Insulin sensitivity, hormone balance' },
+          { id: 'endometriosis', name: 'Endometriosis', focus: 'Anti-inflammatory, pain management' },
+          { id: 'thyroid_hypo', name: 'Hypothyroidism', focus: 'Metabolism support, nutrient density' },
+          { id: 'stress_adrenal', name: 'Chronic Stress', focus: 'Cortisol regulation, adrenal support' }
+        ]
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get nutrition options' });
     }
   });
 
