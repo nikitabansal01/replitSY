@@ -18,6 +18,7 @@ class ResearchService {
   private pinecone: Pinecone;
   private openai: OpenAI;
   private indexName = 'health-research';
+  private knowledgeGapThreshold = 0.7; // Similarity threshold to determine if new scraping is needed
 
   constructor() {
     this.firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
@@ -203,6 +204,129 @@ class ResearchService {
     }
   }
 
+  // Check if we have sufficient knowledge on a topic
+  async hasKnowledgeGaps(query: string, minSimilarity: number = 0.7): Promise<boolean> {
+    try {
+      const matches = await this.searchRelevantResearch(query, 5);
+      
+      if (matches.length === 0) {
+        return true; // No knowledge at all
+      }
+
+      // Check if the best match meets our similarity threshold
+      const bestMatch = matches[0];
+      return !bestMatch.score || bestMatch.score < minSimilarity;
+    } catch (error) {
+      console.error('Error checking knowledge gaps:', error);
+      return true; // Assume gap if we can't check
+    }
+  }
+
+  // Smart search that scrapes only when needed
+  async searchWithSmartScraping(query: string, topK: number = 3): Promise<any[]> {
+    try {
+      // First check existing knowledge
+      const existingMatches = await this.searchRelevantResearch(query, topK);
+      const hasGaps = await this.hasKnowledgeGaps(query, this.knowledgeGapThreshold);
+
+      if (!hasGaps && existingMatches.length > 0) {
+        console.log('Using existing knowledge for query:', query);
+        return existingMatches;
+      }
+
+      // If we have knowledge gaps, scrape for more specific information
+      console.log('Knowledge gap detected, scraping for:', query);
+      await this.scrapeSpecificTopic(query);
+
+      // Search again after scraping
+      return await this.searchRelevantResearch(query, topK);
+    } catch (error) {
+      console.error('Error in smart search:', error);
+      return existingMatches || [];
+    }
+  }
+
+  // Scrape specific topic when knowledge gaps are detected
+  async scrapeSpecificTopic(topic: string): Promise<void> {
+    try {
+      const targetedSources = this.getTargetedSources(topic);
+      const articles: ResearchArticle[] = [];
+
+      for (const source of targetedSources) {
+        try {
+          const crawlResult = await this.firecrawl.scrapeUrl(source, {
+            formats: ['markdown'],
+            includeTags: ['article', 'main', 'div', 'section'],
+            excludeTags: ['nav', 'footer', 'aside', 'header'],
+            waitFor: 2000
+          });
+
+          if (crawlResult.success && crawlResult.markdown) {
+            const extractedArticles = this.parseScrapedContent(crawlResult.markdown, topic, source);
+            articles.push(...extractedArticles);
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error(`Error scraping ${source}:`, error);
+        }
+      }
+
+      if (articles.length > 0) {
+        const articlesWithEmbeddings = await this.generateEmbeddings(articles);
+        await this.storeInVectorDB(articlesWithEmbeddings);
+        console.log(`Scraped and stored ${articlesWithEmbeddings.length} new articles for topic: ${topic}`);
+      }
+    } catch (error) {
+      console.error(`Error scraping specific topic ${topic}:`, error);
+    }
+  }
+
+  // Get targeted sources based on topic
+  private getTargetedSources(topic: string): string[] {
+    const lowerTopic = topic.toLowerCase();
+    const baseUrl = 'https://pubmed.ncbi.nlm.nih.gov/?term=';
+    
+    if (lowerTopic.includes('pcos')) {
+      return [
+        `${baseUrl}${encodeURIComponent('PCOS polycystic ovary syndrome women nutrition diet')}`,
+        `${baseUrl}${encodeURIComponent('PCOS natural treatment insulin resistance')}`,
+        'https://www.womenshealth.gov/a-z-topics/polycystic-ovary-syndrome'
+      ];
+    }
+    
+    if (lowerTopic.includes('endometriosis')) {
+      return [
+        `${baseUrl}${encodeURIComponent('endometriosis pain management nutrition anti-inflammatory')}`,
+        `${baseUrl}${encodeURIComponent('endometriosis diet omega-3 antioxidants')}`,
+        'https://www.womenshealth.gov/a-z-topics/endometriosis'
+      ];
+    }
+    
+    if (lowerTopic.includes('stress') || lowerTopic.includes('cortisol')) {
+      return [
+        `${baseUrl}${encodeURIComponent('stress management women cortisol adaptogens')}`,
+        `${baseUrl}${encodeURIComponent('chronic stress hormonal balance women nutrition')}`,
+        'https://www.niddk.nih.gov/health-information/endocrine-diseases'
+      ];
+    }
+    
+    if (lowerTopic.includes('thyroid')) {
+      return [
+        `${baseUrl}${encodeURIComponent('thyroid health women nutrition selenium iodine')}`,
+        `${baseUrl}${encodeURIComponent('hypothyroidism diet treatment women')}`,
+        'https://www.niddk.nih.gov/health-information/endocrine-diseases/hypothyroidism'
+      ];
+    }
+    
+    // Default sources for general women's health topics
+    return [
+      `${baseUrl}${encodeURIComponent(topic + ' women health nutrition')}`,
+      'https://www.womenshealth.gov',
+      'https://www.niddk.nih.gov/health-information'
+    ];
+  }
+
   // Search for relevant research based on user query
   async searchRelevantResearch(query: string, topK: number = 3): Promise<any[]> {
     try {
@@ -235,36 +359,78 @@ class ResearchService {
 
   // Scrape and store research for common women's health topics
   async initializeResearchDatabase(): Promise<void> {
-    console.log('Initializing research database...');
+    console.log('Initializing comprehensive women\'s health research database...');
     
     const healthTopics = [
-      'menstrual cramps natural remedies',
-      'PMS symptoms nutrition therapy',
-      'hormonal acne diet treatment',
-      'PCOS natural treatment diet',
-      'endometriosis pain management nutrition',
-      'menopause symptoms natural remedies',
-      'thyroid health women nutrition',
-      'iron deficiency anemia women',
-      'bloating digestive health women',
-      'mood swings hormonal balance'
+      // PCOS related topics
+      'PCOS polycystic ovary syndrome nutrition diet',
+      'PCOS insulin resistance natural treatment',
+      'PCOS weight management metformin alternatives',
+      'PCOS hormonal balance spearmint tea',
+      'PCOS fertility natural conception support',
+      
+      // Endometriosis topics
+      'endometriosis pain management anti-inflammatory diet',
+      'endometriosis omega-3 fatty acids turmeric',
+      'endometriosis iron deficiency anemia nutrition',
+      'endometriosis hormonal therapy natural alternatives',
+      'endometriosis fertility preservation nutrition',
+      
+      // Stress and cortisol management
+      'chronic stress cortisol women health effects',
+      'stress management adaptogens ashwagandha rhodiola',
+      'cortisol regulation sleep hygiene women',
+      'stress induced hormonal imbalance treatment',
+      'adrenal fatigue natural recovery nutrition',
+      
+      // Thyroid health
+      'hypothyroidism women nutrition selenium iodine',
+      'thyroid health autoimmune hashimoto diet',
+      'thyroid medication natural supplements interaction',
+      'thyroid function vitamin D B12 deficiency',
+      'hyperthyroidism graves disease nutrition management',
+      
+      // Menstrual health
+      'menstrual cramps dysmenorrhea natural pain relief',
+      'heavy menstrual bleeding iron supplementation',
+      'irregular periods hormonal balance nutrition',
+      'PMS premenstrual syndrome magnesium B6',
+      'menstrual cycle tracking hormonal patterns',
+      
+      // Reproductive health
+      'fertility nutrition preconception health women',
+      'hormonal contraception side effects natural alternatives',
+      'menopause symptoms hormone replacement therapy natural',
+      'postmenopausal bone health calcium magnesium',
+      'perimenopause symptom management nutrition',
+      
+      // General women's wellness
+      'iron deficiency anemia women plant-based sources',
+      'hormonal acne adult women natural treatment',
+      'digestive health bloating women hormonal connection',
+      'mood disorders women hormonal fluctuations',
+      'breast health nutrition cancer prevention'
     ];
 
     try {
       await this.initializeIndex();
       
+      console.log(`Starting to scrape ${healthTopics.length} specialized women's health topics...`);
       const articles = await this.scrapeHealthResearch(healthTopics);
-      console.log(`Scraped ${articles.length} research articles`);
+      console.log(`Successfully scraped ${articles.length} research articles`);
 
       if (articles.length > 0) {
         const articlesWithEmbeddings = await this.generateEmbeddings(articles);
         console.log(`Generated embeddings for ${articlesWithEmbeddings.length} articles`);
 
         await this.storeInVectorDB(articlesWithEmbeddings);
-        console.log('Research database initialization complete');
+        console.log('Comprehensive women\'s health research database initialization complete');
+      } else {
+        console.log('No articles were scraped - please check Firecrawl API key and connection');
       }
     } catch (error) {
       console.error('Error initializing research database:', error);
+      throw error;
     }
   }
 }
