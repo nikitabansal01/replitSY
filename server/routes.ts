@@ -7,6 +7,7 @@ import OpenAI from 'openai';
 import { researchService } from './research';
 import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
 import { nutritionistService, type DailyMealPlan } from './nutritionist';
+import { auth as firebaseAuth } from './firebase-admin';
 
 interface AuthenticatedRequest extends Request {
   user: User;
@@ -341,12 +342,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: 'demo@example.com',
           name: 'Demo User'
         };
+        next();
       } else {
-        return res.status(401).json({ error: 'Invalid token' });
+        // Verify Firebase token
+        const decodedToken = await firebaseAuth.verifyIdToken(token);
+        
+        // Get or create user in our storage
+        let user = await storage.getUserByFirebaseUid(decodedToken.uid);
+        
+        if (!user) {
+          // Create user if it doesn't exist
+          user = await storage.createUser({
+            firebaseUid: decodedToken.uid,
+            email: decodedToken.email || '',
+            name: decodedToken.name || decodedToken.email?.split('@')[0] || 'User'
+          });
+        }
+        
+        req.user = user;
+        next();
       }
-      
-      next();
     } catch (error) {
+      console.error('Authentication error:', error);
       res.status(401).json({ error: 'Invalid token' });
     }
   }
