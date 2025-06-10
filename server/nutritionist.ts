@@ -266,55 +266,9 @@ Create a complete daily meal plan that is:
 3. Practical and accessible
 4. Nutritionally balanced
 
-Respond with exactly this JSON format:
-{
-  "condition_focus": ["condition1", "condition2"],
-  "cuisine_style": "${cuisine.name}",
-  "breakfast": {
-    "name": "Meal name",
-    "ingredients": ["ingredient1", "ingredient2"],
-    "preparation_time": "15 minutes",
-    "cooking_method": "method",
-    "nutritional_focus": ["focus1", "focus2"],
-    "health_benefits": ["benefit1", "benefit2"],
-    "cultural_authenticity": "explanation"
-  },
-  "lunch": {
-    "name": "Meal name",
-    "ingredients": ["ingredient1", "ingredient2"],
-    "preparation_time": "20 minutes",
-    "cooking_method": "method",
-    "nutritional_focus": ["focus1", "focus2"],
-    "health_benefits": ["benefit1", "benefit2"],
-    "cultural_authenticity": "explanation"
-  },
-  "dinner": {
-    "name": "Meal name",
-    "ingredients": ["ingredient1", "ingredient2"],
-    "preparation_time": "25 minutes",
-    "cooking_method": "method",
-    "nutritional_focus": ["focus1", "focus2"],
-    "health_benefits": ["benefit1", "benefit2"],
-    "cultural_authenticity": "explanation"
-  },
-  "snacks": [
-    {
-      "name": "Snack name",
-      "ingredients": ["ingredient1", "ingredient2"],
-      "preparation_time": "5 minutes",
-      "cooking_method": "method",
-      "nutritional_focus": ["focus1"],
-      "health_benefits": ["benefit1"],
-      "cultural_authenticity": "explanation"
-    }
-  ],
-  "daily_guidelines": {
-    "foods_to_emphasize": ["food1", "food2"],
-    "foods_to_limit": ["food1", "food2"],
-    "hydration_tips": ["tip1", "tip2"],
-    "timing_recommendations": ["timing1", "timing2"]
-  }
-}`;
+CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations. Use this exact format:
+
+{"condition_focus":["${healthConditions.join('","')}"],"cuisine_style":"${cuisine.name}","breakfast":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"15 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"lunch":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"20 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"dinner":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"25 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"snacks":[{"name":"Snack name","ingredients":["ingredient1","ingredient2"],"preparation_time":"5 minutes","cooking_method":"method","nutritional_focus":["focus1"],"health_benefits":["benefit1"],"cultural_authenticity":"explanation"}],"daily_guidelines":{"foods_to_emphasize":["food1","food2"],"foods_to_limit":["food1","food2"],"hydration_tips":["tip1","tip2"],"timing_recommendations":["timing1","timing2"]}}`;
 
     try {
       const completion = await this.openai.chat.completions.create({
@@ -327,11 +281,132 @@ Respond with exactly this JSON format:
       const content = completion.choices[0]?.message?.content;
       if (!content) throw new Error('No OpenAI response');
 
-      return JSON.parse(content);
+      // Clean the response - remove markdown code blocks if present
+      let cleanedContent = content.trim();
+      if (cleanedContent.startsWith('```json')) {
+        cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      try {
+        return JSON.parse(cleanedContent);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Content to parse:', cleanedContent);
+        throw new Error('Invalid JSON response from AI');
+      }
     } catch (error) {
       console.error('Error generating meal plan:', error);
-      throw new Error('Failed to generate personalized meal plan');
+      // Return fallback meal plan instead of throwing error
+      return this.generateFallbackMealPlan(healthConditions, cuisinePreference, userProfile);
     }
+  }
+
+  // Fallback meal plan generator for when AI fails
+  private generateFallbackMealPlan(
+    healthConditions: string[],
+    cuisinePreference: string,
+    userProfile: any
+  ): DailyMealPlan {
+    const cuisine = CUISINE_PROFILES[cuisinePreference.toLowerCase()] || CUISINE_PROFILES.mediterranean;
+    
+    if (cuisinePreference.toLowerCase() === 'indian') {
+      return {
+        condition_focus: healthConditions,
+        cuisine_style: "Indian",
+        breakfast: {
+          name: "Turmeric Golden Milk Oats",
+          ingredients: ["steel cut oats", "turmeric", "ginger", "coconut milk", "almonds", "cinnamon"],
+          preparation_time: "10 minutes",
+          cooking_method: "simmering",
+          nutritional_focus: ["anti_inflammatory", "fiber_rich", "protein"],
+          health_benefits: ["Reduces inflammation", "Supports digestion", "Provides sustained energy"],
+          cultural_authenticity: "Traditional Indian spices like turmeric and ginger with modern breakfast format"
+        },
+        lunch: {
+          name: "Quinoa Dal with Vegetables",
+          ingredients: ["quinoa", "red lentils", "spinach", "tomatoes", "cumin", "turmeric", "ghee"],
+          preparation_time: "25 minutes",
+          cooking_method: "pressure cooking",
+          nutritional_focus: ["complete_protein", "iron_rich", "low_glycemic"],
+          health_benefits: ["Complete amino acid profile", "High in iron and folate", "Supports blood sugar stability"],
+          cultural_authenticity: "Classic dal preparation with protein-rich quinoa adaptation"
+        },
+        dinner: {
+          name: "Grilled Fish with Coconut Curry",
+          ingredients: ["salmon", "coconut milk", "curry leaves", "mustard seeds", "green chilies", "cauliflower"],
+          preparation_time: "20 minutes",
+          cooking_method: "grilling and simmering",
+          nutritional_focus: ["omega3_fatty_acids", "anti_inflammatory", "low_carb"],
+          health_benefits: ["Rich in omega-3s", "Supports heart health", "Anti-inflammatory properties"],
+          cultural_authenticity: "South Indian coconut-based curry with therapeutic spices"
+        },
+        snacks: [{
+          name: "Spiced Roasted Chickpeas",
+          ingredients: ["chickpeas", "turmeric", "cumin", "chaat masala", "olive oil"],
+          preparation_time: "15 minutes",
+          cooking_method: "roasting",
+          nutritional_focus: ["plant_protein", "fiber"],
+          health_benefits: ["High in protein and fiber", "Supports digestive health"],
+          cultural_authenticity: "Traditional Indian street food adapted for health"
+        }],
+        daily_guidelines: {
+          foods_to_emphasize: ["turmeric", "ginger", "lentils", "leafy greens", "coconut"],
+          foods_to_limit: ["refined sugar", "processed foods", "excessive oil"],
+          hydration_tips: ["Drink warm water with lemon", "Include herbal teas", "Coconut water for electrolytes"],
+          timing_recommendations: ["Eat largest meal at lunch", "Light dinner before 7 PM", "Include protein with each meal"]
+        }
+      };
+    }
+
+    // Default Mediterranean fallback
+    return {
+      condition_focus: healthConditions,
+      cuisine_style: "Mediterranean",
+      breakfast: {
+        name: "Greek Yogurt Bowl with Nuts",
+        ingredients: ["Greek yogurt", "walnuts", "berries", "honey", "chia seeds", "cinnamon"],
+        preparation_time: "5 minutes",
+        cooking_method: "assembly",
+        nutritional_focus: ["protein_rich", "omega3", "antioxidants"],
+        health_benefits: ["High in protein", "Rich in omega-3s", "Supports gut health"],
+        cultural_authenticity: "Traditional Greek breakfast with therapeutic additions"
+      },
+      lunch: {
+        name: "Mediterranean Quinoa Salad",
+        ingredients: ["quinoa", "olive oil", "tomatoes", "cucumber", "feta", "olives", "herbs"],
+        preparation_time: "15 minutes",
+        cooking_method: "boiling and mixing",
+        nutritional_focus: ["complete_protein", "healthy_fats", "anti_inflammatory"],
+        health_benefits: ["Complete amino acids", "Heart-healthy fats", "Anti-inflammatory"],
+        cultural_authenticity: "Classic Mediterranean flavors with modern super grain"
+      },
+      dinner: {
+        name: "Herb-Crusted Salmon with Vegetables",
+        ingredients: ["salmon", "olive oil", "herbs", "zucchini", "bell peppers", "lemon"],
+        preparation_time: "20 minutes",
+        cooking_method: "baking",
+        nutritional_focus: ["omega3_fatty_acids", "lean_protein", "vegetables"],
+        health_benefits: ["Rich in omega-3s", "Supports brain health", "Anti-inflammatory"],
+        cultural_authenticity: "Mediterranean herb preparation with therapeutic focus"
+      },
+      snacks: [{
+        name: "Hummus with Vegetables",
+        ingredients: ["chickpeas", "tahini", "olive oil", "lemon", "vegetables"],
+        preparation_time: "10 minutes",
+        cooking_method: "blending",
+        nutritional_focus: ["plant_protein", "fiber", "healthy_fats"],
+        health_benefits: ["High in protein", "Supports digestive health", "Provides sustained energy"],
+        cultural_authenticity: "Traditional Middle Eastern dip with fresh vegetables"
+      }],
+      daily_guidelines: {
+        foods_to_emphasize: ["olive oil", "fish", "vegetables", "nuts", "herbs"],
+        foods_to_limit: ["processed foods", "refined sugars", "trans fats"],
+        hydration_tips: ["Drink plenty of water", "Include herbal teas", "Limit caffeine"],
+        timing_recommendations: ["Eat regular meals", "Include healthy fats", "Focus on whole foods"]
+      }
+    };
   }
 
   // Generate shopping list from meal plan
