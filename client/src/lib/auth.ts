@@ -56,7 +56,26 @@ export async function signInWithGoogle() {
 
 export async function signOutUser() {
   try {
+    // Call server logout endpoint to clear chat history for privacy
+    const token = localStorage.getItem('authToken');
+    if (token && token !== 'demo-token') {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        console.error("Error clearing server data:", error);
+      }
+    }
+    
+    // Sign out from Firebase
     await signOut(auth);
+    
+    // Clear local storage
     localStorage.removeItem('authToken');
   } catch (error) {
     console.error("Error signing out:", error);

@@ -126,21 +126,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveOnboardingData(data: InsertOnboardingData): Promise<OnboardingData> {
-    const [onboarding] = await db
-      .insert(onboardingData)
-      .values(data)
-      .onConflictDoUpdate({
-        target: onboardingData.userId,
-        set: {
+    // Check if onboarding data already exists for this user
+    const existing = await this.getOnboardingData(data.userId);
+    
+    if (existing) {
+      // Update existing record
+      const [onboarding] = await db
+        .update(onboardingData)
+        .set({
           age: data.age,
           diet: data.diet,
           symptoms: data.symptoms,
           goals: data.goals,
-          lifestyle: data.lifestyle
-        }
-      })
-      .returning();
-    return onboarding;
+          lifestyle: data.lifestyle,
+          completedAt: new Date()
+        })
+        .where(eq(onboardingData.userId, data.userId))
+        .returning();
+      return onboarding;
+    } else {
+      // Insert new record
+      const [onboarding] = await db
+        .insert(onboardingData)
+        .values({
+          ...data,
+          completedAt: new Date()
+        })
+        .returning();
+      return onboarding;
+    }
   }
 
   async getChatHistory(userId: number): Promise<ChatMessage[]> {
@@ -153,7 +167,12 @@ export class DatabaseStorage implements IStorage {
   async saveChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
     const [chatMessage] = await db
       .insert(chatMessages)
-      .values(message)
+      .values({
+        message: message.message,
+        userId: message.userId,
+        response: message.response,
+        ingredients: message.ingredients
+      })
       .returning();
     return chatMessage;
   }
@@ -163,4 +182,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Using MemStorage for now while database schema is being finalized
+export const storage = new MemStorage();

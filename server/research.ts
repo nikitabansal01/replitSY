@@ -222,26 +222,30 @@ class ResearchService {
     }
   }
 
-  // Smart search that scrapes only when needed
+  // Optimized search that prioritizes existing data
   async searchWithSmartScraping(query: string, topK: number = 3): Promise<any[]> {
     let existingMatches: any[] = [];
     
     try {
-      // First check existing knowledge
+      // Always check existing knowledge first
       existingMatches = await this.searchRelevantResearch(query, topK);
-      const hasGaps = await this.hasKnowledgeGaps(query, this.knowledgeGapThreshold);
+      
+      // Use stricter threshold to reduce unnecessary scraping
+      const hasSignificantGaps = await this.hasKnowledgeGaps(query, 0.85);
 
-      if (!hasGaps && existingMatches.length > 0) {
-        console.log('Using existing knowledge for query:', query);
+      if (!hasSignificantGaps || existingMatches.length >= topK) {
+        console.log('Using existing research data for query:', query);
         return existingMatches;
       }
 
-      // If we have knowledge gaps, scrape for more specific information
-      console.log('Knowledge gap detected, scraping for:', query);
-      await this.scrapeSpecificTopic(query);
+      // Only scrape if we have very limited relevant data
+      if (existingMatches.length < 2) {
+        console.log('Limited data found, performing targeted scraping for:', query);
+        await this.scrapeSpecificTopic(query);
+        return await this.searchRelevantResearch(query, topK);
+      }
 
-      // Search again after scraping
-      return await this.searchRelevantResearch(query, topK);
+      return existingMatches;
     } catch (error) {
       console.error('Error in smart search:', error);
       return existingMatches;
