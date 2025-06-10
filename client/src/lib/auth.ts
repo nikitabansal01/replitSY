@@ -1,34 +1,55 @@
-import { signInWithRedirect, GoogleAuthProvider, getRedirectResult, signOut, User } from "firebase/auth";
-import { auth } from "./firebase";
+import { 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  User,
+  updateProfile
+} from "firebase/auth";
+import { auth, googleProvider } from "./firebase";
 
-const provider = new GoogleAuthProvider();
-
-export async function signInWithGoogle() {
+export async function signUpWithEmail(email: string, password: string, displayName: string) {
   try {
-    // Demo mode - simulate successful login
-    const mockToken = "demo-token-" + Date.now();
-    localStorage.setItem('authToken', mockToken);
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(result.user, { displayName });
     
-    // Simulate redirect to dashboard
-    window.location.href = '/onboarding';
+    // Get Firebase ID token for backend authentication
+    const token = await result.user.getIdToken();
+    localStorage.setItem('authToken', token);
+    
+    return result.user;
   } catch (error) {
-    console.error("Error signing in with Google:", error);
+    console.error("Error signing up with email:", error);
     throw error;
   }
 }
 
-export async function handleRedirectResult(): Promise<User | null> {
+export async function signInWithEmail(email: string, password: string) {
   try {
-    const result = await getRedirectResult(auth);
-    if (result?.user) {
-      // Get Firebase ID token for backend authentication
-      const token = await result.user.getIdToken();
-      localStorage.setItem('authToken', token);
-      return result.user;
-    }
-    return null;
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Get Firebase ID token for backend authentication
+    const token = await result.user.getIdToken();
+    localStorage.setItem('authToken', token);
+    
+    return result.user;
   } catch (error) {
-    console.error("Error handling redirect result:", error);
+    console.error("Error signing in with email:", error);
+    throw error;
+  }
+}
+
+export async function signInWithGoogle() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    
+    // Get Firebase ID token for backend authentication
+    const token = await result.user.getIdToken();
+    localStorage.setItem('authToken', token);
+    
+    return result.user;
+  } catch (error) {
+    console.error("Error signing in with Google:", error);
     throw error;
   }
 }
@@ -43,6 +64,14 @@ export async function signOutUser() {
   }
 }
 
-export function getAuthToken(): string | null {
-  return localStorage.getItem('authToken');
+export async function getAuthToken(): Promise<string | null> {
+  try {
+    if (auth.currentUser) {
+      return await auth.currentUser.getIdToken();
+    }
+    return localStorage.getItem('authToken');
+  } catch (error) {
+    console.error("Error getting auth token:", error);
+    return localStorage.getItem('authToken');
+  }
 }
