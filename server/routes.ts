@@ -385,6 +385,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Logout user and clear chat history for privacy
+  app.post('/api/auth/logout', requireAuth, async (req: any, res: any) => {
+    try {
+      await storage.clearChatHistory(req.user.id);
+      res.json({ success: true, message: 'Logged out successfully and chat history cleared' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to logout' });
+    }
+  });
+
   // Save onboarding data
   app.post('/api/onboarding', requireAuth, async (req: any, res: any) => {
     try {

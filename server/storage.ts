@@ -1,4 +1,6 @@
 import { users, onboardingData, chatMessages, type User, type InsertUser, type OnboardingData, type InsertOnboardingData, type ChatMessage, type InsertChatMessage, type IngredientRecommendation } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -13,6 +15,7 @@ export interface IStorage {
   // Chat messages
   getChatHistory(userId: number): Promise<ChatMessage[]>;
   saveChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  clearChatHistory(userId: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -91,6 +94,73 @@ export class MemStorage implements IStorage {
     
     return chatMessage;
   }
+
+  async clearChatHistory(userId: number): Promise<void> {
+    this.chatMessages.set(userId, []);
+  }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation for user privacy and data persistence
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getOnboardingData(userId: number): Promise<OnboardingData | undefined> {
+    const [onboarding] = await db.select().from(onboardingData).where(eq(onboardingData.userId, userId));
+    return onboarding || undefined;
+  }
+
+  async saveOnboardingData(data: InsertOnboardingData): Promise<OnboardingData> {
+    const [onboarding] = await db
+      .insert(onboardingData)
+      .values(data)
+      .onConflictDoUpdate({
+        target: onboardingData.userId,
+        set: {
+          age: data.age,
+          diet: data.diet,
+          symptoms: data.symptoms,
+          goals: data.goals,
+          lifestyle: data.lifestyle
+        }
+      })
+      .returning();
+    return onboarding;
+  }
+
+  async getChatHistory(userId: number): Promise<ChatMessage[]> {
+    const messages = await db.select().from(chatMessages)
+      .where(eq(chatMessages.userId, userId))
+      .orderBy(chatMessages.createdAt);
+    return messages;
+  }
+
+  async saveChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [chatMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    return chatMessage;
+  }
+
+  async clearChatHistory(userId: number): Promise<void> {
+    await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+  }
+}
+
+export const storage = new DatabaseStorage();
