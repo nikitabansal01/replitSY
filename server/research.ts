@@ -224,9 +224,11 @@ class ResearchService {
 
   // Smart search that scrapes only when needed
   async searchWithSmartScraping(query: string, topK: number = 3): Promise<any[]> {
+    let existingMatches: any[] = [];
+    
     try {
       // First check existing knowledge
-      const existingMatches = await this.searchRelevantResearch(query, topK);
+      existingMatches = await this.searchRelevantResearch(query, topK);
       const hasGaps = await this.hasKnowledgeGaps(query, this.knowledgeGapThreshold);
 
       if (!hasGaps && existingMatches.length > 0) {
@@ -242,7 +244,7 @@ class ResearchService {
       return await this.searchRelevantResearch(query, topK);
     } catch (error) {
       console.error('Error in smart search:', error);
-      return existingMatches || [];
+      return existingMatches;
     }
   }
 

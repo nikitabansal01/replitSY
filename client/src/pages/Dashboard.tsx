@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { IngredientCard } from '@/components/chat/IngredientCard';
+import { ResearchManager } from '@/components/ResearchManager';
 import type { ChatResponse, IngredientRecommendation } from '@shared/schema';
 
 interface Message {
@@ -331,6 +332,9 @@ export default function Dashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            
+            {/* Research Database Manager */}
+            <ResearchManager />
             
             {/* Profile Card */}
             <Card className="shadow-xl">

@@ -126,6 +126,22 @@ User Profile:
 - Goals: ${onboardingData.goals?.join(', ') || 'General wellness'}
 ` : '';
 
+  // Get research-backed information using smart scraping
+  let researchContext = '';
+  try {
+    const researchMatches = await researchService.searchWithSmartScraping(question, 3);
+    if (researchMatches.length > 0) {
+      researchContext = `
+
+Research-based information to consider:
+${researchMatches.map(match => `- ${match.metadata?.title}: ${match.metadata?.content?.substring(0, 200)}...`).join('\n')}
+
+Use this scientific information to provide evidence-based recommendations.`;
+    }
+  } catch (error) {
+    console.log('Research service unavailable, proceeding with general knowledge');
+  }
+
   const systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients and nutrition for hormonal health.
 
 Respond with exactly this JSON format:
@@ -134,7 +150,7 @@ Respond with exactly this JSON format:
   "ingredients": [
     {
       "name": "Ingredient Name",
-      "description": "Health benefits explanation",
+      "description": "Health benefits explanation based on research",
       "emoji": "🌿",
       "lazy": "Easy way to use",
       "tasty": "Delicious preparation",
@@ -143,7 +159,7 @@ Respond with exactly this JSON format:
   ]
 }
 
-Always provide 2-3 ingredient recommendations.${userContext}`;
+Always provide 2-3 ingredient recommendations.${userContext}${researchContext}`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -153,7 +169,7 @@ Always provide 2-3 ingredient recommendations.${userContext}`;
         { role: "user", content: question }
       ],
       temperature: 0.7,
-      max_tokens: 600,
+      max_tokens: 800,
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -306,10 +322,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/research/initialize', requireAuth, async (req: any, res: any) => {
     try {
       await researchService.initializeResearchDatabase();
-      res.json({ success: true, message: 'Research database initialized' });
+      res.json({ success: true, message: 'Research database initialized with comprehensive women\'s health topics' });
     } catch (error) {
       console.error('Error initializing research database:', error);
-      res.status(500).json({ error: 'Failed to initialize research database' });
+      res.status(500).json({ error: 'Failed to initialize research database', details: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Check research database status
+  app.get('/api/research/status', requireAuth, async (req: any, res: any) => {
+    try {
+      const testQuery = 'PCOS nutrition';
+      const results = await researchService.searchRelevantResearch(testQuery, 1);
+      
+      res.json({ 
+        success: true, 
+        hasData: results.length > 0,
+        sampleResultCount: results.length,
+        message: results.length > 0 ? 'Research database is populated and working' : 'Research database is empty - initialize first'
+      });
+    } catch (error) {
+      console.error('Error checking research database status:', error);
+      res.status(500).json({ error: 'Failed to check research database status' });
     }
   });
 
