@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '@/lib/auth';
+import { signInWithGoogle, signInWithEmail, signUpWithEmail, getAuthToken } from '@/lib/auth';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,13 +45,34 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const user = await signInWithGoogle();
+      await signInWithGoogle();
+      
+      // Wait for auth context to update, then check onboarding status
+      setTimeout(async () => {
+        try {
+          const token = await getAuthToken();
+          if (token) {
+            const response = await fetch('/api/profile', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const profile = await response.json();
+            
+            if (profile.onboarding) {
+              setLocation('/dashboard');
+            } else {
+              setLocation('/onboarding');
+            }
+          }
+        } catch (error) {
+          console.error('Profile check failed:', error);
+          setLocation('/onboarding');
+        }
+      }, 1000);
+      
       toast({
         title: "Success",
         description: "Successfully signed in with Google!"
       });
-      // Force navigation after successful authentication
-      setTimeout(() => setLocation('/onboarding'), 500);
     } catch (error: any) {
       console.error('Sign in failed:', error);
       toast({
@@ -69,13 +90,12 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const user = await signInWithEmail(loginForm.email, loginForm.password);
+      await signInWithEmail(loginForm.email, loginForm.password);
       toast({
         title: "Success",
         description: "Successfully signed in!"
       });
-      // Force navigation after successful authentication
-      setTimeout(() => setLocation('/dashboard'), 500);
+      // The App router will handle navigation automatically after auth state updates
     } catch (error: any) {
       toast({
         title: "Error",
