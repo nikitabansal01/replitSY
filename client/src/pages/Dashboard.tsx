@@ -176,15 +176,15 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Hey, {profile?.user.name || 'there'}! 👋
+                Hey, {profile?.user.name || 'there'}!
               </span>
               <Button
                 onClick={handleSignOut}
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="text-gray-600 hover:text-gray-800"
+                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
               >
-                <i className="fas fa-sign-out-alt mr-2"></i>Sign Out
+                Sign Out
               </Button>
             </div>
           </div>

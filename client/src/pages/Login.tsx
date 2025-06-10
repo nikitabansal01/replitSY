@@ -33,6 +33,15 @@ export default function Login() {
     }
   }, [user, loading, setLocation]);
 
+  // Clear any existing tokens on login page load to show login options
+  useEffect(() => {
+    // Only clear if we're on the login page and there's a demo token
+    if (window.location.pathname === '/' && localStorage.getItem('authToken') === 'demo-token') {
+      localStorage.removeItem('authToken');
+      window.location.reload();
+    }
+  }, []);
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
