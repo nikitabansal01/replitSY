@@ -45,11 +45,13 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
       toast({
         title: "Success",
         description: "Successfully signed in with Google!"
       });
+      // Force navigation after successful authentication
+      setTimeout(() => setLocation('/onboarding'), 500);
     } catch (error: any) {
       console.error('Sign in failed:', error);
       toast({
@@ -67,11 +69,13 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      await signInWithEmail(loginForm.email, loginForm.password);
+      const user = await signInWithEmail(loginForm.email, loginForm.password);
       toast({
         title: "Success",
         description: "Successfully signed in!"
       });
+      // Force navigation after successful authentication
+      setTimeout(() => setLocation('/dashboard'), 500);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -107,11 +111,13 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      await signUpWithEmail(signupForm.email, signupForm.password, signupForm.name);
+      const user = await signUpWithEmail(signupForm.email, signupForm.password, signupForm.name);
       toast({
         title: "Success",
         description: "Account created successfully!"
       });
+      // Force navigation after successful account creation
+      setTimeout(() => setLocation('/onboarding'), 500);
     } catch (error: any) {
       toast({
         title: "Error",
