@@ -5,6 +5,7 @@ import { insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type
 import { z } from "zod";
 import OpenAI from 'openai';
 import { researchService } from './research';
+import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
 
 interface AuthenticatedRequest extends Request {
   user: User;
@@ -25,25 +26,25 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
         name: "Maca Root",
         description: "Adaptogenic root that helps balance hormones and naturally increases energy levels",
         emoji: "🌿",
-        lazy: "Add 1 tsp maca powder to your morning smoothie",
-        tasty: "Blend into chocolate energy balls with dates and nuts",
-        healthy: "Mix 1-2 tsp into oatmeal with cinnamon and berries"
+        lazy: "Take 2 maca capsules (500mg each) with breakfast daily",
+        tasty: "Blend 1 tsp maca powder into chocolate-banana smoothies with almond butter",
+        healthy: "Mix 1-2 tsp raw maca powder into overnight oats 30 minutes before eating for optimal absorption"
       },
       {
         name: "Iron-Rich Spinach",
         description: "High in iron and folate, helps prevent fatigue from iron deficiency",
         emoji: "🥬",
-        lazy: "Grab pre-washed baby spinach for quick salads",
-        tasty: "Blend into green smoothies with mango and banana",
-        healthy: "Sauté with garlic and lemon juice as a side dish"
+        lazy: "Buy pre-washed baby spinach bags and add handfuls to any meal",
+        tasty: "Blend 2 cups fresh spinach into green smoothies with pineapple and coconut water",
+        healthy: "Sauté 3 cups spinach with garlic and lemon juice, eat with vitamin C foods for iron absorption"
       },
       {
-        name: "Matcha Green Tea",
-        description: "Provides sustained energy without jitters, rich in antioxidants",
-        emoji: "🍵",
-        lazy: "Use instant matcha powder in milk or water",
-        tasty: "Make matcha lattes with oat milk and honey",
-        healthy: "Whisk ceremonial grade matcha with hot water"
+        name: "Rhodiola Rosea",
+        description: "Adaptogenic herb that reduces stress-related fatigue and improves mental clarity",
+        emoji: "🌸",
+        lazy: "Take 200mg rhodiola extract capsule on empty stomach each morning",
+        tasty: "Add rhodiola tincture drops to herbal teas with honey and ginger",
+        healthy: "Take 300-400mg standardized extract (3% rosavins, 1% salidroside) 30 minutes before breakfast"
       }
     ];
   } else if (lowerMessage.includes('period') || lowerMessage.includes('menstrual') || lowerMessage.includes('cramp')) {
@@ -51,59 +52,103 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
     ingredients = [
       {
         name: "Ginger Root",
-        description: "Natural anti-inflammatory that may help reduce menstrual pain intensity",
+        description: "Natural anti-inflammatory that reduces menstrual pain as effectively as ibuprofen in clinical studies",
         emoji: "🫚",
-        lazy: "Steep ginger tea bags in hot water for 5 minutes",
-        tasty: "Add fresh grated ginger to stir-fries and curries",
-        healthy: "Make fresh ginger tea with lemon and honey"
+        lazy: "Take 250mg ginger capsules 3 times daily during menstruation",
+        tasty: "Make warming ginger-cinnamon tea with honey and a splash of oat milk",
+        healthy: "Consume 1g fresh ginger daily: grate 1 inch piece into hot water, steep 10 minutes, drink 30 minutes before meals"
       },
       {
-        name: "Magnesium-Rich Dark Chocolate",
-        description: "May help reduce cramping and support mood during menstruation",
-        emoji: "🍫",
-        lazy: "Choose 70%+ dark chocolate squares",
-        tasty: "Melt into hot cocoa with cinnamon",
-        healthy: "Pair with nuts for sustained blood sugar"
+        name: "Magnesium Glycinate",
+        description: "Relaxes uterine muscles and reduces prostaglandin production that causes cramping",
+        emoji: "💊",
+        lazy: "Take 200mg magnesium glycinate capsule before bed starting 1 week before period",
+        tasty: "Mix magnesium powder into warm almond milk with vanilla and a touch of maple syrup",
+        healthy: "Take 300-400mg magnesium glycinate with dinner, avoid calcium supplements within 2 hours for optimal absorption"
+      },
+      {
+        name: "Omega-3 Fish Oil",
+        description: "Reduces inflammatory prostaglandins and decreases menstrual pain intensity",
+        emoji: "🐟",
+        lazy: "Take 2 high-quality fish oil capsules (1000mg EPA/DHA total) with breakfast",
+        tasty: "Choose lemon-flavored liquid fish oil and mix into morning smoothies",
+        healthy: "Take 2-3g combined EPA/DHA daily with fatty meals, store in refrigerator to maintain potency"
       }
     ];
   } else if (lowerMessage.includes('mood') || lowerMessage.includes('stress') || lowerMessage.includes('anxiety')) {
     demoMessage = `Mood and stress management are important for overall wellness. Here are natural ingredients that may help support emotional balance.`;
     ingredients = [
       {
-        name: "Ashwagandha",
-        description: "Adaptogenic herb that may help the body manage stress and support mood",
+        name: "Ashwagandha Root",
+        description: "Adaptogenic herb clinically shown to reduce cortisol levels by 30% and improve stress resilience",
         emoji: "🌱",
-        lazy: "Take as capsules with water",
-        tasty: "Mix powder into warm moon milk before bed",
-        healthy: "Steep as tea with honey and cardamom"
+        lazy: "Take 300mg KSM-66 ashwagandha capsule with breakfast daily",
+        tasty: "Mix ashwagandha powder into golden milk lattes with turmeric, ginger, and honey",
+        healthy: "Take 500-600mg standardized root extract (5% withanolides) on empty stomach, cycle 8 weeks on, 2 weeks off"
       },
       {
-        name: "Omega-3 Rich Walnuts",
-        description: "Support brain health and may help stabilize mood",
-        emoji: "🌰",
-        lazy: "Snack on a handful of raw walnuts",
-        tasty: "Add to yogurt parfaits with berries",
-        healthy: "Soak overnight and blend into smoothies"
+        name: "L-Theanine",
+        description: "Amino acid that promotes calm focus and reduces anxiety without drowsiness",
+        emoji: "🍃",
+        lazy: "Take 200mg L-theanine capsule when feeling stressed or anxious",
+        tasty: "Drink high-quality green tea (contains 25-50mg L-theanine naturally) with jasmine",
+        healthy: "Take 100-200mg L-theanine 30-60 minutes before stressful situations, can combine with caffeine for focused calm"
+      },
+      {
+        name: "Magnesium Taurate",
+        description: "Essential mineral that regulates nervous system and supports GABA production for relaxation",
+        emoji: "💊",
+        lazy: "Take 400mg magnesium taurate capsule before bed for sleep and stress support",
+        tasty: "Mix magnesium powder into evening herbal tea with chamomile and lemon balm",
+        healthy: "Take 200mg twice daily with meals, taurate form specifically supports heart and nervous system"
+      }
+    ];
+  } else if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
+    demoMessage = `PCOS requires a comprehensive approach targeting insulin resistance and hormonal balance. Here are evidence-based natural ingredients.`;
+    ingredients = [
+      {
+        name: "Myo-Inositol",
+        description: "Improves insulin sensitivity and ovarian function, reduces testosterone by 73% in clinical studies",
+        emoji: "💊",
+        lazy: "Take 2g myo-inositol powder mixed in morning water or juice",
+        tasty: "Mix inositol into berry smoothies with Greek yogurt, vanilla, and stevia",
+        healthy: "Take 2g myo-inositol + 50mg D-chiro-inositol (40:1 ratio) twice daily, 30 minutes before meals for optimal insulin response"
+      },
+      {
+        name: "Spearmint Tea",
+        description: "Anti-androgenic herb that reduces free testosterone and improves hirsutism in women with PCOS",
+        emoji: "🌿",
+        lazy: "Steep 2 organic spearmint tea bags daily (morning and evening)",
+        tasty: "Make iced spearmint tea with fresh mint leaves, cucumber, and a splash of apple cider vinegar",
+        healthy: "Brew 1 tbsp dried spearmint leaves in hot water for 15 minutes, drink twice daily on empty stomach for maximum anti-androgen effect"
+      },
+      {
+        name: "Chromium Picolinate",
+        description: "Trace mineral that enhances insulin action and improves glucose metabolism in insulin-resistant PCOS",
+        emoji: "⚡",
+        lazy: "Take 200mcg chromium picolinate capsule with largest meal of the day",
+        tasty: "Choose chromium-enriched nutritional yeast to sprinkle on salads and pasta",
+        healthy: "Take 400mcg chromium picolinate with high-carbohydrate meals, combined with vitamin C for enhanced absorption"
       }
     ];
   } else {
     demoMessage = `Here are some general wellness ingredients that align with your ${diet} dietary preferences.`;
     ingredients = [
       {
-        name: "Chamomile",
-        description: "Gentle herb known for its calming and digestive support properties",
-        emoji: "🌼",
-        lazy: "Brew chamomile tea bags for 5 minutes",
-        tasty: "Add honey and lemon to chamomile tea",
-        healthy: "Steep loose flowers for stronger therapeutic effect"
+        name: "Turmeric Root",
+        description: "Potent anti-inflammatory compound curcumin supports joint health and may reduce chronic inflammation",
+        emoji: "🌿",
+        lazy: "Take 500mg turmeric capsules with black pepper extract (piperine) with meals",
+        tasty: "Make golden milk lattes with turmeric, ginger, cinnamon, and coconut milk",
+        healthy: "Use 1 tsp fresh grated turmeric with a pinch of black pepper and healthy fat for 2000% better absorption"
       },
       {
-        name: "Lemon",
-        description: "Rich in vitamin C and may support digestion and immune function",
-        emoji: "🍋",
-        lazy: "Squeeze into water bottles throughout the day",
-        tasty: "Make lemon ginger honey tea",
-        healthy: "Start mornings with warm lemon water"
+        name: "Vitamin D3",
+        description: "Essential hormone that supports immune function, mood, and bone health - deficient in 80% of women",
+        emoji: "☀️",
+        lazy: "Take 2000-4000 IU vitamin D3 softgel with breakfast daily",
+        tasty: "Choose vitamin D3 gummies or liquid drops in orange flavor",
+        healthy: "Take 1000 IU per 25 pounds body weight with magnesium and vitamin K2 for optimal calcium metabolism"
       }
     ];
   }
@@ -144,6 +189,26 @@ Use this scientific information to provide evidence-based recommendations.`;
 
   const systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients and nutrition for hormonal health.
 
+IMPORTANT: For each ingredient, provide three specific implementation methods:
+
+1. "lazy" - The quickest, most convenient way with minimal preparation:
+   - Pre-packaged options (capsules, powders, ready-made products)
+   - Items that require no cooking or preparation
+   - Grab-and-go solutions
+   - Examples: "Take 2 capsules with breakfast", "Add 1 tsp powder to any drink", "Buy pre-washed spinach for quick salads"
+
+2. "tasty" - The most enjoyable, flavorful preparation that doesn't feel like medicine:
+   - Focus on taste, texture, and culinary enjoyment
+   - Creative recipes and combinations
+   - Ways to mask strong flavors or enhance pleasant ones
+   - Examples: "Blend into chocolate smoothies with banana", "Make golden milk latte with honey", "Add to homemade energy balls with dates"
+
+3. "healthy" - The most nutritionally optimal method that maximizes benefits:
+   - Preservation of nutrients and bioactive compounds
+   - Proper timing, dosage, and food combinations
+   - Methods that enhance absorption or efficacy
+   - Examples: "Consume with black pepper for better absorption", "Take on empty stomach 30 minutes before meals", "Combine with vitamin C-rich foods"
+
 Respond with exactly this JSON format:
 {
   "message": "Your helpful response (include disclaimer about consulting healthcare providers)",
@@ -152,9 +217,9 @@ Respond with exactly this JSON format:
       "name": "Ingredient Name",
       "description": "Health benefits explanation based on research",
       "emoji": "🌿",
-      "lazy": "Easy way to use",
-      "tasty": "Delicious preparation",
-      "healthy": "Optimal method"
+      "lazy": "Minimal effort preparation method",
+      "tasty": "Most enjoyable, flavorful preparation",
+      "healthy": "Nutritionally optimal method for maximum benefits"
     }
   ]
 }
