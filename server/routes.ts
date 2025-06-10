@@ -189,25 +189,27 @@ Use this scientific information to provide evidence-based recommendations.`;
 
   const systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients and nutrition for hormonal health.
 
-IMPORTANT: For each ingredient, provide three specific implementation methods:
+${ENHANCED_TRAINING_PROMPT}
 
-1. "lazy" - The quickest, most convenient way with minimal preparation:
-   - Pre-packaged options (capsules, powders, ready-made products)
-   - Items that require no cooking or preparation
-   - Grab-and-go solutions
-   - Examples: "Take 2 capsules with breakfast", "Add 1 tsp powder to any drink", "Buy pre-washed spinach for quick salads"
+STRICT IMPLEMENTATION REQUIREMENTS:
 
-2. "tasty" - The most enjoyable, flavorful preparation that doesn't feel like medicine:
-   - Focus on taste, texture, and culinary enjoyment
-   - Creative recipes and combinations
-   - Ways to mask strong flavors or enhance pleasant ones
-   - Examples: "Blend into chocolate smoothies with banana", "Make golden milk latte with honey", "Add to homemade energy balls with dates"
+LAZY METHOD must include:
+- Specific dosage/amount (e.g., "2 capsules", "1 tsp powder")
+- Convenience factor (e.g., "with breakfast", "pre-made", "tea bags")
+- Zero cooking or complex preparation
+- Grab-and-go solutions
 
-3. "healthy" - The most nutritionally optimal method that maximizes benefits:
-   - Preservation of nutrients and bioactive compounds
-   - Proper timing, dosage, and food combinations
-   - Methods that enhance absorption or efficacy
-   - Examples: "Consume with black pepper for better absorption", "Take on empty stomach 30 minutes before meals", "Combine with vitamin C-rich foods"
+TASTY METHOD must include:
+- Flavor enhancement (e.g., "chocolate", "honey", "vanilla")
+- Culinary enjoyment (e.g., "smoothie", "latte", "energy balls")
+- Creative preparation that feels like a treat
+- Pleasant taste combinations
+
+HEALTHY METHOD must include:
+- Precise dosage with units (mg, mcg, g, IU, ml)
+- Absorption optimization (e.g., "with black pepper", "on empty stomach")
+- Timing guidance (e.g., "30 minutes before meals", "with dinner")
+- Bioavailability enhancement
 
 Respond with exactly this JSON format:
 {
@@ -217,9 +219,9 @@ Respond with exactly this JSON format:
       "name": "Ingredient Name",
       "description": "Health benefits explanation based on research",
       "emoji": "🌿",
-      "lazy": "Minimal effort preparation method",
-      "tasty": "Most enjoyable, flavorful preparation",
-      "healthy": "Nutritionally optimal method for maximum benefits"
+      "lazy": "[CONVENIENCE] Specific easy method with dosage",
+      "tasty": "[FLAVOR] Enjoyable culinary preparation",
+      "healthy": "[OPTIMAL] Evidence-based dosage with absorption guidance"
     }
   ]
 }
@@ -242,16 +244,29 @@ Always provide 2-3 ingredient recommendations.${userContext}${researchContext}`;
 
     const parsed = JSON.parse(content);
     
-    return {
-      message: parsed.message,
-      ingredients: parsed.ingredients.map((ing: any) => ({
+    // Validate and enhance ingredient recommendations
+    const validatedIngredients = parsed.ingredients.map((ing: any) => {
+      const validation = validateImplementationMethods(ing);
+      
+      // Log validation issues for improvement
+      if (!validation.isValid) {
+        console.log(`Validation issues for ${ing.name}:`, validation.errors);
+        console.log(`Suggestions:`, validation.suggestions);
+      }
+      
+      return {
         name: ing.name || 'Unknown',
         description: ing.description || 'Natural ingredient',
         emoji: ing.emoji || '🌿',
-        lazy: ing.lazy || 'Use as directed',
-        tasty: ing.tasty || 'Add to meals',
-        healthy: ing.healthy || 'Follow guidelines'
-      }))
+        lazy: ing.lazy || 'Take as supplement with breakfast daily',
+        tasty: ing.tasty || 'Mix into smoothies with fruit and honey',
+        healthy: ing.healthy || 'Follow evidence-based dosage guidelines'
+      };
+    });
+    
+    return {
+      message: parsed.message,
+      ingredients: validatedIngredients
     };
 
   } catch (error) {

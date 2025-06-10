@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { IngredientCard } from '@/components/chat/IngredientCard';
 import { ResearchManager } from '@/components/ResearchManager';
+import { LLMTrainingDashboard } from '@/components/LLMTrainingDashboard';
 import type { ChatResponse, IngredientRecommendation } from '@shared/schema';
 
 interface Message {
@@ -312,6 +313,9 @@ export default function Dashboard() {
             
             {/* Research Database Manager */}
             <ResearchManager />
+            
+            {/* LLM Training Dashboard */}
+            <LLMTrainingDashboard />
             
             {/* Profile Card */}
             <Card className="shadow-xl">
