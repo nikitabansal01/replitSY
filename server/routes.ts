@@ -12,10 +12,30 @@ interface AuthenticatedRequest extends Request {
   user: User;
 }
 
-// Demo response function for testing without external APIs
+// Enhanced demo response function with meal plan detection
 function generateDemoResponse(message: string, onboardingData: any): ChatResponse {
   const lowerMessage = message.toLowerCase();
   const diet = onboardingData?.diet || 'balanced';
+  
+  // Check if user is asking for meal plans
+  if (lowerMessage.includes('meal plan') || lowerMessage.includes('what to eat') || 
+      lowerMessage.includes('food plan') || lowerMessage.includes('diet plan') ||
+      lowerMessage.includes('recipes for') || lowerMessage.includes('meals for')) {
+    
+    return {
+      message: `I can create a personalized meal plan for you! Based on your profile, I'll design meals that address your specific health needs. Use the meal plan generator in your dashboard to select your preferred cuisine (Indian, Mediterranean, Japanese, or Mexican) and I'll create a complete daily meal plan with recipes, shopping lists, and nutritional guidance tailored to your conditions.`,
+      ingredients: [
+        {
+          name: "Personalized Meal Planning",
+          description: "AI-generated meal plans based on your health conditions and cuisine preferences",
+          emoji: "🍽️",
+          lazy: "Use the meal plan generator with one-click cuisine selection",
+          tasty: "Choose from 4 authentic cuisines with flavorful, culturally-relevant recipes",
+          healthy: "Get evidence-based meal timing, portion guidance, and therapeutic food combinations"
+        }
+      ]
+    };
+  }
   
   let demoMessage = "";
   let ingredients: IngredientRecommendation[] = [];
@@ -171,6 +191,30 @@ User Profile:
 - Symptoms: ${onboardingData.symptoms?.join(', ') || 'Not specified'}
 - Goals: ${onboardingData.goals?.join(', ') || 'General wellness'}
 ` : '';
+
+  // Check if user is asking for meal plans
+  const lowerQuestion = question.toLowerCase();
+  if (lowerQuestion.includes('meal plan') || lowerQuestion.includes('what to eat') || 
+      lowerQuestion.includes('food plan') || lowerQuestion.includes('diet plan') ||
+      lowerQuestion.includes('recipes for') || lowerQuestion.includes('meals for')) {
+    
+    // Extract health conditions for meal planning context
+    const healthConditions = nutritionistService.extractHealthConditions(onboardingData || {});
+    
+    return {
+      message: `I can create a personalized meal plan for you! Based on your profile${healthConditions.length > 0 ? ` and ${healthConditions.join(', ')} conditions` : ''}, I'll design meals that address your specific health needs. Use the meal plan generator in your dashboard to select your preferred cuisine (Indian, Mediterranean, Japanese, or Mexican) and I'll create a complete daily meal plan with recipes, shopping lists, and nutritional guidance tailored to your needs.`,
+      ingredients: [
+        {
+          name: "AI Meal Planning",
+          description: "Personalized meal plans based on your health conditions and cuisine preferences",
+          emoji: "🍽️",
+          lazy: "Click 'Generate Meal Plan' button and select your preferred cuisine",
+          tasty: "Choose from authentic Indian, Mediterranean, Japanese, or Mexican recipes",
+          healthy: "Get evidence-based meal timing, therapeutic ingredients, and nutritional optimization"
+        }
+      ]
+    };
+  }
 
   // Get research-backed information using smart scraping
   let researchContext = '';

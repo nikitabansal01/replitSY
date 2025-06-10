@@ -11,6 +11,7 @@ import { ChatMessage } from '@/components/chat/ChatMessage';
 import { IngredientCard } from '@/components/chat/IngredientCard';
 import { ResearchManager } from '@/components/ResearchManager';
 import { LLMTrainingDashboard } from '@/components/LLMTrainingDashboard';
+import { MealPlanGenerator } from '@/components/MealPlanGenerator';
 import type { ChatResponse, IngredientRecommendation } from '@shared/schema';
 
 interface Message {
@@ -292,7 +293,13 @@ export default function Dashboard() {
                 
                 {/* Quick Suggestions */}
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {['What foods help with bloating?', 'How to improve sleep during PMS?', 'Natural mood boosters?'].map((suggestion) => (
+                  {[
+                    'Create a meal plan for PCOS',
+                    'What foods help with bloating?', 
+                    'Mediterranean recipes for endometriosis',
+                    'How to improve sleep during PMS?',
+                    'Indian meal plan for stress management'
+                  ].map((suggestion) => (
                     <Button
                       key={suggestion}
                       onClick={() => setInputMessage(suggestion)}
@@ -356,6 +363,9 @@ export default function Dashboard() {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* AI Nutritionist */}
+            <MealPlanGenerator />
 
             {/* Quick Actions */}
             <Card className="shadow-xl">
