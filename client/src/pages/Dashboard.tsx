@@ -41,7 +41,7 @@ export default function Dashboard() {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isInitializingResearch, setIsInitializingResearch] = useState(false);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -150,30 +150,7 @@ export default function Dashboard() {
     }
   };
 
-  const initializeResearchDatabase = async () => {
-    setIsInitializingResearch(true);
-    try {
-      const response = await apiRequest('POST', '/api/research/initialize', {});
 
-      if (response.ok) {
-        toast({
-          title: "Research Database Initialized",
-          description: "Health research articles have been scraped and indexed for better recommendations.",
-        });
-      } else {
-        throw new Error('Failed to initialize research database');
-      }
-    } catch (error) {
-      console.error('Error initializing research database:', error);
-      toast({
-        title: "Initialization Failed",
-        description: "Could not initialize research database. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsInitializingResearch(false);
-    }
-  };
 
   if (loading) {
     return (
