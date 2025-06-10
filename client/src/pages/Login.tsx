@@ -46,33 +46,11 @@ export default function Login() {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      
-      // Wait for auth context to update, then check onboarding status
-      setTimeout(async () => {
-        try {
-          const token = await getAuthToken();
-          if (token) {
-            const response = await fetch('/api/profile', {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const profile = await response.json();
-            
-            if (profile.onboarding) {
-              setLocation('/dashboard');
-            } else {
-              setLocation('/onboarding');
-            }
-          }
-        } catch (error) {
-          console.error('Profile check failed:', error);
-          setLocation('/onboarding');
-        }
-      }, 1000);
-      
       toast({
         title: "Success",
         description: "Successfully signed in with Google!"
       });
+      // The App router will handle navigation automatically after auth state updates
     } catch (error: any) {
       console.error('Sign in failed:', error);
       toast({
