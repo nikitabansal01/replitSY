@@ -526,14 +526,14 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
     try {
       const completion = await Promise.race([
         this.openai.chat.completions.create({
-          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          model: "gpt-4o",
           messages: [{ role: "system", content: systemPrompt }],
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: 1800,
           response_format: { type: "json_object" },
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI API timeout')), 25000)
+          setTimeout(() => reject(new Error('OpenAI API timeout')), 20000)
         )
       ]) as any;
 
@@ -589,7 +589,8 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
       }
     } catch (error) {
       console.error('Error generating meal plan:', error);
-      // Return fallback meal plan instead of throwing error
+      console.log('Using fallback meal plan with improved formatting');
+      // Return enhanced fallback meal plan instead of throwing error
       return this.generateFallbackMealPlan(healthConditions, cuisinePreference, userProfile);
     }
   }
