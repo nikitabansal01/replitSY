@@ -417,6 +417,21 @@ class ResearchService {
       'amenorrhea missing periods nutrition weight restoration',
       'ovulation nutrition fertility signs tracking',
       
+      // Seed cycling comprehensive research
+      'seed cycling menstrual cycle hormonal balance flax pumpkin sesame sunflower',
+      'flax seeds lignans estrogen metabolism follicular phase clinical studies',
+      'pumpkin seeds zinc hormone production progesterone support',
+      'sesame seeds lignans progesterone support luteal phase research',
+      'sunflower seeds vitamin E hormone balance menstrual cycle',
+      'seed cycling PCOS hormonal imbalance natural treatment',
+      'menstrual cycle phases nutrition follicular luteal ovulation',
+      'hormone support foods estrogen progesterone natural balance',
+      'seed cycling clinical evidence scientific research women health',
+      'phytoestrogens seeds nuts hormonal balance menstruation',
+      'essential fatty acids omega-3 omega-6 menstrual health',
+      'seed cycling endometriosis pain management hormonal support',
+      'natural hormone therapy seeds nuts menopause perimenopause',
+      
       // Stress and adrenal health
       'chronic stress cortisol women adrenal fatigue nutrition',
       'adaptogens ashwagandha rhodiola holy basil women stress',

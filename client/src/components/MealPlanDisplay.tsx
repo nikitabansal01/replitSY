@@ -18,6 +18,13 @@ interface MealItem {
 interface MealPlan {
   condition_focus: string[];
   cuisine_style: string;
+  menstrual_phase?: string;
+  cycle_specific_recommendations?: {
+    phase: string;
+    seed_cycling: string[];
+    hormone_support_foods: string[];
+    phase_benefits: string[];
+  };
   breakfast: MealItem;
   lunch: MealItem;
   dinner: MealItem;
@@ -27,6 +34,7 @@ interface MealPlan {
     foods_to_limit: string[];
     hydration_tips: string[];
     timing_recommendations: string[];
+    cycle_support?: string[];
   };
 }
 
@@ -129,13 +137,63 @@ export function MealPlanDisplay({ mealPlan, shoppingList, detectedConditions }: 
         </CardHeader>
       </Card>
 
+      {/* Menstrual Cycle Phase Information */}
+      {displayMealPlan.cycle_specific_recommendations && (
+        <Card className="border-pink-200 bg-gradient-to-r from-pink-50 to-purple-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-pink-700">
+              <Heart className="h-5 w-5" />
+              {displayMealPlan.cycle_specific_recommendations.phase} Nutrition
+            </CardTitle>
+            <CardDescription>
+              Tailored recommendations for your current menstrual cycle phase
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-medium text-sm mb-2 text-pink-700">Seed Cycling for This Phase:</h4>
+              <div className="flex flex-wrap gap-2">
+                {displayMealPlan.cycle_specific_recommendations.seed_cycling.map((seed: string, idx: number) => (
+                  <Badge key={idx} variant="outline" className="border-pink-300 text-pink-700">
+                    {seed.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-medium text-sm mb-2 text-purple-700">Hormone Support Foods:</h4>
+              <div className="flex flex-wrap gap-2">
+                {displayMealPlan.cycle_specific_recommendations.hormone_support_foods.map((food: string, idx: number) => (
+                  <Badge key={idx} variant="outline" className="border-purple-300 text-purple-700">
+                    {food.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-sm mb-2">Phase Benefits:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                {displayMealPlan.cycle_specific_recommendations.phase_benefits.map((benefit: string, idx: number) => (
+                  <li key={idx} className="flex items-start">
+                    <span className="text-pink-500 mr-2">•</span>
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Meals */}
       <div className="grid grid-cols-1 gap-4">
         <MealCard meal={mealPlan.breakfast} mealType="Breakfast" />
         <MealCard meal={mealPlan.lunch} mealType="Lunch" />
         <MealCard meal={mealPlan.dinner} mealType="Dinner" />
         
-        {mealPlan.snacks.map((snack, idx) => (
+        {mealPlan.snacks.map((snack: MealItem, idx: number) => (
           <MealCard key={idx} meal={snack} mealType="Snack" />
         ))}
       </div>
@@ -158,7 +216,7 @@ export function MealPlanDisplay({ mealPlan, shoppingList, detectedConditions }: 
               <div>
                 <h4 className="font-medium text-sm mb-2 text-green-700">Foods to Emphasize:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {mealPlan.daily_guidelines.foods_to_emphasize.map((food, idx) => (
+                  {mealPlan.daily_guidelines.foods_to_emphasize.map((food: string, idx: number) => (
                     <Badge key={idx} variant="default" className="text-xs bg-green-100 text-green-800">
                       {food}
                     </Badge>
@@ -191,11 +249,26 @@ export function MealPlanDisplay({ mealPlan, shoppingList, detectedConditions }: 
               <div>
                 <h4 className="font-medium text-sm mb-2">Timing Recommendations:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  {mealPlan.daily_guidelines.timing_recommendations.map((tip, idx) => (
+                  {mealPlan.daily_guidelines.timing_recommendations.map((tip: string, idx: number) => (
                     <li key={idx}>• {tip}</li>
                   ))}
                 </ul>
               </div>
+
+              {mealPlan.daily_guidelines.cycle_support && (
+                <div>
+                  <Separator />
+                  <h4 className="font-medium text-sm mb-2 text-pink-700">Seed Cycling & Hormone Support:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {mealPlan.daily_guidelines.cycle_support.map((tip: string, idx: number) => (
+                      <li key={idx} className="flex items-start">
+                        <span className="text-pink-500 mr-2">•</span>
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </CardContent>
           </Card>
         </CollapsibleContent>
