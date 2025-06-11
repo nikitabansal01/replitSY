@@ -391,6 +391,118 @@ It's important to consult with healthcare providers for proper diagnosis and tre
   };
 }
 
+// Extract foods directly from research content when OpenAI parsing fails
+function extractFoodsFromResearch(researchMatches: any[], phase: string): any[] {
+  const foods = [];
+  const foodTerms = new Map();
+  
+  // Define phase-specific food keywords
+  const phaseKeywords = {
+    'Luteal Phase': ['sesame seeds', 'sunflower seeds', 'magnesium', 'progesterone', 'leafy greens', 'zinc'],
+    'Follicular Phase': ['flax seeds', 'pumpkin seeds', 'estrogen', 'folate', 'citrus', 'iron'],
+    'Menstrual Phase': ['iron', 'ginger', 'leafy greens', 'vitamin C', 'anti-inflammatory', 'cramps'],
+    'Ovulation Phase': ['omega-3', 'selenium', 'avocado', 'brazil nuts', 'fertility', 'folate']
+  };
+  
+  const keywords = phaseKeywords[phase] || [];
+  
+  // Extract relevant food mentions from research
+  researchMatches.forEach(match => {
+    const content = match.metadata?.content?.toLowerCase() || '';
+    
+    keywords.forEach(keyword => {
+      if (content.includes(keyword)) {
+        const count = (foodTerms.get(keyword) || 0) + 1;
+        foodTerms.set(keyword, count);
+      }
+    });
+  });
+  
+  // Convert top foods to ingredient cards
+  const sortedFoods = Array.from(foodTerms.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  
+  sortedFoods.forEach((food, index) => {
+    const foodName = food[0];
+    const benefits = getFoodBenefits(foodName, phase);
+    
+    foods.push({
+      name: capitalizeWords(foodName),
+      description: benefits.description,
+      emoji: benefits.emoji,
+      lazy: benefits.lazy,
+      tasty: benefits.tasty,
+      healthy: benefits.healthy
+    });
+  });
+  
+  return foods;
+}
+
+// Get benefits and preparation methods for specific foods
+function getFoodBenefits(foodName: string, phase: string): any {
+  const benefitsMap: Record<string, any> = {
+    'sesame seeds': {
+      description: 'Rich in lignans that support progesterone production during luteal phase',
+      emoji: '🌱',
+      lazy: 'Take 1 tbsp sesame seeds daily or sesame seed butter on toast',
+      tasty: 'Sprinkle toasted sesame seeds on salads or make tahini smoothie bowls',
+      healthy: 'Consume 1-2 tbsp raw sesame seeds daily with vitamin E-rich foods'
+    },
+    'sunflower seeds': {
+      description: 'High in vitamin E and selenium to support luteal phase hormone production',
+      emoji: '🌻',
+      lazy: 'Snack on 1/4 cup roasted sunflower seeds or sunflower seed butter',
+      tasty: 'Add sunflower seeds to homemade granola or trail mix',
+      healthy: 'Eat 1-2 tbsp raw sunflower seeds daily during luteal phase'
+    },
+    'flax seeds': {
+      description: 'High in lignans that support healthy estrogen metabolism during follicular phase',
+      emoji: '🌾',
+      lazy: 'Take 1 tbsp ground flaxseed daily mixed in water or yogurt',
+      tasty: 'Add ground flax to smoothies, oatmeal, or homemade muffins',
+      healthy: 'Consume 1-2 tbsp freshly ground flaxseeds daily for optimal lignan content'
+    },
+    'pumpkin seeds': {
+      description: 'Rich in zinc and iron to support healthy follicle development',
+      emoji: '🎃',
+      lazy: 'Snack on 1/4 cup raw or roasted pumpkin seeds daily',
+      tasty: 'Toast pumpkin seeds with sea salt and herbs',
+      healthy: 'Eat 1-2 tbsp raw pumpkin seeds daily for zinc and iron'
+    },
+    'ginger': {
+      description: 'Natural anti-inflammatory that reduces menstrual cramps and nausea',
+      emoji: '🫚',
+      lazy: 'Take ginger capsules or drink pre-made ginger tea',
+      tasty: 'Make fresh ginger tea with honey and lemon',
+      healthy: 'Consume 1-2g fresh ginger daily as tea or in cooking'
+    },
+    'leafy greens': {
+      description: 'High in iron, folate, and magnesium to support menstrual health',
+      emoji: '🥬',
+      lazy: 'Add baby spinach to smoothies or buy pre-washed salad mixes',
+      tasty: 'Sauté spinach with garlic and lemon',
+      healthy: 'Consume 2-3 cups dark leafy greens daily with vitamin C'
+    }
+  };
+  
+  return benefitsMap[foodName] || {
+    description: `Research-backed nutrient for ${phase.toLowerCase()} support`,
+    emoji: '🥗',
+    lazy: `Include ${foodName} in your daily routine`,
+    tasty: `Add ${foodName} to your favorite recipes`,
+    healthy: `Consume ${foodName} as recommended by research studies`
+  };
+}
+
+// Utility function to capitalize words
+function capitalizeWords(str: string): string {
+  return str.split(' ').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+}
+
 // Generate research-based ingredient cards for menstrual cycle phases
 async function generateResearchBasedCycleResponse(message: string, onboardingData: any, openai: OpenAI): Promise<ChatResponse> {
   const lowerMessage = message.toLowerCase();
@@ -438,25 +550,18 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
       messages: [
         {
           role: 'system',
-          content: `You are a nutrition researcher who extracts specific food recommendations from scientific research. Based on the research provided, identify the top 3 foods/nutrients mentioned for ${phase} support.
+          content: `You are a nutrition researcher. Extract exactly 3 foods/nutrients from the research for ${phase} support. 
 
-For each food, provide:
-1. Name of the food/nutrient
-2. Scientific description of its benefits based on the research
-3. Lazy way to consume it (simple, convenient)
-4. Tasty way to consume it (flavorful, appealing)
-5. Healthy way to consume it (optimal dosage/preparation)
-6. Appropriate emoji
+CRITICAL: Return ONLY valid JSON - no other text before or after.
 
-Return ONLY a JSON array with exactly 3 objects in this format:
 [
   {
     "name": "Food Name",
-    "description": "Research-based description of benefits",
+    "description": "Research-based benefits",
     "emoji": "🌱",
-    "lazy": "Simple consumption method",
-    "tasty": "Appealing preparation method", 
-    "healthy": "Optimal dosage and preparation for maximum benefit"
+    "lazy": "Simple way to eat it",
+    "tasty": "Delicious preparation", 
+    "healthy": "Optimal daily amount"
   }
 ]`
         },
@@ -474,15 +579,46 @@ Return ONLY a JSON array with exactly 3 objects in this format:
       return generateDemoResponse(message, onboardingData);
     }
 
-    // Parse the JSON response
+    // Parse the JSON response with robust error handling
     let ingredients = [];
     try {
-      ingredients = JSON.parse(content);
-      if (!Array.isArray(ingredients) || ingredients.length === 0) {
-        throw new Error('Invalid format');
+      // Clean the content to handle any extra text
+      let cleanContent = content.trim();
+      
+      // Extract JSON if it's wrapped in markdown or has extra text
+      const jsonMatch = cleanContent.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        cleanContent = jsonMatch[0];
       }
+      
+      ingredients = JSON.parse(cleanContent);
+      
+      if (!Array.isArray(ingredients)) {
+        throw new Error('Not an array');
+      }
+      
+      // Validate each ingredient has required fields
+      ingredients = ingredients.filter(ing => 
+        ing.name && ing.description && ing.lazy && ing.tasty && ing.healthy
+      ).slice(0, 3); // Ensure max 3 ingredients
+      
+      if (ingredients.length === 0) {
+        throw new Error('No valid ingredients found');
+      }
+      
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
+      console.log('Raw response:', content);
+      
+      // Extract foods directly from research data as fallback
+      const researchFoods = extractFoodsFromResearch(researchMatches, phase);
+      if (researchFoods.length > 0) {
+        return {
+          message: `Here are the top ${researchFoods.length} research-backed foods for your ${phase.toLowerCase()}:`,
+          ingredients: researchFoods
+        };
+      }
+      
       return generateDemoResponse(message, onboardingData);
     }
 
