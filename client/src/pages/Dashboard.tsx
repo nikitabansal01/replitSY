@@ -178,6 +178,14 @@ export default function Dashboard() {
                 Hey, {profile?.user.name || 'there'}!
               </span>
               <Button
+                onClick={() => setLocation('/profile')}
+                variant="outline"
+                size="sm"
+                className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300"
+              >
+                Edit Profile
+              </Button>
+              <Button
                 onClick={handleSignOut}
                 variant="outline"
                 size="sm"
