@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { researchService } from './research';
 
 export interface HealthCondition {
   name: string;
@@ -236,6 +237,20 @@ class NutritionistService {
     const conditions = healthConditions.map(c => HEALTH_CONDITIONS[c]).filter(Boolean);
     const cuisine = CUISINE_PROFILES[cuisinePreference.toLowerCase()] || CUISINE_PROFILES.mediterranean;
 
+    // Get scientific research data for the health conditions
+    let researchContext = '';
+    try {
+      const researchQuery = `nutrition diet meal planning ${healthConditions.join(' ')} ${cuisinePreference}`;
+      const researchMatches = await researchService.searchWithSmartScraping(researchQuery, 3);
+      if (researchMatches.length > 0) {
+        researchContext = `\n\nSCIENTIFIC RESEARCH CONTEXT:\n${researchMatches.map(match => 
+          `- ${match.metadata?.title}: ${match.metadata?.content?.substring(0, 300)}...`
+        ).join('\n')}\n\nUse this evidence-based research to inform your meal planning recommendations.`;
+      }
+    } catch (error) {
+      console.log('Research data unavailable for meal planning, using condition mappings');
+    }
+
     // Build comprehensive nutritional requirements
     const nutritionalFocus = conditions.flatMap(c => c.dietary_focus);
     const includeIngredients = conditions.flatMap(c => c.foods_to_include);
@@ -268,14 +283,15 @@ Create a complete daily meal plan that is:
 
 CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations. Use this exact format:
 
-{"condition_focus":["${healthConditions.join('","')}"],"cuisine_style":"${cuisine.name}","breakfast":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"15 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"lunch":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"20 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"dinner":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"25 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"snacks":[{"name":"Snack name","ingredients":["ingredient1","ingredient2"],"preparation_time":"5 minutes","cooking_method":"method","nutritional_focus":["focus1"],"health_benefits":["benefit1"],"cultural_authenticity":"explanation"}],"daily_guidelines":{"foods_to_emphasize":["food1","food2"],"foods_to_limit":["food1","food2"],"hydration_tips":["tip1","tip2"],"timing_recommendations":["timing1","timing2"]}}`;
+{"condition_focus":["${healthConditions.join('","')}"],"cuisine_style":"${cuisine.name}","breakfast":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"15 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"lunch":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"20 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"dinner":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"25 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"snacks":[{"name":"Snack name","ingredients":["ingredient1","ingredient2"],"preparation_time":"5 minutes","cooking_method":"method","nutritional_focus":["focus1"],"health_benefits":["benefit1"],"cultural_authenticity":"explanation"}],"daily_guidelines":{"foods_to_emphasize":["food1","food2"],"foods_to_limit":["food1","food2"],"hydration_tips":["tip1","tip2"],"timing_recommendations":["timing1","timing2"]}}${researchContext}`;
 
     try {
       const completion = await this.openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [{ role: "system", content: systemPrompt }],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
       });
 
       const content = completion.choices[0]?.message?.content;
