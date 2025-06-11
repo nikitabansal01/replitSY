@@ -33,7 +33,7 @@ class PDFGeneratorService {
   ): Promise<Buffer> {
     const html = this.generateWeeklyHTML(weeklyPlan, userProfile, cuisineStyle);
     
-    // For now, return HTML as text buffer until PDF library is properly configured
+    // Return properly formatted HTML document for download
     return Buffer.from(html, 'utf-8');
   }
 

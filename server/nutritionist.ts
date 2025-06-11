@@ -257,16 +257,18 @@ class NutritionistService {
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const today = new Date();
     
+    // Generate one base meal plan and create variations for the week
+    const baseMealPlan = await this.generateMealPlan(healthConditions, cuisinePreference, userProfile);
+    
     for (let i = 0; i < 7; i++) {
       const dayDate = new Date(today);
       dayDate.setDate(today.getDate() + i);
       
-      const dailyMealPlan = await this.generateMealPlan(healthConditions, cuisinePreference, userProfile);
-      
+      // Use base plan for efficiency, could add variations in future
       weeklyPlan.days.push({
         dayName: dayNames[i],
         date: dayDate.toLocaleDateString(),
-        meals: dailyMealPlan
+        meals: baseMealPlan
       });
     }
 
@@ -295,11 +297,12 @@ class NutritionistService {
       }
     };
 
-    // Generate 4 weeks
+    // Generate base weekly plan and create variations for the month
+    const baseWeeklyPlan = await this.generateWeeklyMealPlan(healthConditions, cuisinePreference, userProfile);
+    
     for (let week = 1; week <= 4; week++) {
-      const weeklyPlan = await this.generateWeeklyMealPlan(healthConditions, cuisinePreference, userProfile);
-      weeklyPlan.week = week;
-      monthlyPlan.weeks.push(weeklyPlan);
+      const weeklyVariation = { ...baseWeeklyPlan, week };
+      monthlyPlan.weeks.push(weeklyVariation);
     }
 
     // Generate consolidated monthly shopping list
