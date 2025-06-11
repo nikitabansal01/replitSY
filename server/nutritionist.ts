@@ -508,7 +508,7 @@ DIETARY FOCUS: ${nutritionalFocus.join(', ')}
 
 MENSTRUAL CYCLE PHASE: ${phaseData.name} (${phaseData.days})
 PHASE-SPECIFIC SEED CYCLING: ${phaseData.seed_cycling.join(', ')}
-HORMONE SUPPORT: ${phaseData.hormone_focus.join(', ')}
+HORMONE SUPPORT: ${phaseData.supporting_foods.join(', ')}
 PHASE BENEFITS: ${phaseData.benefits.join(' | ')}
 
 SEED CYCLING INCORPORATION METHODS:

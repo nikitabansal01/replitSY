@@ -71,6 +71,68 @@ class PDFGeneratorService {
     return Buffer.from(html, 'utf-8');
   }
 
+  private determineMenstrualPhase(userProfile: any): string {
+    const lastPeriodDate = userProfile.lastPeriodDate;
+    const irregularPeriods = userProfile.irregularPeriods;
+    
+    if (!lastPeriodDate || irregularPeriods) {
+      return this.getLunarCyclePhase();
+    }
+
+    const lastPeriod = new Date(lastPeriodDate);
+    const today = new Date();
+    const daysSinceLastPeriod = Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24));
+    const cycleLength = parseInt(userProfile.cycleLength) || 28;
+
+    if (daysSinceLastPeriod > 60) {
+      return this.getLunarCyclePhase();
+    }
+
+    if (daysSinceLastPeriod <= 5) return 'menstrual';
+    else if (daysSinceLastPeriod <= Math.floor(cycleLength * 0.5)) return 'follicular';
+    else if (daysSinceLastPeriod <= Math.floor(cycleLength * 0.55)) return 'ovulatory';
+    else return 'luteal';
+  }
+
+  private getLunarCyclePhase(): string {
+    const today = new Date();
+    const lunarMonth = 29.53;
+    const knownNewMoon = new Date('2024-01-11');
+    const daysSinceNewMoon = Math.floor((today.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24));
+    const lunarDay = daysSinceNewMoon % lunarMonth;
+    
+    if (lunarDay <= 7) return 'menstrual';
+    else if (lunarDay <= 14) return 'follicular';
+    else if (lunarDay <= 21) return 'ovulatory';
+    else return 'luteal';
+  }
+
+  private getPhaseData(phase: string) {
+    const phases = {
+      menstrual: {
+        name: "Menstrual Phase",
+        seeds: ["Ground flax seeds (1-2 tbsp daily)", "Raw pumpkin seeds (1 oz daily)"],
+        description: "Rest and renewal - Support iron replenishment and comfort"
+      },
+      follicular: {
+        name: "Follicular Phase", 
+        seeds: ["Ground flax seeds (1-2 tbsp daily)", "Raw pumpkin seeds (1-2 oz daily)"],
+        description: "Energy building - Support estrogen with lignans and healthy fats"
+      },
+      ovulatory: {
+        name: "Ovulatory Phase",
+        seeds: ["Raw sesame seeds/tahini (1-2 tbsp daily)", "Raw sunflower seeds (1-2 oz daily)"],
+        description: "Peak energy - Support ovulation with zinc and vitamin E"
+      },
+      luteal: {
+        name: "Luteal Phase",
+        seeds: ["Raw sesame seeds/tahini (1-2 tbsp daily)", "Raw sunflower seeds (1-2 oz daily)"],
+        description: "Preparation - Support progesterone and reduce PMS symptoms"
+      }
+    };
+    return phases[phase as keyof typeof phases] || phases.follicular;
+  }
+
   private generateWeeklyHTML(
     weeklyPlan: WeeklyMealPlan,
     userProfile: any,
@@ -128,6 +190,53 @@ class PDFGeneratorService {
       font-size: 1.2rem;
       opacity: 0.9;
       font-style: italic;
+    }
+    
+    .cycle-info {
+      background: linear-gradient(135deg, #fef7ff, #f3e8ff);
+      border: 2px solid #d946ef;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(217, 70, 239, 0.1);
+    }
+    
+    .phase-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #be185d;
+      margin-bottom: 10px;
+    }
+    
+    .phase-description {
+      font-size: 1.1rem;
+      color: #7c3aed;
+      margin-bottom: 20px;
+    }
+    
+    .seed-cycling-box {
+      background: linear-gradient(135deg, #fff7ed, #fed7aa);
+      border: 2px solid #fb923c;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .seed-title {
+      font-weight: bold;
+      color: #ea580c;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .seed-list {
+      font-size: 1rem;
+      color: #7c2d12;
+      line-height: 1.8;
     }
     
     .wellness-quote {
@@ -365,6 +474,15 @@ class PDFGeneratorService {
     <div class="header">
       <h1>🌸 Weekly ${cuisineStyle} Meal Plan</h1>
       <div class="subtitle">Personalized Nutrition for Women's Wellness</div>
+    </div>
+    
+    <div class="cycle-info">
+      <div class="phase-title">${phaseData.name}</div>
+      <div class="phase-description">${phaseData.description}</div>
+      <div class="seed-cycling-box">
+        <div class="seed-title">🌱 Seed Cycling for This Phase</div>
+        <div class="seed-list">${phaseData.seeds.join('<br>')}</div>
+      </div>
     </div>
     
     <div class="wellness-quote">
