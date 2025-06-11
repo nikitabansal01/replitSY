@@ -186,59 +186,98 @@ class NutritionistService {
     });
   }
 
-  // Extract health conditions from user profile
+  // Extract health conditions from comprehensive user profile
   extractHealthConditions(userProfile: any): string[] {
     const conditions: string[] = [];
     const symptoms = userProfile.symptoms || [];
+    const medicalConditions = userProfile.medicalConditions || [];
     const goals = userProfile.goals || [];
     const lifestyle = userProfile.lifestyle || {};
 
-    // Map symptoms to conditions
+    // Map diagnosed medical conditions directly
+    medicalConditions.forEach((condition: string) => {
+      const lowerCondition = condition.toLowerCase();
+      if (lowerCondition.includes('pcos') || lowerCondition.includes('polycystic')) {
+        conditions.push('pcos');
+      }
+      if (lowerCondition.includes('endometriosis')) {
+        conditions.push('endometriosis');
+      }
+      if (lowerCondition.includes('thyroid') || lowerCondition.includes('hypo') || lowerCondition.includes('hyper')) {
+        conditions.push('thyroid_hypo');
+      }
+      if (lowerCondition.includes('diabetes') || lowerCondition.includes('insulin')) {
+        conditions.push('diabetes_insulin');
+      }
+      if (lowerCondition.includes('depression') || lowerCondition.includes('anxiety')) {
+        conditions.push('mental_health');
+      }
+      if (lowerCondition.includes('ibs') || lowerCondition.includes('digestive') || lowerCondition.includes('celiac')) {
+        conditions.push('digestive_health');
+      }
+      if (lowerCondition.includes('autoimmune')) {
+        conditions.push('autoimmune');
+      }
+    });
+
+    // Enhanced symptom mapping with actual onboarding symptom names
     const symptomMapping: Record<string, string[]> = {
       'irregular_periods': ['pcos'],
-      'weight_gain': ['pcos', 'thyroid_hypo'],
-      'fatigue': ['thyroid_hypo', 'stress_adrenal'],
+      'heavy_bleeding': ['endometriosis', 'pcos'],
+      'painful_periods': ['endometriosis'],
+      'weight_gain_or_difficulty_losing_weight': ['pcos', 'thyroid_hypo'],
+      'fatigue_and_low_energy': ['thyroid_hypo', 'stress_adrenal'],
       'mood_swings': ['pcos', 'stress_adrenal'],
-      'heavy_periods': ['endometriosis'],
-      'pelvic_pain': ['endometriosis'],
-      'stress': ['stress_adrenal'],
-      'anxiety': ['stress_adrenal'],
-      'hair_loss': ['pcos', 'thyroid_hypo'],
-      'cold_sensitivity': ['thyroid_hypo']
+      'hair_loss_or_thinning': ['pcos', 'thyroid_hypo'],
+      'acne_or_skin_issues': ['pcos'],
+      'bloating_and_digestive_issues': ['digestive_health'],
+      'stress_and_anxiety': ['stress_adrenal'],
+      'sleep_problems': ['stress_adrenal'],
+      'food_cravings': ['pcos', 'stress_adrenal'],
+      'hot_flashes': ['hormone_imbalance'],
+      'brain_fog_or_memory_issues': ['thyroid_hypo', 'stress_adrenal'],
+      'joint_pain_or_stiffness': ['autoimmune', 'endometriosis']
     };
 
     // Check symptoms against conditions
     symptoms.forEach((symptom: string) => {
-      const mapped = symptomMapping[symptom.toLowerCase().replace(/\s+/g, '_')];
+      const normalizedSymptom = symptom.toLowerCase().replace(/\s+/g, '_').replace(/[()]/g, '');
+      const mapped = symptomMapping[normalizedSymptom];
       if (mapped) {
         conditions.push(...mapped);
       }
     });
 
-    // Check explicit mentions in goals or lifestyle
-    const allText = [...symptoms, ...goals, ...Object.values(lifestyle)]
-      .join(' ').toLowerCase();
-
-    if (allText.includes('pcos') || allText.includes('polycystic')) {
-      conditions.push('pcos');
-    }
-    if (allText.includes('endometriosis')) {
-      conditions.push('endometriosis');
-    }
-    if (allText.includes('thyroid') || allText.includes('hypothyroid')) {
-      conditions.push('thyroid_hypo');
-    }
-    if (allText.includes('stress') || allText.includes('adrenal')) {
+    // Check stress level from lifestyle data
+    if (userProfile.stressLevel === 'High' || userProfile.stressLevel === 'Very High') {
       conditions.push('stress_adrenal');
     }
 
-    const uniqueConditions: string[] = [];
-    conditions.forEach(condition => {
-      if (uniqueConditions.indexOf(condition) === -1) {
-        uniqueConditions.push(condition);
+    // Check sleep quality
+    if (userProfile.sleepHours === 'Less than 6') {
+      conditions.push('stress_adrenal');
+    }
+
+    // Check explicit mentions in goals
+    goals.forEach((goal: string) => {
+      const lowerGoal = goal.toLowerCase();
+      if (lowerGoal.includes('regulate menstrual') || lowerGoal.includes('pcos')) {
+        conditions.push('pcos');
+      }
+      if (lowerGoal.includes('hormone balance')) {
+        conditions.push('hormone_balance');
+      }
+      if (lowerGoal.includes('manage chronic')) {
+        conditions.push('general_chronic');
+      }
+      if (lowerGoal.includes('reduce inflammation')) {
+        conditions.push('anti_inflammatory');
       }
     });
-    return uniqueConditions;
+
+    // Remove duplicates and return
+    const uniqueConditions = Array.from(new Set(conditions));
+    return uniqueConditions.length > 0 ? uniqueConditions : ['general_wellness'];
   }
 
   // Generate weekly meal plan
