@@ -42,7 +42,7 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
     };
   }
 
-  // Handle general health information questions (no diet recommendations)
+  // Handle general health information questions (no food recommendations)
   if (!isDietQuestion) {
     if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
       return {
@@ -95,6 +95,32 @@ For personalized nutritional support, try asking about foods for hormone balance
 - Quality sleep prioritization
 
 For nutritional guidance, ask about anti-inflammatory foods or endometriosis-friendly meal plans.`,
+        ingredients: []
+      };
+    }
+
+    if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia')) {
+      return {
+        message: `Sleep quality is crucial for hormonal balance and overall women's health.
+
+**Sleep Hygiene Tips:**
+- Maintain consistent bedtime and wake times
+- Create a dark, cool, quiet sleep environment
+- Limit screen time 1-2 hours before bed
+- Avoid caffeine after 2 PM
+
+**Hormonal Sleep Factors:**
+- Estrogen and progesterone fluctuations affect sleep
+- PMS can cause sleep disturbances
+- Menopause often brings insomnia and night sweats
+
+**Natural Sleep Support:**
+- Regular exercise (but not close to bedtime)
+- Relaxation techniques (meditation, deep breathing)
+- Consistent evening routine
+- Temperature regulation (cool room, breathable bedding)
+
+For specific sleep-supporting foods, ask about foods for better sleep or evening nutrition.`,
         ingredients: []
       };
     }
@@ -339,16 +365,24 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
 
 // OpenAI ChatGPT integration for personalized health responses
 async function generateChatGPTResponse(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
-  const systemPrompt = `${ENHANCED_TRAINING_PROMPT}
+  const lowerQuestion = question.toLowerCase();
+  
+  // Check if this is a nutrition/diet question
+  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(question);
+  
+  let systemPrompt = `You are a women's health expert providing evidence-based information.
 
 User Profile:
 - Age: ${onboardingData?.age || 'Not specified'}
 - Diet: ${onboardingData?.diet || 'Not specified'}
 - Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}
 
-CRITICAL: Your response must be valid JSON with this exact structure:
+CRITICAL: Your response must be valid JSON with this exact structure:`;
+
+  if (isDietQuestion) {
+    systemPrompt += `
 {
-  "message": "Your helpful response about the health topic",
+  "message": "Your helpful nutrition response",
   "ingredients": [
     {
       "name": "Ingredient Name",
@@ -361,7 +395,16 @@ CRITICAL: Your response must be valid JSON with this exact structure:
   ]
 }
 
-Focus on evidence-based nutrition for women's hormonal health. Always include 1-3 relevant ingredients with specific implementation methods.`;
+Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relevant ingredients with specific implementation methods.`;
+  } else {
+    systemPrompt += `
+{
+  "message": "Your helpful health information response",
+  "ingredients": []
+}
+
+Provide general health information without food recommendations. For nutrition advice, suggest the user ask specifically about foods or diet.`;
+  }
 
   const completion = await openai.chat.completions.create({
       model: "gpt-4o",
