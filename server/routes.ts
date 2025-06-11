@@ -249,6 +249,34 @@ It's important to consult with healthcare providers for proper diagnosis and tre
         healthy: "Steep 1 tsp crushed fennel seeds in hot water for 15 minutes, drink after heavy meals"
       }
     ];
+  } else if (lowerMessage.includes('luteal') || lowerMessage.includes('luteal phase')) {
+    demoMessage = `Here are the top 3 foods to include during your luteal phase for hormonal balance and symptom relief:`;
+    ingredients = [
+      {
+        name: "Sesame Seeds",
+        description: "Rich in lignans that support progesterone production during luteal phase",
+        emoji: "🌱",
+        lazy: "Take 1 tbsp sesame seeds daily or sesame seed butter on toast",
+        tasty: "Sprinkle toasted sesame seeds on salads or make tahini smoothie bowls",
+        healthy: "Consume 1-2 tbsp raw sesame seeds daily with vitamin E-rich foods for optimal hormone support"
+      },
+      {
+        name: "Sunflower Seeds",
+        description: "High in vitamin E and selenium to support luteal phase hormone production",
+        emoji: "🌻",
+        lazy: "Snack on 1/4 cup roasted sunflower seeds or sunflower seed butter",
+        tasty: "Add sunflower seeds to homemade granola or trail mix with dark chocolate",
+        healthy: "Eat 1-2 tbsp raw sunflower seeds daily during luteal phase for vitamin E and progesterone support"
+      },
+      {
+        name: "Magnesium-Rich Leafy Greens",
+        description: "Combat PMS symptoms, reduce bloating and support mood stability",
+        emoji: "🥬",
+        lazy: "Add pre-washed spinach to smoothies or grab bagged salad mixes",
+        tasty: "Make green smoothies with spinach, banana, almond butter and dates",
+        healthy: "Consume 2-3 cups dark leafy greens daily - spinach, kale, Swiss chard for 200mg+ magnesium"
+      }
+    ];
   } else {
     demoMessage = `Here are some general wellness ingredients that align with your ${diet} dietary preferences.`;
     ingredients = [
