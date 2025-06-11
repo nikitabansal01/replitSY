@@ -754,5 +754,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate and download weekly meal plan PDF
+  app.post('/api/nutrition/meal-plan/weekly/pdf', requireAuth, async (req: any, res: any) => {
+    try {
+      const { weeklyPlan, userProfile, cuisineStyle } = req.body;
+      
+      if (!weeklyPlan || !cuisineStyle) {
+        return res.status(400).json({ error: 'Weekly plan and cuisine style are required' });
+      }
+
+      // Generate comprehensive text-based meal plan with menstrual cycle information
+      const pdfBuffer = await pdfGeneratorService.generateWeeklyMealPlanPDF(
+        weeklyPlan,
+        userProfile || {},
+        cuisineStyle
+      );
+
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="weekly-meal-plan-${cuisineStyle.toLowerCase()}.txt"`);
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error('Error generating weekly meal plan PDF:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate weekly meal plan PDF', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Generate and download monthly meal plan PDF
+  app.post('/api/nutrition/meal-plan/monthly/pdf', requireAuth, async (req: any, res: any) => {
+    try {
+      const { monthlyPlan, userProfile, cuisineStyle } = req.body;
+      
+      if (!monthlyPlan || !cuisineStyle) {
+        return res.status(400).json({ error: 'Monthly plan and cuisine style are required' });
+      }
+
+      const pdfBuffer = await pdfGeneratorService.generateMonthlyMealPlanPDF(
+        monthlyPlan,
+        userProfile || {},
+        cuisineStyle
+      );
+
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="monthly-meal-plan-${cuisineStyle.toLowerCase()}.txt"`);
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error('Error generating monthly meal plan PDF:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate monthly meal plan PDF', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   return server;
 }
