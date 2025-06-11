@@ -464,6 +464,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user profile with onboarding data
+  app.get('/api/profile', requireAuth, async (req: any, res: any) => {
+    try {
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      res.json({ 
+        user: req.user,
+        onboarding: onboardingData 
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to load profile' });
+    }
+  });
+
+  // Get chat history
+  app.get('/api/chat/history', requireAuth, async (req: any, res: any) => {
+    try {
+      const chatHistory = await storage.getChatHistory(req.user.id);
+      res.json(chatHistory);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to load chat history' });
+    }
+  });
+
   // Save onboarding data
   app.post('/api/onboarding', requireAuth, async (req: any, res: any) => {
     try {
