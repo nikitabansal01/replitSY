@@ -234,18 +234,14 @@ export default function Profile() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="gender">Gender</Label>
-                  <Select value={formData.gender || ''} onValueChange={(value) => setFormData({...formData, gender: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Non-binary">Non-binary</SelectItem>
-                      <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="lastPeriodDate">Last Period Date</Label>
+                  <Input 
+                    id="lastPeriodDate"
+                    type="date"
+                    value={formData.lastPeriodDate || ''} 
+                    onChange={(e) => setFormData({...formData, lastPeriodDate: e.target.value})}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Used for cycle-specific meal planning</p>
                 </div>
                 <div>
                   <Label htmlFor="height">Height</Label>

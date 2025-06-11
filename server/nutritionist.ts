@@ -262,24 +262,58 @@ class NutritionistService {
 
   // Extract health conditions from comprehensive user profile
   determineMenstrualPhase(userProfile: any): string {
-    // Check if user has menstrual cycle data
-    if (userProfile.menstrualCycle?.lastPeriodDate) {
-      const lastPeriod = new Date(userProfile.menstrualCycle.lastPeriodDate);
-      const today = new Date();
-      const daysSinceLastPeriod = Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24));
-      const cycleLength = userProfile.menstrualCycle?.cycleLength || 28;
-      
-      const dayInCycle = daysSinceLastPeriod % cycleLength;
-      
-      if (dayInCycle <= 14) {
-        return 'follicular';
-      } else {
-        return 'luteal';
-      }
-    }
+    const lastPeriodDate = userProfile.lastPeriodDate || userProfile.menstrualCycle?.lastPeriodDate;
+    const irregularPeriods = userProfile.irregularPeriods;
+    const cycleLength = parseInt(userProfile.cycleLength) || parseInt(userProfile.menstrualCycle?.cycleLength) || 28;
     
-    // Default to follicular if no cycle data
-    return 'follicular';
+    if (!lastPeriodDate || irregularPeriods) {
+      // Use lunar cycle for irregular periods or missing data
+      return this.getLunarCyclePhase();
+    }
+
+    const lastPeriod = new Date(lastPeriodDate);
+    const today = new Date();
+    const daysSinceLastPeriod = Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24));
+
+    // If period data is very old (>60 days), use lunar cycle
+    if (daysSinceLastPeriod > 60) {
+      return this.getLunarCyclePhase();
+    }
+
+    // Determine phase based on user's cycle length
+    const menstrualPhase = Math.min(daysSinceLastPeriod, 5);
+    const follicularPhase = Math.floor(cycleLength * 0.5);
+    const ovulatoryPhase = Math.floor(cycleLength * 0.55);
+    
+    if (daysSinceLastPeriod <= menstrualPhase) {
+      return 'menstrual';
+    } else if (daysSinceLastPeriod <= follicularPhase) {
+      return 'follicular';
+    } else if (daysSinceLastPeriod <= ovulatoryPhase) {
+      return 'ovulatory';
+    } else {
+      return 'luteal';
+    }
+  }
+
+  private getLunarCyclePhase(): string {
+    // Calculate lunar phase based on current date
+    const today = new Date();
+    const lunarMonth = 29.53; // Average lunar month in days
+    const knownNewMoon = new Date('2024-01-11'); // Known new moon date
+    const daysSinceNewMoon = Math.floor((today.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24));
+    const lunarDay = daysSinceNewMoon % lunarMonth;
+    
+    // Map lunar phases to menstrual phases for women's natural rhythm
+    if (lunarDay <= 7) {
+      return 'menstrual'; // New moon = menstruation (rest and renewal)
+    } else if (lunarDay <= 14) {
+      return 'follicular'; // Waxing moon = follicular (energy building)
+    } else if (lunarDay <= 21) {
+      return 'ovulatory'; // Full moon = ovulation (peak energy)
+    } else {
+      return 'luteal'; // Waning moon = luteal (preparation and reflection)
+    }
   }
 
   extractHealthConditions(userProfile: any): string[] {

@@ -29,8 +29,37 @@ class PDFGeneratorService {
     userProfile: any,
     cuisineStyle: string
   ): Promise<Buffer> {
-    const html = this.generateWeeklyHTML(weeklyPlan, userProfile, cuisineStyle);
-    return Buffer.from(html, 'utf-8');
+    const puppeteer = require('puppeteer');
+    
+    try {
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      
+      const page = await browser.newPage();
+      const html = this.generateWeeklyHTML(weeklyPlan, userProfile, cuisineStyle);
+      
+      await page.setContent(html);
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          bottom: '20mm',
+          left: '15mm',
+          right: '15mm'
+        }
+      });
+      
+      await browser.close();
+      return pdfBuffer;
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      // Fallback to HTML buffer
+      const html = this.generateWeeklyHTML(weeklyPlan, userProfile, cuisineStyle);
+      return Buffer.from(html, 'utf-8');
+    }
   }
 
   async generateMonthlyMealPlanPDF(
