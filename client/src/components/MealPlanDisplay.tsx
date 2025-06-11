@@ -227,7 +227,7 @@ export function MealPlanDisplay({ mealPlan, shoppingList, detectedConditions }: 
               <div>
                 <h4 className="font-medium text-sm mb-2 text-red-700">Foods to Limit:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {mealPlan.daily_guidelines.foods_to_limit.map((food, idx) => (
+                  {mealPlan.daily_guidelines.foods_to_limit.map((food: string, idx: number) => (
                     <Badge key={idx} variant="destructive" className="text-xs">
                       {food}
                     </Badge>
@@ -240,7 +240,7 @@ export function MealPlanDisplay({ mealPlan, shoppingList, detectedConditions }: 
               <div>
                 <h4 className="font-medium text-sm mb-2">Hydration Tips:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  {mealPlan.daily_guidelines.hydration_tips.map((tip, idx) => (
+                  {mealPlan.daily_guidelines.hydration_tips.map((tip: string, idx: number) => (
                     <li key={idx}>• {tip}</li>
                   ))}
                 </ul>
