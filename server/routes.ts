@@ -7,7 +7,7 @@ import OpenAI from 'openai';
 import { researchService } from './research';
 import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
 import { nutritionistService, type DailyMealPlan } from './nutritionist';
-// import { pdfGeneratorService } from './pdf-generator';
+import { pdfGeneratorService } from './pdf-generator';
 import { auth as firebaseAuth } from './firebase-admin';
 
 interface AuthenticatedRequest extends Request {
@@ -832,21 +832,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         onboardingData
       );
 
-      // Generate HTML content for download
-      const htmlContent = `
-        <html>
-          <head><title>Weekly Meal Plan - ${cuisinePreference}</title></head>
-          <body>
-            <h1>Weekly ${cuisinePreference} Meal Plan</h1>
-            <p>Generated for: ${req.user.name}</p>
-            <pre>${JSON.stringify(weeklyPlan, null, 2)}</pre>
-          </body>
-        </html>
-      `;
+      // Generate beautifully formatted HTML using the PDF generator service
+      const pdfBuffer = await pdfGeneratorService.generateWeeklyMealPlanPDF(
+        weeklyPlan,
+        { user: req.user, onboarding: onboardingData },
+        cuisinePreference
+      );
 
       res.setHeader('Content-Type', 'text/html');
       res.setHeader('Content-Disposition', `attachment; filename="weekly-meal-plan-${cuisinePreference.toLowerCase()}.html"`);
-      res.send(htmlContent);
+      res.send(pdfBuffer);
 
     } catch (error) {
       console.error('Error generating weekly meal plan PDF:', error);
@@ -880,21 +875,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         onboardingData
       );
 
-      // Generate HTML content for download
-      const htmlContent = `
-        <html>
-          <head><title>Monthly Meal Plan - ${cuisinePreference}</title></head>
-          <body>
-            <h1>Monthly ${cuisinePreference} Meal Plan</h1>
-            <p>Generated for: ${req.user.name}</p>
-            <pre>${JSON.stringify(monthlyPlan, null, 2)}</pre>
-          </body>
-        </html>
-      `;
+      // Generate beautifully formatted HTML using the PDF generator service
+      const pdfBuffer = await pdfGeneratorService.generateMonthlyMealPlanPDF(
+        monthlyPlan,
+        { user: req.user, onboarding: onboardingData },
+        cuisinePreference
+      );
 
       res.setHeader('Content-Type', 'text/html');
       res.setHeader('Content-Disposition', `attachment; filename="monthly-meal-plan-${cuisinePreference.toLowerCase()}.html"`);
-      res.send(htmlContent);
+      res.send(pdfBuffer);
 
     } catch (error) {
       console.error('Error generating monthly meal plan PDF:', error);
