@@ -34,10 +34,21 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>({
     age: '',
+    gender: '',
+    height: '',
+    weight: '',
     diet: '',
     symptoms: [],
     goals: [],
-    lifestyle: {}
+    lifestyle: {},
+    medicalConditions: [],
+    medications: [],
+    allergies: [],
+    menstrualCycle: {},
+    stressLevel: '',
+    sleepHours: '',
+    exerciseLevel: '',
+    waterIntake: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 

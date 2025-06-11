@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Login from "@/pages/Login";
-import Onboarding from "@/pages/Onboarding";
+import OnboardingNew from "@/pages/OnboardingNew";
 import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/not-found";
 
@@ -38,7 +38,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Login} />
-      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/onboarding" component={OnboardingNew} />
       <Route path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
