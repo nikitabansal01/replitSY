@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Login from "@/pages/Login";
 import OnboardingNew from "@/pages/OnboardingNew";
 import Dashboard from "@/pages/Dashboard";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/" component={Login} />
       <Route path="/onboarding" component={OnboardingNew} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
