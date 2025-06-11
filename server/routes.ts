@@ -19,7 +19,7 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
   const diet = onboardingData?.diet || 'balanced';
   
   // Check if this is a diet/nutrition question vs general health information
-  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add)\b/i.test(message);
+  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(message);
   
   // Check if user is asking for meal plans
   if (lowerMessage.includes('meal plan') || lowerMessage.includes('what to eat') || 
@@ -329,7 +329,7 @@ Use this scientific information to provide evidence-based recommendations.`;
   }
 
   // Determine if this is a diet/nutrition question vs general health information
-  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add)\b/i.test(question);
+  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(question);
   
   let systemPrompt;
   
@@ -400,13 +400,14 @@ Keep ingredients array empty for general health information questions.${userCont
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: question }
       ],
       temperature: 0.7,
-      max_tokens: 800,
+      max_tokens: 1200,
+      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0]?.message?.content;
