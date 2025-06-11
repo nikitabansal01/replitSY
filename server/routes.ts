@@ -391,6 +391,112 @@ It's important to consult with healthcare providers for proper diagnosis and tre
   };
 }
 
+// Generate research-based ingredient cards for menstrual cycle phases
+async function generateResearchBasedCycleResponse(message: string, onboardingData: any, openai: OpenAI): Promise<ChatResponse> {
+  const lowerMessage = message.toLowerCase();
+  let phase = '';
+  let searchQuery = '';
+  
+  if (lowerMessage.includes('luteal')) {
+    phase = 'Luteal Phase';
+    searchQuery = 'luteal phase nutrition seed cycling sesame sunflower seeds progesterone support foods';
+  } else if (lowerMessage.includes('follicular')) {
+    phase = 'Follicular Phase';
+    searchQuery = 'follicular phase nutrition flax pumpkin seeds estrogen support menstrual cycle foods';
+  } else if (lowerMessage.includes('menstrual')) {
+    phase = 'Menstrual Phase';
+    searchQuery = 'menstrual phase nutrition iron foods menstruation cramps ginger leafy greens';
+  } else if (lowerMessage.includes('ovulation')) {
+    phase = 'Ovulation Phase';
+    searchQuery = 'ovulation phase nutrition fertility foods omega-3 selenium folate egg quality';
+  }
+
+  // Get research data for this phase
+  let researchMatches = [];
+  try {
+    researchMatches = await researchService.searchWithSmartScraping(searchQuery, 5);
+    console.log(`Found ${researchMatches.length} research matches for ${phase}`);
+  } catch (error) {
+    console.log('Research service unavailable, using fallback');
+    return generateDemoResponse(message, onboardingData);
+  }
+
+  if (researchMatches.length === 0) {
+    return generateDemoResponse(message, onboardingData);
+  }
+
+  // Extract foods and generate ingredient cards using OpenAI
+  const researchContext = researchMatches.map(match => 
+    `Study: ${match.metadata?.title || 'Research Paper'}
+    Content: ${match.metadata?.content?.substring(0, 500)}...
+    Source: ${match.metadata?.url || 'Scientific Database'}`
+  ).join('\n\n');
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a nutrition researcher who extracts specific food recommendations from scientific research. Based on the research provided, identify the top 3 foods/nutrients mentioned for ${phase} support.
+
+For each food, provide:
+1. Name of the food/nutrient
+2. Scientific description of its benefits based on the research
+3. Lazy way to consume it (simple, convenient)
+4. Tasty way to consume it (flavorful, appealing)
+5. Healthy way to consume it (optimal dosage/preparation)
+6. Appropriate emoji
+
+Return ONLY a JSON array with exactly 3 objects in this format:
+[
+  {
+    "name": "Food Name",
+    "description": "Research-based description of benefits",
+    "emoji": "🌱",
+    "lazy": "Simple consumption method",
+    "tasty": "Appealing preparation method", 
+    "healthy": "Optimal dosage and preparation for maximum benefit"
+  }
+]`
+        },
+        {
+          role: 'user',
+          content: `Extract the top 3 foods for ${phase} from this research:\n\n${researchContext}`
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 1000
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      return generateDemoResponse(message, onboardingData);
+    }
+
+    // Parse the JSON response
+    let ingredients = [];
+    try {
+      ingredients = JSON.parse(content);
+      if (!Array.isArray(ingredients) || ingredients.length === 0) {
+        throw new Error('Invalid format');
+      }
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError);
+      return generateDemoResponse(message, onboardingData);
+    }
+
+    return {
+      message: `Here are the top ${ingredients.length} research-backed foods for your ${phase.toLowerCase()}:`,
+      ingredients: ingredients
+    };
+
+  } catch (error) {
+    console.error('OpenAI extraction failed:', error);
+    return generateDemoResponse(message, onboardingData);
+  }
+}
+
 // OpenAI ChatGPT integration for personalized health responses
 async function generateChatGPTResponse(openai: OpenAI, question: string, onboardingData: any): Promise<ChatResponse> {
   const userContext = onboardingData ? `
@@ -713,9 +819,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let response;
       
-      // Use demo response for cycle phase queries to show ingredient cards
+      // Use research-based response for cycle phase queries
       if (isLutealPhaseQuery || isFollicularPhaseQuery || isMenstrualPhaseQuery || isOvulationPhaseQuery) {
-        response = generateDemoResponse(message, onboardingData);
+        response = await generateResearchBasedCycleResponse(message, onboardingData, openai);
       } else {
         // Try ChatGPT with fast timeout, fallback to demo if needed
         try {
