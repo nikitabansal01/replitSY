@@ -31,7 +31,7 @@ interface MealPlan {
 }
 
 interface MealPlanDisplayProps {
-  mealPlan: MealPlan;
+  mealPlan: MealPlan | any;
   shoppingList?: Record<string, string[]>;
   detectedConditions?: string[];
 }
@@ -39,6 +39,9 @@ interface MealPlanDisplayProps {
 export function MealPlanDisplay({ mealPlan, shoppingList, detectedConditions }: MealPlanDisplayProps) {
   const [showShoppingList, setShowShoppingList] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
+
+  // Handle both daily meal plans and weekly/monthly meal plans
+  const displayMealPlan = (mealPlan as any)?.weeklyPlan?.days?.[0]?.meals || (mealPlan as any)?.monthlyPlan?.weeks?.[0]?.days?.[0]?.meals || mealPlan;
 
   const MealCard = ({ meal, mealType }: { meal: MealItem; mealType: string }) => (
     <Card className="mb-4">
@@ -109,7 +112,7 @@ export function MealPlanDisplay({ mealPlan, shoppingList, detectedConditions }: 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ChefHat className="h-5 w-5" />
-            Personalized {mealPlan.cuisine_style} Meal Plan
+            Personalized {displayMealPlan.cuisine_style} Meal Plan
           </CardTitle>
           <CardDescription>
             {detectedConditions && detectedConditions.length > 0 && (
