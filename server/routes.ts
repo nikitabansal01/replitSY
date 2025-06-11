@@ -46,55 +46,60 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
   if (!isDietQuestion) {
     if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
       return {
-        message: `PCOS (Polycystic Ovary Syndrome) is a hormonal disorder affecting reproductive-aged women.
+        message: `## PCOS (Polycystic Ovary Syndrome)
 
-**Key Symptoms:**
-- Irregular or missed periods
-- Excess androgen levels (causing acne, hirsutism)
-- Polycystic ovaries on ultrasound
-- Weight gain or difficulty losing weight
-- Insulin resistance
+PCOS is a hormonal disorder affecting reproductive-aged women, characterized by irregular periods and elevated androgen levels.
 
-**Health Impacts:**
-- Increased risk of diabetes and heart disease
-- Fertility challenges
-- Mental health effects (anxiety, depression)
+### 🔍 Key Symptoms
+• **Menstrual irregularities** - Irregular or missed periods
+• **Hormonal signs** - Excess androgen levels causing acne and hirsutism
+• **Ovarian changes** - Polycystic ovaries visible on ultrasound
+• **Weight challenges** - Weight gain or difficulty losing weight
+• **Metabolic issues** - Insulin resistance and blood sugar problems
 
-**Management Approaches:**
-- Regular monitoring by healthcare providers
-- Lifestyle modifications (exercise, stress management)
-- Hormonal treatments (birth control, metformin)
-- Fertility treatments if needed
+### 🏥 Health Impacts
+• **Diabetes risk** - Increased risk of type 2 diabetes and heart disease
+• **Fertility concerns** - Challenges with ovulation and conception
+• **Mental health** - Higher rates of anxiety and depression
+• **Long-term effects** - Cardiovascular and metabolic complications
 
-For personalized nutritional support, try asking about foods for hormone balance or PCOS-friendly meal plans.`,
+### 💊 Management Approaches
+• **Medical monitoring** - Regular check-ups with healthcare providers
+• **Lifestyle changes** - Exercise, stress management, and weight control
+• **Hormonal treatments** - Birth control pills, metformin, or other medications
+• **Fertility support** - Specialized treatments when planning pregnancy
+
+*💡 For personalized nutritional support, ask about "foods for PCOS" or "PCOS meal plans"*`,
         ingredients: []
       };
     }
 
     if (lowerMessage.includes('endometriosis')) {
       return {
-        message: `Endometriosis is a condition where tissue similar to the uterine lining grows outside the uterus.
+        message: `## Endometriosis
 
-**Common Symptoms:**
-- Severe pelvic pain during menstruation
-- Pain during intercourse
-- Heavy menstrual bleeding
-- Bloating and digestive issues
-- Fatigue
+Endometriosis is a chronic condition where tissue similar to the uterine lining grows outside the uterus, causing inflammation and pain.
 
-**Treatment Options:**
-- Pain management (NSAIDs, hormonal therapy)
-- Surgical interventions (laparoscopy, excision)
-- Hormone therapy to reduce estrogen
-- Physical therapy for pelvic floor
+### 🔍 Common Symptoms
+• **Severe pelvic pain** - Intense cramping during menstruation
+• **Intimate discomfort** - Pain during or after sexual intercourse
+• **Heavy bleeding** - Irregular or abnormally heavy menstrual periods
+• **Digestive issues** - Bloating, nausea, and bowel problems during periods
+• **Chronic fatigue** - Persistent exhaustion and low energy levels
 
-**Lifestyle Support:**
-- Heat therapy for pain relief
-- Regular gentle exercise
-- Stress management techniques
-- Quality sleep prioritization
+### 💊 Treatment Options
+• **Pain management** - NSAIDs, prescription medications, and hormonal therapy
+• **Surgical interventions** - Laparoscopy and endometrial tissue excision
+• **Hormone therapy** - Treatments to reduce estrogen production
+• **Physical therapy** - Specialized pelvic floor rehabilitation
 
-For nutritional guidance, ask about anti-inflammatory foods or endometriosis-friendly meal plans.`,
+### 🌿 Lifestyle Support
+• **Heat therapy** - Heating pads and warm baths for pain relief
+• **Gentle exercise** - Low-impact activities like yoga and walking
+• **Stress management** - Meditation, breathing exercises, and relaxation techniques
+• **Quality sleep** - Consistent sleep schedule and restful environment
+
+*💡 For anti-inflammatory nutrition support, ask about "foods for endometriosis" or "anti-inflammatory meal plans"*`,
         ingredients: []
       };
     }

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, ChefHat, Heart, ShoppingCart, Utensils } from 'lucide-react';
+import { Clock, ChefHat, Heart, ShoppingCart, Utensils, ChevronDown, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState } from 'react';

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ChefHat, Globe, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { MealPlanDisplay } from './MealPlanDisplay';
+import { EnhancedMealPlanDisplay } from './EnhancedMealPlanDisplay';
 
 interface CuisineOption {
   id: string;
@@ -296,7 +296,7 @@ export function MealPlanGenerator() {
 
       {/* Display Generated Meal Plan */}
       {generatedPlan && (
-        <MealPlanDisplay 
+        <EnhancedMealPlanDisplay 
           mealPlan={generatedPlan.mealPlan}
           shoppingList={generatedPlan.shoppingList}
           detectedConditions={generatedPlan.detectedConditions}
