@@ -458,14 +458,20 @@ class NutritionistService {
     const currentPhase = this.determineMenstrualPhase(userProfile);
     const phaseData = MENSTRUAL_CYCLE_PHASES[currentPhase as keyof typeof MENSTRUAL_CYCLE_PHASES];
 
-    // Get scientific research data including seed cycling
+    // Get scientific research data including seed cycling (with timeout for faster response)
     let researchContext = '';
     try {
       const researchQuery = `nutrition diet meal planning ${healthConditions.join(' ')} ${cuisinePreference} seed cycling menstrual cycle ${currentPhase}`;
-      const researchMatches = await researchService.searchWithSmartScraping(researchQuery, 3);
+      // Use a timeout to prevent slow research lookup from blocking meal plan generation
+      const researchPromise = researchService.searchWithSmartScraping(researchQuery, 2);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Research timeout')), 5000)
+      );
+      
+      const researchMatches = await Promise.race([researchPromise, timeoutPromise]) as any[];
       if (researchMatches.length > 0) {
         researchContext = `\n\nSCIENTIFIC RESEARCH CONTEXT:\n${researchMatches.map(match => 
-          `- ${match.metadata?.title}: ${match.metadata?.content?.substring(0, 300)}...`
+          `- ${match.metadata?.title}: ${match.metadata?.content?.substring(0, 200)}...`
         ).join('\n')}\n\nUse this evidence-based research to inform your meal planning recommendations.`;
       }
     } catch (error) {
@@ -518,13 +524,18 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
 {"condition_focus":["${healthConditions.join('","')}"],"cuisine_style":"${cuisine.name}","menstrual_phase":"${phaseData.name}","cycle_specific_recommendations":{"phase":"${phaseData.name}","seed_cycling":["${phaseData.seed_cycling.join('","')}"],"hormone_support_foods":["${phaseData.supporting_foods.join('","')}"],"phase_benefits":["${phaseData.benefits.join('","')}"]},"breakfast":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"15 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"lunch":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"20 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"dinner":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"25 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"snacks":[{"name":"Snack name","ingredients":["ingredient1","ingredient2"],"preparation_time":"5 minutes","cooking_method":"method","nutritional_focus":["focus1"],"health_benefits":["benefit1"],"cultural_authenticity":"explanation"}],"daily_guidelines":{"foods_to_emphasize":["food1","food2"],"foods_to_limit":["food1","food2"],"hydration_tips":["tip1","tip2"],"timing_recommendations":["timing1","timing2"],"cycle_support":["${phaseData.lazy_incorporation.concat(phaseData.tasty_incorporation, phaseData.healthy_incorporation).join('","')}"]}}${researchContext}`;
 
     try {
-      const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [{ role: "system", content: systemPrompt }],
-        temperature: 0.7,
-        max_tokens: 2500,
-        response_format: { type: "json_object" },
-      });
+      const completion = await Promise.race([
+        this.openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [{ role: "system", content: systemPrompt }],
+          temperature: 0.7,
+          max_tokens: 2000,
+          response_format: { type: "json_object" },
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('OpenAI API timeout')), 25000)
+        )
+      ]) as any;
 
       const content = completion.choices[0]?.message?.content;
       if (!content) throw new Error('No OpenAI response');
