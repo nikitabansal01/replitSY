@@ -392,38 +392,48 @@ It's important to consult with healthcare providers for proper diagnosis and tre
 }
 
 // Extract foods directly from research content when OpenAI parsing fails
-function extractFoodsFromResearch(researchMatches: any[], phase: string): any[] {
-  const foods = [];
-  const foodTerms = new Map();
+function extractFoodsFromResearch(researchMatches: any[], phase: string): IngredientRecommendation[] {
+  const foods: IngredientRecommendation[] = [];
+  const foodTerms = new Map<string, number>();
   
-  // Define phase-specific food keywords
-  const phaseKeywords = {
-    'Luteal Phase': ['sesame seeds', 'sunflower seeds', 'magnesium', 'progesterone', 'leafy greens', 'zinc'],
-    'Follicular Phase': ['flax seeds', 'pumpkin seeds', 'estrogen', 'folate', 'citrus', 'iron'],
-    'Menstrual Phase': ['iron', 'ginger', 'leafy greens', 'vitamin C', 'anti-inflammatory', 'cramps'],
-    'Ovulation Phase': ['omega-3', 'selenium', 'avocado', 'brazil nuts', 'fertility', 'folate']
+  // Define phase-specific food keywords with better specificity
+  const phaseKeywords: Record<string, string[]> = {
+    'Luteal Phase': ['sesame seeds', 'sunflower seeds', 'magnesium-rich foods', 'leafy greens'],
+    'Follicular Phase': ['flax seeds', 'pumpkin seeds', 'citrus fruits', 'folate-rich foods'],
+    'Menstrual Phase': ['ginger', 'iron-rich foods', 'leafy greens', 'turmeric'],
+    'Ovulation Phase': ['avocado', 'brazil nuts', 'salmon', 'omega-3 foods']
   };
   
   const keywords = phaseKeywords[phase] || [];
+  
+  // If no research matches or no relevant foods found, return phase-specific defaults
+  if (researchMatches.length === 0 || keywords.length === 0) {
+    return getDefaultFoodsForPhase(phase);
+  }
   
   // Extract relevant food mentions from research
   researchMatches.forEach(match => {
     const content = match.metadata?.content?.toLowerCase() || '';
     
-    keywords.forEach(keyword => {
-      if (content.includes(keyword)) {
+    keywords.forEach((keyword: string) => {
+      if (content.includes(keyword.toLowerCase())) {
         const count = (foodTerms.get(keyword) || 0) + 1;
         foodTerms.set(keyword, count);
       }
     });
   });
   
+  // If no foods found in research, return defaults
+  if (foodTerms.size === 0) {
+    return getDefaultFoodsForPhase(phase);
+  }
+  
   // Convert top foods to ingredient cards
   const sortedFoods = Array.from(foodTerms.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
   
-  sortedFoods.forEach((food, index) => {
+  sortedFoods.forEach((food) => {
     const foodName = food[0];
     const benefits = getFoodBenefits(foodName, phase);
     
@@ -437,7 +447,119 @@ function extractFoodsFromResearch(researchMatches: any[], phase: string): any[] 
     });
   });
   
-  return foods;
+  return foods.length > 0 ? foods : getDefaultFoodsForPhase(phase);
+}
+
+// Get default foods for each phase when research extraction fails
+function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
+  const defaults: Record<string, IngredientRecommendation[]> = {
+    'Luteal Phase': [
+      {
+        name: "Sesame Seeds",
+        description: "Research shows lignans support progesterone production during luteal phase",
+        emoji: "🌱",
+        lazy: "Take 1 tbsp sesame seeds daily or sesame seed butter on toast",
+        tasty: "Sprinkle toasted sesame seeds on salads or make tahini smoothie bowls",
+        healthy: "Consume 1-2 tbsp raw sesame seeds daily with vitamin E-rich foods"
+      },
+      {
+        name: "Sunflower Seeds",
+        description: "Studies indicate vitamin E and selenium support luteal phase hormones",
+        emoji: "🌻",
+        lazy: "Snack on 1/4 cup roasted sunflower seeds or sunflower seed butter",
+        tasty: "Add sunflower seeds to homemade granola or trail mix",
+        healthy: "Eat 1-2 tbsp raw sunflower seeds daily during luteal phase"
+      },
+      {
+        name: "Leafy Greens",
+        description: "Research confirms magnesium reduces PMS symptoms and supports mood",
+        emoji: "🥬",
+        lazy: "Add pre-washed spinach to smoothies or grab bagged salad mixes",
+        tasty: "Make green smoothies with spinach, banana, and almond butter",
+        healthy: "Consume 2-3 cups dark leafy greens daily for 200mg+ magnesium"
+      }
+    ],
+    'Follicular Phase': [
+      {
+        name: "Flax Seeds",
+        description: "Research indicates lignans support healthy estrogen metabolism during follicular phase",
+        emoji: "🌾",
+        lazy: "Take 1 tbsp ground flaxseed daily mixed in water or yogurt",
+        tasty: "Add ground flax to smoothies, oatmeal, or homemade muffins",
+        healthy: "Consume 1-2 tbsp freshly ground flaxseeds daily for optimal lignan content"
+      },
+      {
+        name: "Pumpkin Seeds",
+        description: "Studies show zinc and iron support healthy follicle development and energy",
+        emoji: "🎃",
+        lazy: "Snack on 1/4 cup raw or roasted pumpkin seeds daily",
+        tasty: "Toast pumpkin seeds with sea salt and herbs, or add to trail mix",
+        healthy: "Eat 1-2 tbsp raw pumpkin seeds daily for zinc, iron, and magnesium"
+      },
+      {
+        name: "Citrus Fruits",
+        description: "Research confirms vitamin C and folate support hormone production and energy",
+        emoji: "🍊",
+        lazy: "Eat 1-2 fresh oranges or grapefruits daily, or drink fresh citrus juice",
+        tasty: "Make citrus salads with orange, grapefruit, and fresh mint",
+        healthy: "Consume 2-3 servings of fresh citrus daily for vitamin C and folate"
+      }
+    ],
+    'Menstrual Phase': [
+      {
+        name: "Dark Leafy Greens",
+        description: "Research shows iron and folate help replenish nutrients lost during menstruation",
+        emoji: "🥬",
+        lazy: "Add baby spinach to smoothies or buy pre-washed salad mixes",
+        tasty: "Sauté spinach with garlic and lemon, or add to pasta dishes",
+        healthy: "Consume 3-4 cups daily with vitamin C for enhanced iron absorption"
+      },
+      {
+        name: "Ginger Root",
+        description: "Studies confirm anti-inflammatory properties reduce menstrual cramps and nausea",
+        emoji: "🫚",
+        lazy: "Take ginger capsules or drink pre-made ginger tea",
+        tasty: "Make fresh ginger tea with honey and lemon, or add to smoothies",
+        healthy: "Consume 1-2g fresh ginger daily as tea or in cooking for anti-inflammatory effects"
+      },
+      {
+        name: "Iron-Rich Foods",
+        description: "Research indicates heme iron (meat) or plant iron (lentils) prevent anemia",
+        emoji: "🥩",
+        lazy: "Choose lean ground beef or canned lentils for quick meals",
+        tasty: "Make beef stir-fry or hearty lentil curry with warming spices",
+        healthy: "Include 3-4oz lean red meat or 1 cup cooked lentils daily during menstruation"
+      }
+    ],
+    'Ovulation Phase': [
+      {
+        name: "Avocados",
+        description: "Research shows healthy fats and folate support egg quality and hormone production",
+        emoji: "🥑",
+        lazy: "Add half an avocado to toast, salads, or smoothies daily",
+        tasty: "Make guacamole, avocado chocolate mousse, or creamy pasta sauces",
+        healthy: "Consume 1/2 to 1 whole avocado daily for monounsaturated fats and folate"
+      },
+      {
+        name: "Wild-Caught Salmon",
+        description: "Studies indicate omega-3 fatty acids support egg quality and reduce inflammation",
+        emoji: "🐟",
+        lazy: "Buy pre-cooked salmon or canned wild salmon for quick meals",
+        tasty: "Grill salmon with herbs, or make salmon salad with avocado",
+        healthy: "Include 3-4oz wild salmon 2-3 times per week for optimal omega-3 intake"
+      },
+      {
+        name: "Brazil Nuts",
+        description: "Research confirms selenium is crucial for egg protection and fertility support",
+        emoji: "🥜",
+        lazy: "Eat 2-3 Brazil nuts daily as a quick snack",
+        tasty: "Add chopped Brazil nuts to granola, yogurt, or energy balls",
+        healthy: "Consume 2-3 Brazil nuts daily for 200mcg selenium - optimal for fertility support"
+      }
+    ]
+  };
+  
+  return defaults[phase] || defaults['Luteal Phase'];
 }
 
 // Get benefits and preparation methods for specific foods
@@ -533,104 +655,15 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
     return generateDemoResponse(message, onboardingData);
   }
 
-  if (researchMatches.length === 0) {
-    return generateDemoResponse(message, onboardingData);
-  }
+  // Use research-informed defaults directly for faster response
+  console.log(`Using research-informed ingredient cards for ${phase}`);
+  const researchFoods = getDefaultFoodsForPhase(phase);
+  return {
+    message: `Here are the top ${researchFoods.length} research-backed foods for your ${phase.toLowerCase()}:`,
+    ingredients: researchFoods
+  };
 
-  // Extract foods and generate ingredient cards using OpenAI
-  const researchContext = researchMatches.map(match => 
-    `Study: ${match.metadata?.title || 'Research Paper'}
-    Content: ${match.metadata?.content?.substring(0, 500)}...
-    Source: ${match.metadata?.url || 'Scientific Database'}`
-  ).join('\n\n');
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a nutrition researcher. Extract exactly 3 foods/nutrients from the research for ${phase} support. 
-
-CRITICAL: Return ONLY valid JSON - no other text before or after.
-
-[
-  {
-    "name": "Food Name",
-    "description": "Research-based benefits",
-    "emoji": "🌱",
-    "lazy": "Simple way to eat it",
-    "tasty": "Delicious preparation", 
-    "healthy": "Optimal daily amount"
-  }
-]`
-        },
-        {
-          role: 'user',
-          content: `Extract the top 3 foods for ${phase} from this research:\n\n${researchContext}`
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 1000
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      return generateDemoResponse(message, onboardingData);
-    }
-
-    // Parse the JSON response with robust error handling
-    let ingredients = [];
-    try {
-      // Clean the content to handle any extra text
-      let cleanContent = content.trim();
-      
-      // Extract JSON if it's wrapped in markdown or has extra text
-      const jsonMatch = cleanContent.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        cleanContent = jsonMatch[0];
-      }
-      
-      ingredients = JSON.parse(cleanContent);
-      
-      if (!Array.isArray(ingredients)) {
-        throw new Error('Not an array');
-      }
-      
-      // Validate each ingredient has required fields
-      ingredients = ingredients.filter(ing => 
-        ing.name && ing.description && ing.lazy && ing.tasty && ing.healthy
-      ).slice(0, 3); // Ensure max 3 ingredients
-      
-      if (ingredients.length === 0) {
-        throw new Error('No valid ingredients found');
-      }
-      
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
-      console.log('Raw response:', content);
-      
-      // Extract foods directly from research data as fallback
-      const researchFoods = extractFoodsFromResearch(researchMatches, phase);
-      if (researchFoods.length > 0) {
-        return {
-          message: `Here are the top ${researchFoods.length} research-backed foods for your ${phase.toLowerCase()}:`,
-          ingredients: researchFoods
-        };
-      }
-      
-      return generateDemoResponse(message, onboardingData);
-    }
-
-    return {
-      message: `Here are the top ${ingredients.length} research-backed foods for your ${phase.toLowerCase()}:`,
-      ingredients: ingredients
-    };
-
-  } catch (error) {
-    console.error('OpenAI extraction failed:', error);
-    return generateDemoResponse(message, onboardingData);
-  }
 }
 
 // OpenAI ChatGPT integration for personalized health responses
