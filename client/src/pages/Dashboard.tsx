@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { IngredientCard } from '@/components/chat/IngredientCard';
-import { ResearchManager } from '@/components/ResearchManager';
-import { LLMTrainingDashboard } from '@/components/LLMTrainingDashboard';
+
 import { MealPlanGenerator } from '@/components/MealPlanGenerator';
 import type { ChatResponse, IngredientRecommendation } from '@shared/schema';
 
@@ -317,12 +316,6 @@ export default function Dashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            
-            {/* Research Database Manager */}
-            <ResearchManager />
-            
-            {/* LLM Training Dashboard */}
-            <LLMTrainingDashboard />
             
             {/* Profile Card */}
             <Card className="shadow-xl">
