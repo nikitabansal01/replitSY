@@ -160,6 +160,19 @@ export const CUISINE_PROFILES: Record<string, CuisineProfile> = {
       "use_whole_grain_tortillas", "increase_vegetables", "use_lean_proteins",
       "add_more_beans", "reduce_cheese", "increase_herbs_spices"
     ]
+  },
+  american: {
+    name: "American",
+    common_ingredients: [
+      "lean_meats", "poultry", "fish", "eggs", "dairy", "whole_grains",
+      "vegetables", "fruits", "nuts", "seeds", "herbs"
+    ],
+    cooking_methods: ["grilling", "baking", "roasting", "steaming", "sautéing"],
+    staple_foods: ["lean_proteins", "whole_grains", "vegetables", "fruits", "healthy_fats"],
+    healthy_adaptations: [
+      "choose_grass_fed_meats", "use_organic_produce", "whole_grain_alternatives",
+      "increase_plant_proteins", "reduce_processed_foods", "emphasize_local_seasonal"
+    ]
   }
 };
 
@@ -226,6 +239,73 @@ class NutritionistService {
       }
     });
     return uniqueConditions;
+  }
+
+  // Generate weekly meal plan
+  async generateWeeklyMealPlan(
+    healthConditions: string[],
+    cuisinePreference: string,
+    userProfile: any
+  ): Promise<any> {
+    const weeklyPlan: any = {
+      week: 1,
+      days: [] as any[],
+      weeklyShoppingList: {},
+      weeklyNotes: []
+    };
+
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const today = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(today);
+      dayDate.setDate(today.getDate() + i);
+      
+      const dailyMealPlan = await this.generateMealPlan(healthConditions, cuisinePreference, userProfile);
+      
+      weeklyPlan.days.push({
+        dayName: dayNames[i],
+        date: dayDate.toLocaleDateString(),
+        meals: dailyMealPlan
+      });
+    }
+
+    // Generate consolidated shopping list
+    weeklyPlan.weeklyShoppingList = this.generateWeeklyShoppingList(weeklyPlan.days);
+    
+    return weeklyPlan;
+  }
+
+  // Generate monthly meal plan
+  async generateMonthlyMealPlan(
+    healthConditions: string[],
+    cuisinePreference: string,
+    userProfile: any
+  ): Promise<any> {
+    const today = new Date();
+    const monthlyPlan = {
+      month: today.toLocaleDateString('en-US', { month: 'long' }),
+      year: today.getFullYear(),
+      weeks: [],
+      monthlyShoppingList: {},
+      nutritionalSummary: {
+        focusAreas: healthConditions,
+        keyNutrients: ['protein', 'fiber', 'omega-3', 'vitamins', 'minerals'],
+        healthGoals: ['hormonal balance', 'energy optimization', 'digestive health']
+      }
+    };
+
+    // Generate 4 weeks
+    for (let week = 1; week <= 4; week++) {
+      const weeklyPlan = await this.generateWeeklyMealPlan(healthConditions, cuisinePreference, userProfile);
+      weeklyPlan.week = week;
+      monthlyPlan.weeks.push(weeklyPlan);
+    }
+
+    // Generate consolidated monthly shopping list
+    monthlyPlan.monthlyShoppingList = this.generateMonthlyShoppingList(monthlyPlan.weeks);
+
+    return monthlyPlan;
   }
 
   // Generate personalized meal plan
@@ -473,6 +553,73 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
     });
 
     return categories;
+  }
+
+  generateWeeklyShoppingList(days: any[]): Record<string, string[]> {
+    const consolidatedList: Record<string, string[]> = {
+      proteins: [],
+      vegetables: [],
+      fruits: [],
+      grains: [],
+      dairy: [],
+      spices: [],
+      pantry: []
+    };
+
+    days.forEach(day => {
+      const dailyList = this.generateShoppingList(day.meals);
+      Object.keys(dailyList).forEach(category => {
+        if (consolidatedList[category]) {
+          consolidatedList[category].push(...dailyList[category]);
+        }
+      });
+    });
+
+    // Remove duplicates
+    Object.keys(consolidatedList).forEach(category => {
+      const unique: string[] = [];
+      consolidatedList[category].forEach(item => {
+        if (unique.indexOf(item) === -1) {
+          unique.push(item);
+        }
+      });
+      consolidatedList[category] = unique;
+    });
+
+    return consolidatedList;
+  }
+
+  generateMonthlyShoppingList(weeks: any[]): Record<string, string[]> {
+    const monthlyList: Record<string, string[]> = {
+      proteins: [],
+      vegetables: [],
+      fruits: [],
+      grains: [],
+      dairy: [],
+      spices: [],
+      pantry: []
+    };
+
+    weeks.forEach(week => {
+      Object.keys(week.weeklyShoppingList).forEach(category => {
+        if (monthlyList[category]) {
+          monthlyList[category].push(...week.weeklyShoppingList[category]);
+        }
+      });
+    });
+
+    // Remove duplicates
+    Object.keys(monthlyList).forEach(category => {
+      const unique: string[] = [];
+      monthlyList[category].forEach(item => {
+        if (unique.indexOf(item) === -1) {
+          unique.push(item);
+        }
+      });
+      monthlyList[category] = unique;
+    });
+
+    return monthlyList;
   }
 }
 
