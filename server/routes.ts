@@ -880,15 +880,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         onboardingData
       );
 
-      const pdfBuffer = await pdfGeneratorService.generateMonthlyMealPlanPDF(
-        monthlyPlan,
-        { name: req.user.name, diet: onboardingData.diet },
-        cuisinePreference
-      );
+      // Generate HTML content for download
+      const htmlContent = `
+        <html>
+          <head><title>Monthly Meal Plan - ${cuisinePreference}</title></head>
+          <body>
+            <h1>Monthly ${cuisinePreference} Meal Plan</h1>
+            <p>Generated for: ${req.user.name}</p>
+            <pre>${JSON.stringify(monthlyPlan, null, 2)}</pre>
+          </body>
+        </html>
+      `;
 
       res.setHeader('Content-Type', 'text/html');
       res.setHeader('Content-Disposition', `attachment; filename="monthly-meal-plan-${cuisinePreference.toLowerCase()}.html"`);
-      res.send(pdfBuffer);
+      res.send(htmlContent);
 
     } catch (error) {
       console.error('Error generating monthly meal plan PDF:', error);
