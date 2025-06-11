@@ -277,6 +277,90 @@ It's important to consult with healthcare providers for proper diagnosis and tre
         healthy: "Consume 2-3 cups dark leafy greens daily - spinach, kale, Swiss chard for 200mg+ magnesium"
       }
     ];
+  } else if (lowerMessage.includes('follicular') || lowerMessage.includes('follicular phase')) {
+    demoMessage = `Here are the top 3 foods to include during your follicular phase for estrogen support and energy:`;
+    ingredients = [
+      {
+        name: "Flax Seeds",
+        description: "High in lignans that support healthy estrogen metabolism during follicular phase",
+        emoji: "🌾",
+        lazy: "Take 1 tbsp ground flaxseed daily mixed in water or yogurt",
+        tasty: "Add ground flax to smoothies, oatmeal, or homemade muffins",
+        healthy: "Consume 1-2 tbsp freshly ground flaxseeds daily for optimal lignan content and omega-3s"
+      },
+      {
+        name: "Pumpkin Seeds",
+        description: "Rich in zinc and iron to support healthy follicle development and energy",
+        emoji: "🎃",
+        lazy: "Snack on 1/4 cup raw or roasted pumpkin seeds daily",
+        tasty: "Toast pumpkin seeds with sea salt and herbs, or add to trail mix",
+        healthy: "Eat 1-2 tbsp raw pumpkin seeds daily for zinc, iron, and magnesium during follicular phase"
+      },
+      {
+        name: "Citrus Fruits",
+        description: "High in vitamin C and folate to support healthy hormone production and energy",
+        emoji: "🍊",
+        lazy: "Eat 1-2 fresh oranges or grapefruits daily, or drink fresh citrus juice",
+        tasty: "Make citrus salads with orange, grapefruit, and fresh mint",
+        healthy: "Consume 2-3 servings of fresh citrus daily for vitamin C, folate, and antioxidants"
+      }
+    ];
+  } else if (lowerMessage.includes('menstrual') || lowerMessage.includes('menstrual phase')) {
+    demoMessage = `Here are the top 3 foods to include during your menstrual phase for iron support and pain relief:`;
+    ingredients = [
+      {
+        name: "Dark Leafy Greens",
+        description: "High in iron and folate to replenish nutrients lost during menstruation",
+        emoji: "🥬",
+        lazy: "Add baby spinach to smoothies or buy pre-washed salad mixes",
+        tasty: "Sauté spinach with garlic and lemon, or add to pasta dishes",
+        healthy: "Consume 3-4 cups of dark leafy greens daily with vitamin C for enhanced iron absorption"
+      },
+      {
+        name: "Ginger Root",
+        description: "Natural anti-inflammatory that reduces menstrual cramps and nausea",
+        emoji: "🫚",
+        lazy: "Take ginger capsules or drink pre-made ginger tea",
+        tasty: "Make fresh ginger tea with honey and lemon, or add to smoothies",
+        healthy: "Consume 1-2g fresh ginger daily as tea or in cooking for anti-inflammatory effects"
+      },
+      {
+        name: "Red Meat or Lentils",
+        description: "Rich in heme iron (meat) or plant iron (lentils) to prevent anemia",
+        emoji: "🥩",
+        lazy: "Choose lean ground beef or canned lentils for quick meals",
+        tasty: "Make beef stir-fry or hearty lentil curry with warming spices",
+        healthy: "Include 3-4oz lean red meat or 1 cup cooked lentils daily during menstruation"
+      }
+    ];
+  } else if (lowerMessage.includes('ovulation') || lowerMessage.includes('ovulation phase')) {
+    demoMessage = `Here are the top 3 foods to include during your ovulation phase for peak fertility and energy:`;
+    ingredients = [
+      {
+        name: "Avocados",
+        description: "Rich in healthy fats and folate that support egg quality and hormone production",
+        emoji: "🥑",
+        lazy: "Add half an avocado to toast, salads, or smoothies daily",
+        tasty: "Make guacamole, avocado chocolate mousse, or creamy pasta sauces",
+        healthy: "Consume 1/2 to 1 whole avocado daily for monounsaturated fats and folate"
+      },
+      {
+        name: "Wild-Caught Salmon",
+        description: "High in omega-3 fatty acids that support egg quality and reduce inflammation",
+        emoji: "🐟",
+        lazy: "Buy pre-cooked salmon or canned wild salmon for quick meals",
+        tasty: "Grill salmon with herbs, or make salmon salad with avocado",
+        healthy: "Include 3-4oz wild salmon 2-3 times per week for optimal omega-3 intake"
+      },
+      {
+        name: "Brazil Nuts",
+        description: "Extremely high in selenium, crucial for egg protection and fertility",
+        emoji: "🥜",
+        lazy: "Eat 2-3 Brazil nuts daily as a quick snack",
+        tasty: "Add chopped Brazil nuts to granola, yogurt, or energy balls",
+        healthy: "Consume 2-3 Brazil nuts daily for 200mcg selenium - optimal for fertility support"
+      }
+    ];
   } else {
     demoMessage = `Here are some general wellness ingredients that align with your ${diet} dietary preferences.`;
     ingredients = [
@@ -620,16 +704,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      // Try ChatGPT with fast timeout, fallback to demo if needed
+      // Check if this is a luteal phase query that should use demo response with ingredient cards
+      const lowerMessage = message.toLowerCase();
+      const isLutealPhaseQuery = lowerMessage.includes('luteal') || lowerMessage.includes('luteal phase');
+      const isFollicularPhaseQuery = lowerMessage.includes('follicular') || lowerMessage.includes('follicular phase');
+      const isMenstrualPhaseQuery = lowerMessage.includes('menstrual') || lowerMessage.includes('menstrual phase');
+      const isOvulationPhaseQuery = lowerMessage.includes('ovulation') || lowerMessage.includes('ovulation phase');
+      
       let response;
-      try {
-        response = await Promise.race([
-          generateChatGPTResponse(openai, message, onboardingData),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
-        ]) as ChatResponse;
-      } catch (error) {
-        console.error('ChatGPT API failed, using demo response:', error);
+      
+      // Use demo response for cycle phase queries to show ingredient cards
+      if (isLutealPhaseQuery || isFollicularPhaseQuery || isMenstrualPhaseQuery || isOvulationPhaseQuery) {
         response = generateDemoResponse(message, onboardingData);
+      } else {
+        // Try ChatGPT with fast timeout, fallback to demo if needed
+        try {
+          response = await Promise.race([
+            generateChatGPTResponse(openai, message, onboardingData),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          ]) as ChatResponse;
+        } catch (error) {
+          console.error('ChatGPT API failed, using demo response:', error);
+          response = generateDemoResponse(message, onboardingData);
+        }
       }
 
       await storage.saveChatMessage({
