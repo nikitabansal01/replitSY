@@ -76,6 +76,9 @@ class PDFGeneratorService {
     userProfile: any,
     cuisineStyle: string
   ): string {
+    const currentPhase = this.determineMenstrualPhase(userProfile);
+    const phaseData = this.getPhaseData(currentPhase);
+    
     return `
 <!DOCTYPE html>
 <html lang="en">

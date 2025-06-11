@@ -244,6 +244,41 @@ export default function Profile() {
                   <p className="text-xs text-gray-500 mt-1">Used for cycle-specific meal planning</p>
                 </div>
                 <div>
+                  <Label htmlFor="cycleLength">Cycle Length (days)</Label>
+                  <Input 
+                    id="cycleLength"
+                    type="number"
+                    value={formData.cycleLength || ''} 
+                    onChange={(e) => setFormData({...formData, cycleLength: e.target.value})}
+                    placeholder="e.g., 28"
+                    min="21"
+                    max="35"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="periodLength">Period Length (days)</Label>
+                  <Input 
+                    id="periodLength"
+                    type="number"
+                    value={formData.periodLength || ''} 
+                    onChange={(e) => setFormData({...formData, periodLength: e.target.value})}
+                    placeholder="e.g., 5"
+                    min="3"
+                    max="7"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="irregularPeriods"
+                    checked={formData.irregularPeriods || false}
+                    onChange={(e) => setFormData({...formData, irregularPeriods: e.target.checked})}
+                    className="rounded"
+                  />
+                  <Label htmlFor="irregularPeriods">I have irregular periods</Label>
+                  <p className="text-xs text-gray-500">(We'll use lunar cycles for meal planning)</p>
+                </div>
+                <div>
                   <Label htmlFor="height">Height</Label>
                   <Input 
                     id="height"

@@ -117,67 +117,49 @@ export const HEALTH_CONDITIONS: Record<string, HealthCondition> = {
 
 // Menstrual cycle phase support with seed cycling
 export const MENSTRUAL_CYCLE_PHASES = {
+  menstrual: {
+    name: "Menstrual Phase",
+    days: "1-5",
+    description: "Rest and renewal - Support iron replenishment and comfort",
+    seed_cycling: ["Ground flax seeds (1-2 tbsp daily)", "Raw pumpkin seeds (1 oz daily)"],
+    supporting_foods: ["Iron-rich leafy greens", "Warming ginger and turmeric", "Dark chocolate", "Red meat or lentils"],
+    benefits: ["Replenish iron stores", "Reduce menstrual cramps", "Support hormone detoxification", "Combat fatigue"],
+    lazy_incorporation: ["Sprinkle ground flax on cereal", "Grab handful of pumpkin seeds as snack", "Add flax to store-bought smoothies"],
+    tasty_incorporation: ["Chocolate flax energy balls", "Spiced pumpkin seed granola", "Flax banana bread"],
+    healthy_incorporation: ["Fresh ground flax daily (store in fridge)", "Soak pumpkin seeds overnight", "Take with vitamin C for iron absorption"]
+  },
   follicular: {
     name: "Follicular Phase",
-    days: "1-14",
-    hormone_focus: ["estrogen_rising", "FSH_support"],
-    seed_cycling: ["flax_seeds", "pumpkin_seeds"],
-    supporting_foods: [
-      "dark_leafy_greens", "cruciferous_vegetables", "citrus_fruits",
-      "lean_proteins", "complex_carbs", "iron_rich_foods"
-    ],
-    benefits: [
-      "Flax seeds contain lignans that help metabolize estrogen",
-      "Pumpkin seeds provide zinc for hormone production",
-      "Iron-rich foods support energy during menstruation",
-      "Cruciferous vegetables aid estrogen detoxification"
-    ],
-    lazy_incorporation: [
-      "Add 1 tbsp ground flax seeds to smoothies",
-      "Sprinkle pumpkin seeds on salads or yogurt",
-      "Mix seeds into overnight oats"
-    ],
-    tasty_incorporation: [
-      "Flax seed energy balls with dates and cocoa",
-      "Roasted pumpkin seeds with spices as snacks",
-      "Flax seed crackers with hummus"
-    ],
-    healthy_incorporation: [
-      "Ground flax in morning smoothie with spinach",
-      "Raw pumpkin seeds in Buddha bowls",
-      "Flax seed oil in salad dressings"
-    ]
+    days: "6-13",
+    description: "Energy building - Support estrogen with lignans and healthy fats",
+    seed_cycling: ["Ground flax seeds (1-2 tbsp daily)", "Raw pumpkin seeds (1-2 oz daily)"],
+    supporting_foods: ["Fresh vegetables", "Lean proteins", "Sprouted foods", "Citrus fruits", "Fermented foods"],
+    benefits: ["Support healthy estrogen levels", "Boost energy and mood", "Enhance metabolism", "Improve skin health"],
+    lazy_incorporation: ["Buy pre-ground flax from health store", "Keep roasted pumpkin seeds in purse", "Add to existing meals without prep"],
+    tasty_incorporation: ["Pumpkin seed pesto pasta", "Flax crusted chicken", "Green goddess salad with pumpkin seeds"],
+    healthy_incorporation: ["Grind flax fresh daily for maximum lignans", "Combine with healthy fats", "Track energy improvements"]
+  },
+  ovulatory: {
+    name: "Ovulatory Phase",
+    days: "14-16",
+    description: "Peak energy - Support ovulation with zinc and vitamin E",
+    seed_cycling: ["Raw sesame seeds/tahini (1-2 tbsp daily)", "Raw sunflower seeds (1-2 oz daily)"],
+    supporting_foods: ["Antioxidant berries", "Leafy greens", "Avocados", "Wild-caught fish", "Colorful vegetables"],
+    benefits: ["Support healthy ovulation", "Maintain peak energy", "Enhance fertility", "Reduce inflammation"],
+    lazy_incorporation: ["Tahini on toast or fruit", "Sunflower seed butter as snack", "Pre-made sesame seed bars"],
+    tasty_incorporation: ["Sesame crusted salmon", "Tahini chocolate truffles", "Sunflower seed brittle"],
+    healthy_incorporation: ["Raw unhulled sesame seeds", "Soak sunflower seeds for digestion", "Combine with zinc-rich foods"]
   },
   luteal: {
     name: "Luteal Phase", 
-    days: "15-28",
-    hormone_focus: ["progesterone_support", "estrogen_balance"],
-    seed_cycling: ["sesame_seeds", "sunflower_seeds"],
-    supporting_foods: [
-      "magnesium_rich_foods", "b6_sources", "healthy_fats",
-      "complex_carbs", "anti_inflammatory_foods"
-    ],
-    benefits: [
-      "Sesame seeds contain lignans that support progesterone",
-      "Sunflower seeds provide vitamin E for hormone balance",
-      "Magnesium helps reduce PMS symptoms",
-      "B6 supports mood and reduces bloating"
-    ],
-    lazy_incorporation: [
-      "Add 1 tbsp tahini (sesame paste) to toast",
-      "Handful of sunflower seeds as afternoon snack",
-      "Mix seeds into trail mix"
-    ],
-    tasty_incorporation: [
-      "Tahini chocolate chip cookies",
-      "Sunflower seed butter on apple slices",
-      "Sesame seed brittle or halva"
-    ],
-    healthy_incorporation: [
-      "Raw sesame seeds in grain bowls",
-      "Sunflower seed oil in cooking",
-      "Tahini in nutrient-dense smoothies"
-    ]
+    days: "17-28",
+    description: "Preparation - Support progesterone and reduce PMS symptoms",
+    seed_cycling: ["Raw sesame seeds/tahini (1-2 tbsp daily)", "Raw sunflower seeds (1-2 oz daily)"],
+    supporting_foods: ["Complex carbs like sweet potato", "Magnesium-rich dark chocolate", "B-vitamin nutritional yeast", "Calming chamomile tea"],
+    benefits: ["Support progesterone production", "Reduce PMS and bloating", "Stabilize mood and cravings", "Improve sleep quality"],
+    lazy_incorporation: ["Tahini packets for on-the-go", "Sunflower seed trail mix", "Ready-made sesame energy bars"],
+    tasty_incorporation: ["Sesame halva for sweet cravings", "Sunflower banana bread", "Tahini date balls"],
+    healthy_incorporation: ["Increase seeds to 2 tbsp/2 oz this phase", "Pair with magnesium foods", "Track PMS improvements over 3 months"]
   }
 };
 
