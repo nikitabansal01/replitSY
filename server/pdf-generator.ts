@@ -29,37 +29,69 @@ class PDFGeneratorService {
     userProfile: any,
     cuisineStyle: string
   ): Promise<Buffer> {
-    const puppeteer = require('puppeteer');
+    // Generate comprehensive text-based meal plan with menstrual cycle information
+    const currentPhase = this.determineMenstrualPhase(userProfile);
+    const phaseData = this.getPhaseData(currentPhase);
     
-    try {
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      
-      const page = await browser.newPage();
-      const html = this.generateWeeklyHTML(weeklyPlan, userProfile, cuisineStyle);
-      
-      await page.setContent(html);
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          bottom: '20mm',
-          left: '15mm',
-          right: '15mm'
-        }
-      });
-      
-      await browser.close();
-      return pdfBuffer;
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      // Fallback to HTML buffer
-      const html = this.generateWeeklyHTML(weeklyPlan, userProfile, cuisineStyle);
-      return Buffer.from(html, 'utf-8');
-    }
+    const textContent = `WEEKLY MEAL PLAN - ${cuisineStyle.toUpperCase()} CUISINE
+=================================================================
+
+MENSTRUAL CYCLE PHASE: ${phaseData.name}
+${phaseData.description}
+
+SEED CYCLING FOR THIS PHASE:
+${phaseData.seeds.map(seed => `• ${seed}`).join('\n')}
+
+=================================================================
+DAILY MEAL PLANS
+=================================================================
+
+${weeklyPlan.days.map(day => `
+${day.dayName.toUpperCase()} - ${day.date}
+-----------------------------------------------------------------
+
+🌅 BREAKFAST: ${day.meals.breakfast.name}
+   Ingredients: ${day.meals.breakfast.ingredients.join(', ')}
+   Prep time: ${day.meals.breakfast.preparation_time}
+   Method: ${day.meals.breakfast.cooking_method}
+   Health benefits: ${day.meals.breakfast.health_benefits.join(', ')}
+
+☀️ LUNCH: ${day.meals.lunch.name}
+   Ingredients: ${day.meals.lunch.ingredients.join(', ')}
+   Prep time: ${day.meals.lunch.preparation_time}
+   Method: ${day.meals.lunch.cooking_method}
+   Health benefits: ${day.meals.lunch.health_benefits.join(', ')}
+
+🌙 DINNER: ${day.meals.dinner.name}
+   Ingredients: ${day.meals.dinner.ingredients.join(', ')}
+   Prep time: ${day.meals.dinner.preparation_time}
+   Method: ${day.meals.dinner.cooking_method}
+   Health benefits: ${day.meals.dinner.health_benefits.join(', ')}
+
+🍎 SNACKS: ${day.meals.snacks.map(snack => snack.name).join(', ')}
+   Details: ${day.meals.snacks.map(snack => `${snack.name} (${snack.preparation_time})`).join(', ')}
+
+`).join('\n')}
+
+=================================================================
+WEEKLY SHOPPING LIST
+=================================================================
+
+${Object.entries(weeklyPlan.weeklyShoppingList).map(([category, items]) => `
+${category.toUpperCase().replace(/_/g, ' ')}:
+${(items as string[]).map(item => `□ ${item}`).join('\n')}
+`).join('\n')}
+
+=================================================================
+WEEKLY NOTES & TIPS
+=================================================================
+
+${weeklyPlan.weeklyNotes ? weeklyPlan.weeklyNotes.join('\n\n') : 'Focus on incorporating the recommended seeds for your current menstrual cycle phase to support hormonal balance and overall wellness.'}
+
+Generated with love for your health journey! 💖
+`;
+    
+    return Buffer.from(textContent, 'utf-8');
   }
 
   async generateMonthlyMealPlanPDF(
