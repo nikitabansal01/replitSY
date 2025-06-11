@@ -29,7 +29,10 @@ export default function Login() {
 
   useEffect(() => {
     if (user && !loading) {
-      setLocation('/onboarding');
+      // Force navigation to dashboard after authentication
+      setTimeout(() => {
+        setLocation('/dashboard');
+      }, 100);
     }
   }, [user, loading, setLocation]);
 
@@ -50,7 +53,10 @@ export default function Login() {
         title: "Success",
         description: "Successfully signed in with Google!"
       });
-      // The App router will handle navigation automatically after auth state updates
+      // Force navigation to dashboard
+      setTimeout(() => {
+        setLocation('/dashboard');
+      }, 500);
     } catch (error: any) {
       console.error('Sign in failed:', error);
       toast({
@@ -73,7 +79,10 @@ export default function Login() {
         title: "Success",
         description: "Successfully signed in!"
       });
-      // The App router will handle navigation automatically after auth state updates
+      // Force navigation to dashboard
+      setTimeout(() => {
+        setLocation('/dashboard');
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Error",

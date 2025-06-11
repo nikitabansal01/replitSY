@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { handleRedirectResult } from '@/lib/auth';
+
 
 interface AuthContextType {
   user: User | null;
@@ -32,43 +32,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
-    
-    if (storedToken === 'demo-token') {
-      // Demo mode - create mock user
-      const mockUser = {
-        uid: 'demo-user-123',
-        email: 'demo@example.com',
-        displayName: 'Demo User',
-        photoURL: null,
-        emailVerified: true,
-        getIdToken: async () => storedToken
-      } as User;
-      
-      setUser(mockUser);
-      setToken(storedToken);
-      setLoading(false);
-    } else if (storedToken) {
-      // Real Firebase token exists
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          setUser(firebaseUser);
+    // Always listen for Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
           const idToken = await firebaseUser.getIdToken();
+          localStorage.setItem('authToken', idToken);
+          setUser(firebaseUser);
           setToken(idToken);
+        } catch (error) {
+          console.error('Error getting token:', error);
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('authToken');
+        }
+      } else {
+        // Check for demo token
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken === 'demo-token') {
+          const mockUser = {
+            uid: 'demo-user-123',
+            email: 'demo@example.com',
+            displayName: 'Demo User',
+            photoURL: null,
+            emailVerified: true,
+            getIdToken: async () => storedToken
+          } as User;
+          
+          setUser(mockUser);
+          setToken(storedToken);
         } else {
           setUser(null);
           setToken(null);
+          localStorage.removeItem('authToken');
         }
-        setLoading(false);
-      });
-      
-      return () => unsubscribe();
-    } else {
-      // No token - user not authenticated
-      setUser(null);
-      setToken(null);
+      }
       setLoading(false);
-    }
+    });
+    
+    return () => unsubscribe();
   }, []);
 
   return (
