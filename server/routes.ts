@@ -312,21 +312,32 @@ User Profile:
     };
   }
 
-  // Get research-backed information using smart scraping
-  let researchContext = '';
+  // Get research-backed information using smart scraping - STRICT RESEARCH ONLY
+  let researchMatches = [];
   try {
-    const researchMatches = await researchService.searchWithSmartScraping(question, 3);
-    if (researchMatches.length > 0) {
-      researchContext = `
-
-Research-based information to consider:
-${researchMatches.map(match => `- ${match.metadata?.title}: ${match.metadata?.content?.substring(0, 200)}...`).join('\n')}
-
-Use this scientific information to provide evidence-based recommendations.`;
-    }
+    researchMatches = await researchService.searchWithSmartScraping(question, 5);
+    console.log(`Using existing research data for query: ${question}`);
   } catch (error) {
-    console.log('Research service unavailable, proceeding with general knowledge');
+    console.log('Research service unavailable');
   }
+
+  // Only respond if we have research data
+  if (researchMatches.length === 0) {
+    return {
+      message: "I can only provide information based on scientific research papers stored in our database. Your question doesn't match our current research collection. Please ask about women's health topics like PCOS, thyroid conditions, endometriosis, hormonal balance, fertility, menstrual health, or nutrition for specific health conditions.",
+      ingredients: []
+    };
+  }
+
+  const researchContext = `
+SCIENTIFIC RESEARCH EVIDENCE:
+${researchMatches.map(match => `
+Study: ${match.metadata?.title || 'Research Paper'}
+Content: ${match.metadata?.content?.substring(0, 400)}...
+Source: ${match.metadata?.url || 'Scientific Database'}
+`).join('\n')}
+
+CRITICAL: Base your response ONLY on the scientific research provided above. Do not add information from general knowledge.`;
 
   // Determine if this is a diet/nutrition question vs general health information
   const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(question);
@@ -334,9 +345,7 @@ Use this scientific information to provide evidence-based recommendations.`;
   let systemPrompt;
   
   if (isDietQuestion) {
-    systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients, foods, and nutrition for hormonal health and digestive wellness.
-
-For digestive issues like bloating, gas, or stomach discomfort, focus on foods and natural remedies that support digestion.
+    systemPrompt = `You are a women's health nutritionist who ONLY provides information based on scientific research papers. Use ONLY the research evidence provided below to answer questions about foods, nutrients, and dietary interventions.
 
 ${ENHANCED_TRAINING_PROMPT}
 
@@ -377,21 +386,24 @@ Respond with exactly this JSON format:
 
 Always provide 2-3 food/ingredient recommendations that specifically address the user's question.${userContext}${researchContext}`;
   } else {
-    systemPrompt = `You are a knowledgeable women's health coach. Provide evidence-based educational information about women's health conditions, symptoms, and general health knowledge.
+    systemPrompt = `You are a women's health educator who ONLY provides information based on scientific research papers. Use ONLY the research evidence provided below to answer questions about health conditions.
 
-Focus on explaining:
-- What the condition is
-- Common symptoms and signs
-- Types or classifications if applicable
-- Risk factors and causes
-- When to seek medical attention
-- General lifestyle considerations
+CRITICAL INSTRUCTIONS:
+- Base your response EXCLUSIVELY on the scientific research provided
+- Do NOT add information from general medical knowledge
+- If the research doesn't cover certain aspects, state "The available research doesn't provide information about [specific aspect]"
+- Always cite that information comes from scientific studies
 
-Do NOT provide specific dietary recommendations, supplements, or ingredients unless specifically asked about nutrition.
+Focus on explaining (ONLY from research provided):
+- What the condition is (based on research definitions)
+- Symptoms and signs (as documented in studies)
+- Types or classifications (if mentioned in research)
+- Risk factors and causes (as identified in research)
+- Research findings and clinical observations
 
 Respond with exactly this JSON format:
 {
-  "message": "Your informative response about the health topic (include disclaimer about consulting healthcare providers)",
+  "message": "Your informative response based solely on the research evidence provided (include disclaimer about consulting healthcare providers and mention that information is from scientific studies)",
   "ingredients": []
 }
 

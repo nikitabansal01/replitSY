@@ -368,54 +368,122 @@ class ResearchService {
     console.log('Initializing comprehensive women\'s health research database...');
     
     const healthTopics = [
-      // PCOS related topics
-      'PCOS polycystic ovary syndrome nutrition diet',
-      'PCOS insulin resistance natural treatment',
-      'PCOS weight management metformin alternatives',
-      'PCOS hormonal balance spearmint tea',
-      'PCOS fertility natural conception support',
+      // PCOS comprehensive topics
+      'PCOS polycystic ovary syndrome nutrition diet anti-inflammatory',
+      'PCOS insulin resistance myo-inositol D-chiro-inositol clinical studies',
+      'PCOS weight management chromium berberine metformin alternatives',
+      'PCOS hormonal balance spearmint tea anti-androgen effects',
+      'PCOS fertility natural conception omega-3 CoQ10',
+      'PCOS lean type normal weight treatment nutrition',
+      'PCOS inflammatory type diet turmeric omega-3',
+      'PCOS insulin resistant type low glycemic diet',
+      'PCOS post-pill type hormonal recovery nutrition',
       
-      // Endometriosis topics
-      'endometriosis pain management anti-inflammatory diet',
-      'endometriosis omega-3 fatty acids turmeric',
-      'endometriosis iron deficiency anemia nutrition',
-      'endometriosis hormonal therapy natural alternatives',
-      'endometriosis fertility preservation nutrition',
-      
-      // Stress and cortisol management
-      'chronic stress cortisol women health effects',
-      'stress management adaptogens ashwagandha rhodiola',
-      'cortisol regulation sleep hygiene women',
-      'stress induced hormonal imbalance treatment',
-      'adrenal fatigue natural recovery nutrition',
-      
-      // Thyroid health
-      'hypothyroidism women nutrition selenium iodine',
-      'thyroid health autoimmune hashimoto diet',
-      'thyroid medication natural supplements interaction',
-      'thyroid function vitamin D B12 deficiency',
+      // Thyroid comprehensive topics
+      'hypothyroidism women nutrition selenium iodine zinc',
+      'hashimoto thyroid autoimmune diet gluten-free AIP',
       'hyperthyroidism graves disease nutrition management',
+      'thyroid nodules diet iodine restriction nutrition',
+      'subclinical hypothyroidism TSH levels nutrition intervention',
+      'thyroid medication food interactions timing absorption',
+      'thyroid function vitamin D B12 iron deficiency connection',
+      'postpartum thyroiditis nutrition recovery treatment',
+      'thyroid hormone conversion T4 T3 selenium zinc',
       
-      // Menstrual health
-      'menstrual cramps dysmenorrhea natural pain relief',
-      'heavy menstrual bleeding iron supplementation',
-      'irregular periods hormonal balance nutrition',
-      'PMS premenstrual syndrome magnesium B6',
-      'menstrual cycle tracking hormonal patterns',
+      // Endometriosis detailed research
+      'endometriosis pain management anti-inflammatory diet omega-3',
+      'endometriosis iron deficiency anemia nutrition supplementation',
+      'endometriosis hormonal therapy natural alternatives',
+      'endometriosis fertility preservation nutrition CoQ10',
+      'endometriosis digestive symptoms IBS connection nutrition',
+      'endometriosis estrogen dominance detox nutrition',
+      'endometriosis surgical recovery nutrition healing',
       
-      // Reproductive health
-      'fertility nutrition preconception health women',
-      'hormonal contraception side effects natural alternatives',
-      'menopause symptoms hormone replacement therapy natural',
-      'postmenopausal bone health calcium magnesium',
-      'perimenopause symptom management nutrition',
+      // Digestive health specific to women
+      'women digestive health bloating hormonal connection menstrual cycle',
+      'SIBO small intestinal bacterial overgrowth women treatment',
+      'IBS irritable bowel syndrome women hormonal triggers',
+      'constipation women hormonal causes magnesium fiber',
+      'acid reflux GERD women pregnancy menopause',
+      'gut microbiome women hormones estrogen progesterone',
+      'leaky gut syndrome women autoimmune connection',
       
-      // General women's wellness
-      'iron deficiency anemia women plant-based sources',
-      'hormonal acne adult women natural treatment',
-      'digestive health bloating women hormonal connection',
-      'mood disorders women hormonal fluctuations',
-      'breast health nutrition cancer prevention'
+      // Hormonal balance and cycles
+      'menstrual cramps dysmenorrhea magnesium omega-3 natural relief',
+      'heavy menstrual bleeding iron B vitamins nutrition',
+      'irregular periods PCOS thyroid nutrition hormonal balance',
+      'PMS premenstrual syndrome magnesium B6 calcium',
+      'PMDD premenstrual dysphoric disorder nutrition serotonin',
+      'amenorrhea missing periods nutrition weight restoration',
+      'ovulation nutrition fertility signs tracking',
+      
+      // Stress and adrenal health
+      'chronic stress cortisol women adrenal fatigue nutrition',
+      'adaptogens ashwagandha rhodiola holy basil women stress',
+      'adrenal insufficiency women nutrition mineral support',
+      'stress eating emotional eating women hormonal triggers',
+      'sleep disorders women hormones melatonin magnesium',
+      'anxiety women hormonal connection GABA nutrients',
+      
+      // Reproductive and fertility
+      'fertility nutrition preconception health folate omega-3 CoQ10',
+      'infertility women nutritional deficiencies testing',
+      'miscarriage prevention nutrition folic acid progesterone',
+      'egg quality nutrition antioxidants CoQ10 resveratrol',
+      'sperm health partner nutrition zinc selenium vitamin C',
+      'IVF nutrition support pre-during transfer',
+      'postpartum nutrition breastfeeding recovery depletion',
+      
+      // Menopause and aging
+      'menopause symptoms nutrition phytoestrogens isoflavones',
+      'perimenopause nutrition hormone fluctuations management',
+      'postmenopausal bone health calcium magnesium vitamin D K2',
+      'menopause weight gain metabolism nutrition strategies',
+      'hot flashes natural treatment black cohosh nutrition',
+      'menopause mood changes serotonin nutrition support',
+      'hormone replacement therapy nutrition interactions',
+      
+      // Autoimmune conditions in women
+      'autoimmune diseases women nutrition AIP diet',
+      'lupus women nutrition anti-inflammatory omega-3',
+      'rheumatoid arthritis women nutrition turmeric',
+      'celiac disease women nutrition gluten-free healing',
+      'inflammatory bowel disease women nutrition healing',
+      'multiple sclerosis women nutrition vitamin D omega-3',
+      
+      // Skin and hair health
+      'hormonal acne women nutrition zinc omega-3 probiotics',
+      'hair loss women iron deficiency biotin nutrition',
+      'melasma women nutrition antioxidants vitamin C',
+      'eczema women hormonal triggers nutrition healing',
+      'rosacea women nutrition triggers anti-inflammatory',
+      
+      // Mental health and nutrition
+      'depression women hormonal connection omega-3 B vitamins',
+      'anxiety women nutrition magnesium GABA amino acids',
+      'bipolar disorder women nutrition lithium omega-3',
+      'eating disorders women nutrition recovery healing',
+      'seasonal affective disorder women vitamin D',
+      
+      // Cancer prevention and nutrition
+      'breast cancer prevention nutrition cruciferous vegetables',
+      'ovarian cancer prevention nutrition antioxidants',
+      'cervical cancer prevention nutrition folate vitamin C',
+      'endometrial cancer prevention nutrition fiber phytoestrogens',
+      
+      // Metabolic health
+      'insulin resistance women nutrition chromium cinnamon',
+      'diabetes type 2 women nutrition prevention management',
+      'metabolic syndrome women nutrition omega-3 fiber',
+      'obesity women hormonal causes nutrition strategies',
+      'fatty liver disease women nutrition choline',
+      
+      // Bone and joint health
+      'osteoporosis women nutrition calcium magnesium vitamin D K2',
+      'osteopenia women nutrition prevention bone building',
+      'joint pain women inflammation nutrition omega-3',
+      'fibromyalgia women nutrition magnesium B vitamins',
+      'chronic fatigue syndrome women nutrition mitochondrial support'
     ];
 
     try {
