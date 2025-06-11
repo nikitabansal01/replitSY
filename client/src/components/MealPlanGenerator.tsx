@@ -26,17 +26,32 @@ const CUISINE_OPTIONS: CuisineOption[] = [
   { id: 'indian', name: 'Indian', description: 'Spice-rich, turmeric-based healing cuisine' },
   { id: 'mediterranean', name: 'Mediterranean', description: 'Anti-inflammatory, omega-3 rich foods' },
   { id: 'japanese', name: 'Japanese', description: 'Fermented foods, seaweed, clean eating' },
-  { id: 'mexican', name: 'Mexican', description: 'Bean-rich, antioxidant-packed vegetables' }
+  { id: 'mexican', name: 'Mexican', description: 'Bean-rich, antioxidant-packed vegetables' },
+  { id: 'american', name: 'American', description: 'Whole foods, lean proteins, fresh produce' }
+];
+
+const DURATION_OPTIONS = [
+  { id: 'daily', name: '1 Day', description: 'Single day meal plan with recipes' },
+  { id: 'weekly', name: '1 Week', description: '7-day meal plan with shopping list' },
+  { id: 'monthly', name: '1 Month', description: '4-week comprehensive meal plan' }
 ];
 
 export function MealPlanGenerator() {
   const { toast } = useToast();
   const [selectedCuisine, setSelectedCuisine] = useState<string>('');
+  const [selectedDuration, setSelectedDuration] = useState<string>('');
   const [generatedPlan, setGeneratedPlan] = useState<MealPlanResponse | null>(null);
 
   const generateMealPlan = useMutation({
-    mutationFn: async (cuisinePreference: string) => {
-      const response = await fetch('/api/nutrition/meal-plan', {
+    mutationFn: async ({ cuisinePreference, duration }: { cuisinePreference: string, duration: string }) => {
+      let endpoint = '/api/nutrition/meal-plan';
+      if (duration === 'weekly') {
+        endpoint = '/api/nutrition/meal-plan/weekly';
+      } else if (duration === 'monthly') {
+        endpoint = '/api/nutrition/meal-plan/monthly';
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -68,6 +83,52 @@ export function MealPlanGenerator() {
     }
   });
 
+  const downloadPDF = useMutation({
+    mutationFn: async ({ cuisinePreference, duration }: { cuisinePreference: string, duration: string }) => {
+      let endpoint = '/api/nutrition/meal-plan/weekly/pdf';
+      if (duration === 'monthly') {
+        endpoint = '/api/nutrition/meal-plan/monthly/pdf';
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || 'demo-token'}`
+        },
+        body: JSON.stringify({ cuisinePreference })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${duration}-meal-plan-${cuisinePreference.toLowerCase()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Download Started",
+        description: "Your meal plan file is downloading now.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Download Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleGeneratePlan = () => {
     if (!selectedCuisine) {
       toast({
@@ -77,7 +138,30 @@ export function MealPlanGenerator() {
       });
       return;
     }
-    generateMealPlan.mutate(selectedCuisine);
+
+    if (!selectedDuration) {
+      toast({
+        variant: "destructive",
+        title: "Duration Required",
+        description: "Please select meal plan duration.",
+      });
+      return;
+    }
+    
+    generateMealPlan.mutate({ cuisinePreference: selectedCuisine, duration: selectedDuration });
+  };
+
+  const handleDownloadPDF = () => {
+    if (!selectedCuisine || !selectedDuration) {
+      toast({
+        title: "Selections Required",
+        description: "Choose cuisine and duration before downloading.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    downloadPDF.mutate({ cuisinePreference: selectedCuisine, duration: selectedDuration });
   };
 
   return (
@@ -117,6 +201,28 @@ export function MealPlanGenerator() {
             </Select>
           </div>
 
+          {/* Duration Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Choose Meal Plan Duration</label>
+            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select plan duration" />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATION_OPTIONS.map((duration) => (
+                  <SelectItem key={duration.id} value={duration.id}>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <div className="font-medium">{duration.name}</div>
+                        <div className="text-xs text-muted-foreground">{duration.description}</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Cuisine Preview */}
           {selectedCuisine && (
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -132,25 +238,48 @@ export function MealPlanGenerator() {
             </div>
           )}
 
-          {/* Generate Button */}
-          <Button
-            onClick={handleGeneratePlan}
-            disabled={!selectedCuisine || generateMealPlan.isPending}
-            className="w-full"
-            size="lg"
-          >
-            {generateMealPlan.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Your Personalized Plan...
-              </>
-            ) : (
-              <>
-                <ChefHat className="mr-2 h-4 w-4" />
-                Generate Meal Plan
-              </>
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <Button
+              onClick={handleGeneratePlan}
+              disabled={!selectedCuisine || !selectedDuration || generateMealPlan.isPending}
+              className="w-full"
+              size="lg"
+            >
+              {generateMealPlan.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Your Personalized Plan...
+                </>
+              ) : (
+                <>
+                  <ChefHat className="mr-2 h-4 w-4" />
+                  Generate Meal Plan
+                </>
+              )}
+            </Button>
+
+            {(selectedDuration === 'weekly' || selectedDuration === 'monthly') && (
+              <Button
+                onClick={handleDownloadPDF}
+                disabled={!selectedCuisine || !selectedDuration || downloadPDF.isPending}
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                {downloadPDF.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Preparing Download...
+                  </>
+                ) : (
+                  <>
+                    📄 Download {selectedDuration === 'weekly' ? '1-Week' : '1-Month'} Plan PDF
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
 
           {/* Info Text */}
           <div className="text-xs text-muted-foreground text-center space-y-1">
