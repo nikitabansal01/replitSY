@@ -30,6 +30,13 @@ export interface MealPlanItem {
 export interface DailyMealPlan {
   condition_focus: string[];
   cuisine_style: string;
+  menstrual_phase?: string;
+  cycle_specific_recommendations?: {
+    phase: string;
+    seed_cycling: string[];
+    hormone_support_foods: string[];
+    phase_benefits: string[];
+  };
   breakfast: MealPlanItem;
   lunch: MealPlanItem;
   dinner: MealPlanItem;
@@ -39,6 +46,7 @@ export interface DailyMealPlan {
     foods_to_limit: string[];
     hydration_tips: string[];
     timing_recommendations: string[];
+    cycle_support?: string[];
   };
 }
 
@@ -103,6 +111,72 @@ export const HEALTH_CONDITIONS: Record<string, HealthCondition> = {
     ],
     meal_timing_considerations: [
       "eat_within_hour_of_waking", "protein_rich_breakfast", "regular_intervals"
+    ]
+  }
+};
+
+// Menstrual cycle phase support with seed cycling
+export const MENSTRUAL_CYCLE_PHASES = {
+  follicular: {
+    name: "Follicular Phase",
+    days: "1-14",
+    hormone_focus: ["estrogen_rising", "FSH_support"],
+    seed_cycling: ["flax_seeds", "pumpkin_seeds"],
+    supporting_foods: [
+      "dark_leafy_greens", "cruciferous_vegetables", "citrus_fruits",
+      "lean_proteins", "complex_carbs", "iron_rich_foods"
+    ],
+    benefits: [
+      "Flax seeds contain lignans that help metabolize estrogen",
+      "Pumpkin seeds provide zinc for hormone production",
+      "Iron-rich foods support energy during menstruation",
+      "Cruciferous vegetables aid estrogen detoxification"
+    ],
+    lazy_incorporation: [
+      "Add 1 tbsp ground flax seeds to smoothies",
+      "Sprinkle pumpkin seeds on salads or yogurt",
+      "Mix seeds into overnight oats"
+    ],
+    tasty_incorporation: [
+      "Flax seed energy balls with dates and cocoa",
+      "Roasted pumpkin seeds with spices as snacks",
+      "Flax seed crackers with hummus"
+    ],
+    healthy_incorporation: [
+      "Ground flax in morning smoothie with spinach",
+      "Raw pumpkin seeds in Buddha bowls",
+      "Flax seed oil in salad dressings"
+    ]
+  },
+  luteal: {
+    name: "Luteal Phase", 
+    days: "15-28",
+    hormone_focus: ["progesterone_support", "estrogen_balance"],
+    seed_cycling: ["sesame_seeds", "sunflower_seeds"],
+    supporting_foods: [
+      "magnesium_rich_foods", "b6_sources", "healthy_fats",
+      "complex_carbs", "anti_inflammatory_foods"
+    ],
+    benefits: [
+      "Sesame seeds contain lignans that support progesterone",
+      "Sunflower seeds provide vitamin E for hormone balance",
+      "Magnesium helps reduce PMS symptoms",
+      "B6 supports mood and reduces bloating"
+    ],
+    lazy_incorporation: [
+      "Add 1 tbsp tahini (sesame paste) to toast",
+      "Handful of sunflower seeds as afternoon snack",
+      "Mix seeds into trail mix"
+    ],
+    tasty_incorporation: [
+      "Tahini chocolate chip cookies",
+      "Sunflower seed butter on apple slices",
+      "Sesame seed brittle or halva"
+    ],
+    healthy_incorporation: [
+      "Raw sesame seeds in grain bowls",
+      "Sunflower seed oil in cooking",
+      "Tahini in nutrient-dense smoothies"
     ]
   }
 };
@@ -187,6 +261,27 @@ class NutritionistService {
   }
 
   // Extract health conditions from comprehensive user profile
+  determineMenstrualPhase(userProfile: any): string {
+    // Check if user has menstrual cycle data
+    if (userProfile.menstrualCycle?.lastPeriodDate) {
+      const lastPeriod = new Date(userProfile.menstrualCycle.lastPeriodDate);
+      const today = new Date();
+      const daysSinceLastPeriod = Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24));
+      const cycleLength = userProfile.menstrualCycle?.cycleLength || 28;
+      
+      const dayInCycle = daysSinceLastPeriod % cycleLength;
+      
+      if (dayInCycle <= 14) {
+        return 'follicular';
+      } else {
+        return 'luteal';
+      }
+    }
+    
+    // Default to follicular if no cycle data
+    return 'follicular';
+  }
+
   extractHealthConditions(userProfile: any): string[] {
     const conditions: string[] = [];
     const symptoms = userProfile.symptoms || [];
@@ -359,10 +454,14 @@ class NutritionistService {
     const conditions = healthConditions.map(c => HEALTH_CONDITIONS[c]).filter(Boolean);
     const cuisine = CUISINE_PROFILES[cuisinePreference.toLowerCase()] || CUISINE_PROFILES.mediterranean;
 
-    // Get scientific research data for the health conditions
+    // Determine menstrual cycle phase for phase-specific recommendations
+    const currentPhase = this.determineMenstrualPhase(userProfile);
+    const phaseData = MENSTRUAL_CYCLE_PHASES[currentPhase as keyof typeof MENSTRUAL_CYCLE_PHASES];
+
+    // Get scientific research data including seed cycling
     let researchContext = '';
     try {
-      const researchQuery = `nutrition diet meal planning ${healthConditions.join(' ')} ${cuisinePreference}`;
+      const researchQuery = `nutrition diet meal planning ${healthConditions.join(' ')} ${cuisinePreference} seed cycling menstrual cycle ${currentPhase}`;
       const researchMatches = await researchService.searchWithSmartScraping(researchQuery, 3);
       if (researchMatches.length > 0) {
         researchContext = `\n\nSCIENTIFIC RESEARCH CONTEXT:\n${researchMatches.map(match => 
@@ -379,13 +478,23 @@ class NutritionistService {
     const avoidIngredients = conditions.flatMap(c => c.foods_to_avoid);
     const timingConsiderations = conditions.flatMap(c => c.meal_timing_considerations);
 
-    const systemPrompt = `You are an expert nutritionist specializing in women's health conditions. Create a personalized daily meal plan.
+    const systemPrompt = `You are an expert nutritionist specializing in women's health conditions. Create a personalized daily meal plan with menstrual cycle phase-specific recommendations.
 
 HEALTH CONDITIONS: ${healthConditions.join(', ')}
 CUISINE PREFERENCE: ${cuisine.name}
 DIETARY FOCUS: ${nutritionalFocus.join(', ')}
 
-FOODS TO EMPHASIZE: ${includeIngredients.join(', ')}
+MENSTRUAL CYCLE PHASE: ${phaseData.name} (${phaseData.days})
+PHASE-SPECIFIC SEED CYCLING: ${phaseData.seed_cycling.join(', ')}
+HORMONE SUPPORT: ${phaseData.hormone_focus.join(', ')}
+PHASE BENEFITS: ${phaseData.benefits.join(' | ')}
+
+SEED CYCLING INCORPORATION METHODS:
+- Lazy: ${phaseData.lazy_incorporation.join(' | ')}
+- Tasty: ${phaseData.tasty_incorporation.join(' | ')}
+- Healthy: ${phaseData.healthy_incorporation.join(' | ')}
+
+FOODS TO EMPHASIZE: ${includeIngredients.concat(phaseData.supporting_foods).join(', ')}
 FOODS TO AVOID/LIMIT: ${avoidIngredients.join(', ')}
 
 CUISINE ELEMENTS TO INCLUDE:
@@ -399,13 +508,14 @@ USER PROFILE:
 
 Create a complete daily meal plan that is:
 1. Therapeutically appropriate for the health conditions
-2. Culturally authentic to ${cuisine.name} cuisine
-3. Practical and accessible
-4. Nutritionally balanced
+2. Includes menstrual cycle phase-specific seed cycling recommendations
+3. Culturally authentic to ${cuisine.name} cuisine
+4. Practical and accessible
+5. Nutritionally balanced
 
 CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations. Use this exact format:
 
-{"condition_focus":["${healthConditions.join('","')}"],"cuisine_style":"${cuisine.name}","breakfast":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"15 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"lunch":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"20 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"dinner":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"25 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"snacks":[{"name":"Snack name","ingredients":["ingredient1","ingredient2"],"preparation_time":"5 minutes","cooking_method":"method","nutritional_focus":["focus1"],"health_benefits":["benefit1"],"cultural_authenticity":"explanation"}],"daily_guidelines":{"foods_to_emphasize":["food1","food2"],"foods_to_limit":["food1","food2"],"hydration_tips":["tip1","tip2"],"timing_recommendations":["timing1","timing2"]}}${researchContext}`;
+{"condition_focus":["${healthConditions.join('","')}"],"cuisine_style":"${cuisine.name}","menstrual_phase":"${phaseData.name}","cycle_specific_recommendations":{"phase":"${phaseData.name}","seed_cycling":["${phaseData.seed_cycling.join('","')}"],"hormone_support_foods":["${phaseData.supporting_foods.join('","')}"],"phase_benefits":["${phaseData.benefits.join('","')}"]},"breakfast":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"15 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"lunch":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"20 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"dinner":{"name":"Meal name","ingredients":["ingredient1","ingredient2"],"preparation_time":"25 minutes","cooking_method":"method","nutritional_focus":["focus1","focus2"],"health_benefits":["benefit1","benefit2"],"cultural_authenticity":"explanation"},"snacks":[{"name":"Snack name","ingredients":["ingredient1","ingredient2"],"preparation_time":"5 minutes","cooking_method":"method","nutritional_focus":["focus1"],"health_benefits":["benefit1"],"cultural_authenticity":"explanation"}],"daily_guidelines":{"foods_to_emphasize":["food1","food2"],"foods_to_limit":["food1","food2"],"hydration_tips":["tip1","tip2"],"timing_recommendations":["timing1","timing2"],"cycle_support":["${phaseData.lazy_incorporation.concat(phaseData.tasty_incorporation, phaseData.healthy_incorporation).join('","')}"]}}${researchContext}`;
 
     try {
       const completion = await this.openai.chat.completions.create({
