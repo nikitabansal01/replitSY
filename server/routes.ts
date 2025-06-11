@@ -764,15 +764,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate comprehensive text-based meal plan with menstrual cycle information
-      const pdfBuffer = await pdfGeneratorService.generateWeeklyMealPlanPDF(
-        weeklyPlan,
-        userProfile || {},
-        cuisineStyle
-      );
+      const currentPhase = userProfile?.lastPeriodDate ? 
+        (userProfile.irregularPeriods ? 'follicular' : 'follicular') : 'follicular';
+      
+      const phaseData = {
+        follicular: {
+          name: "Follicular Phase",
+          description: "Energy building - Support estrogen with lignans and healthy fats",
+          seeds: ["Ground flax seeds (1-2 tbsp daily)", "Raw pumpkin seeds (1-2 oz daily)"]
+        }
+      };
+
+      const currentPhaseInfo = phaseData[currentPhase as keyof typeof phaseData] || phaseData.follicular;
+
+      const textContent = `WEEKLY MEAL PLAN - ${cuisineStyle.toUpperCase()} CUISINE
+=================================================================
+
+MENSTRUAL CYCLE PHASE: ${currentPhaseInfo.name}
+${currentPhaseInfo.description}
+
+SEED CYCLING FOR THIS PHASE:
+${currentPhaseInfo.seeds.map(seed => `• ${seed}`).join('\n')}
+
+=================================================================
+DAILY MEAL PLANS
+=================================================================
+
+${weeklyPlan.days.map((day: any) => `
+${day.dayName.toUpperCase()} - ${day.date}
+-----------------------------------------------------------------
+
+🌅 BREAKFAST: ${day.meals.breakfast.name}
+   Ingredients: ${day.meals.breakfast.ingredients.join(', ')}
+   Prep time: ${day.meals.breakfast.preparation_time}
+   Method: ${day.meals.breakfast.cooking_method}
+   Health benefits: ${day.meals.breakfast.health_benefits.join(', ')}
+
+☀️ LUNCH: ${day.meals.lunch.name}
+   Ingredients: ${day.meals.lunch.ingredients.join(', ')}
+   Prep time: ${day.meals.lunch.preparation_time}
+   Method: ${day.meals.lunch.cooking_method}
+   Health benefits: ${day.meals.lunch.health_benefits.join(', ')}
+
+🌙 DINNER: ${day.meals.dinner.name}
+   Ingredients: ${day.meals.dinner.ingredients.join(', ')}
+   Prep time: ${day.meals.dinner.preparation_time}
+   Method: ${day.meals.dinner.cooking_method}
+   Health benefits: ${day.meals.dinner.health_benefits.join(', ')}
+
+🍎 SNACKS: ${day.meals.snacks.map((snack: any) => snack.name).join(', ')}
+   Details: ${day.meals.snacks.map((snack: any) => `${snack.name} (${snack.preparation_time})`).join(', ')}
+
+`).join('\n')}
+
+=================================================================
+WEEKLY SHOPPING LIST
+=================================================================
+
+${Object.entries(weeklyPlan.weeklyShoppingList).map(([category, items]) => `
+${category.toUpperCase().replace(/_/g, ' ')}:
+${(items as string[]).map(item => `□ ${item}`).join('\n')}
+`).join('\n')}
+
+=================================================================
+WEEKLY NOTES & TIPS
+=================================================================
+
+${weeklyPlan.weeklyNotes ? weeklyPlan.weeklyNotes.join('\n\n') : 'Focus on incorporating the recommended seeds for your current menstrual cycle phase to support hormonal balance and overall wellness.'}
+
+Generated with love for your health journey! 💖
+`;
 
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="weekly-meal-plan-${cuisineStyle.toLowerCase()}.txt"`);
-      res.send(pdfBuffer);
+      res.send(textContent);
 
     } catch (error) {
       console.error('Error generating weekly meal plan PDF:', error);
