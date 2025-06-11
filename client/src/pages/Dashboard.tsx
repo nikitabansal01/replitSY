@@ -325,43 +325,112 @@ export default function Dashboard() {
           {/* Sidebar */}
           <div className="space-y-6">
             
-            {/* Profile Card */}
+            {/* Health Dashboard */}
             <Card className="shadow-xl">
-              <CardContent className="p-6">
-                <div className="text-center mb-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-white text-lg font-bold">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-white text-sm font-bold">
                       {profile?.user.name?.charAt(0) || 'U'}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-gray-900">{profile?.user.name}</h3>
-                  <p className="text-sm text-gray-500 capitalize">
-                    {profile?.onboarding?.diet} • {profile?.onboarding?.age} years
-                  </p>
-                </div>
+                  Health Dashboard
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 
-                {profile?.onboarding && (
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Main concerns:</span>
-                      <span className="text-gray-900 text-right">
-                        {profile.onboarding.symptoms.slice(0, 2).join(', ')}
-                      </span>
+                {profile?.onboarding ? (
+                  <>
+                    {/* Health Status Overview */}
+                    <div className="bg-purple-50 rounded-lg p-3">
+                      <h4 className="font-medium text-purple-900 mb-2">Current Focus Areas</h4>
+                      <div className="space-y-2">
+                        {profile.onboarding.symptoms && profile.onboarding.symptoms.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {profile.onboarding.symptoms.slice(0, 3).map((symptom, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                                {symptom}
+                              </span>
+                            ))}
+                            {profile.onboarding.symptoms.length > 3 && (
+                              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                                +{profile.onboarding.symptoms.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-purple-600">Complete your profile to see personalized insights</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Diet:</span>
-                      <span className="text-gray-900 capitalize">{profile.onboarding.diet}</span>
+
+                    {/* Diet & Lifestyle */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-green-50 rounded-lg p-2">
+                        <p className="text-green-600 font-medium">Diet Style</p>
+                        <p className="text-green-800 capitalize">{profile.onboarding.diet}</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-2">
+                        <p className="text-blue-600 font-medium">Age Group</p>
+                        <p className="text-blue-800">{profile.onboarding.age} years</p>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Age Range:</span>
-                      <span className="text-gray-900">{profile.onboarding.age}</span>
-                    </div>
+
+                    {/* Medical Conditions Alert */}
+                    {profile.onboarding.medicalConditions && profile.onboarding.medicalConditions.length > 0 && (
+                      <div className="bg-orange-50 rounded-lg p-3">
+                        <p className="text-orange-700 font-medium text-sm mb-1">Medical Considerations</p>
+                        <p className="text-orange-600 text-xs">
+                          {profile.onboarding.medicalConditions.slice(0, 2).join(', ')}
+                          {profile.onboarding.medicalConditions.length > 2 && ` +${profile.onboarding.medicalConditions.length - 2} more`}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Allergies Warning */}
+                    {profile.onboarding.allergies && profile.onboarding.allergies.length > 0 && (
+                      <div className="bg-red-50 rounded-lg p-3">
+                        <p className="text-red-700 font-medium text-sm mb-1 flex items-center">
+                          <span className="mr-1">⚠️</span>Allergies
+                        </p>
+                        <p className="text-red-600 text-xs">
+                          {profile.onboarding.allergies.join(', ')}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 text-sm mb-3">Complete your health profile to unlock personalized insights</p>
+                    <Button 
+                      onClick={() => setLocation('/onboarding')}
+                      className="w-full gradient-bg text-white"
+                    >
+                      Complete Profile
+                    </Button>
                   </div>
                 )}
 
-                <Button variant="outline" className="w-full mt-4">
-                  <i className="fas fa-edit mr-2"></i>Edit Profile
-                </Button>
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-2 border-t">
+                  <Button 
+                    onClick={() => setLocation('/profile')}
+                    variant="outline" 
+                    className="w-full text-sm"
+                  >
+                    <i className="fas fa-edit mr-2"></i>Edit Profile
+                  </Button>
+                  
+                  {profile?.onboarding && (
+                    <Button 
+                      onClick={() => setInputMessage('Generate a personalized meal plan for my conditions')}
+                      variant="ghost" 
+                      className="w-full text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                    >
+                      <i className="fas fa-utensils mr-2"></i>Get Meal Plan
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
