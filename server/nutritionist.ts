@@ -283,10 +283,10 @@ class NutritionistService {
     userProfile: any
   ): Promise<any> {
     const today = new Date();
-    const monthlyPlan = {
+    const monthlyPlan: any = {
       month: today.toLocaleDateString('en-US', { month: 'long' }),
       year: today.getFullYear(),
-      weeks: [],
+      weeks: [] as any[],
       monthlyShoppingList: {},
       nutritionalSummary: {
         focusAreas: healthConditions,

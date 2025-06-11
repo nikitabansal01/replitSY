@@ -7,6 +7,7 @@ import OpenAI from 'openai';
 import { researchService } from './research';
 import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
 import { nutritionistService, type DailyMealPlan } from './nutritionist';
+import { pdfGeneratorService } from './pdf-generator';
 import { auth as firebaseAuth } from './firebase-admin';
 
 interface AuthenticatedRequest extends Request {
@@ -27,7 +28,7 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
       lowerMessage.includes('recipes for') || lowerMessage.includes('meals for')) {
     
     return {
-      message: `I can create a personalized meal plan for you! Based on your profile, I'll design meals that address your specific health needs. Use the meal plan generator in your dashboard to select your preferred cuisine (Indian, Mediterranean, Japanese, or Mexican) and I'll create a complete daily meal plan with recipes, shopping lists, and nutritional guidance tailored to your conditions.`,
+      message: `I can create a personalized meal plan for you! Based on your profile, I'll design meals that address your specific health needs. Use the meal plan generator in your dashboard to select your preferred cuisine (Indian, Mediterranean, Japanese, Mexican, or American) and choose from daily, weekly, or monthly plans with downloadable PDFs. I'll create complete meal plans with recipes, shopping lists, and nutritional guidance tailored to your conditions.`,
       ingredients: [
         {
           name: "Personalized Meal Planning",
@@ -715,7 +716,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { id: 'indian', name: 'Indian', description: 'Spice-rich, turmeric-based healing cuisine' },
           { id: 'mediterranean', name: 'Mediterranean', description: 'Anti-inflammatory, omega-3 rich foods' },
           { id: 'japanese', name: 'Japanese', description: 'Fermented foods, seaweed, clean eating' },
-          { id: 'mexican', name: 'Mexican', description: 'Bean-rich, antioxidant-packed vegetables' }
+          { id: 'mexican', name: 'Mexican', description: 'Bean-rich, antioxidant-packed vegetables' },
+          { id: 'american', name: 'American', description: 'Whole foods, lean proteins, fresh produce' }
         ],
         supportedConditions: [
           { id: 'pcos', name: 'PCOS', focus: 'Insulin sensitivity, hormone balance' },
@@ -726,6 +728,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to get nutrition options' });
+    }
+  });
+
+  // Generate weekly meal plan
+  app.post('/api/nutrition/meal-plan/weekly', requireAuth, async (req: any, res: any) => {
+    try {
+      const { cuisinePreference } = req.body;
+      
+      if (!cuisinePreference) {
+        return res.status(400).json({ error: 'Cuisine preference is required' });
+      }
+
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to get personalized meal plans' });
+      }
+
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      const weeklyPlan = await nutritionistService.generateWeeklyMealPlan(
+        healthConditions,
+        cuisinePreference,
+        onboardingData
+      );
+
+      res.json({
+        success: true,
+        weeklyPlan,
+        detectedConditions: healthConditions,
+        message: `Personalized ${cuisinePreference} weekly meal plan generated for your health needs`
+      });
+
+    } catch (error) {
+      console.error('Error generating weekly meal plan:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate weekly meal plan', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Generate monthly meal plan
+  app.post('/api/nutrition/meal-plan/monthly', requireAuth, async (req: any, res: any) => {
+    try {
+      const { cuisinePreference } = req.body;
+      
+      if (!cuisinePreference) {
+        return res.status(400).json({ error: 'Cuisine preference is required' });
+      }
+
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to get personalized meal plans' });
+      }
+
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      const monthlyPlan = await nutritionistService.generateMonthlyMealPlan(
+        healthConditions,
+        cuisinePreference,
+        onboardingData
+      );
+
+      res.json({
+        success: true,
+        monthlyPlan,
+        detectedConditions: healthConditions,
+        message: `Personalized ${cuisinePreference} monthly meal plan generated for your health needs`
+      });
+
+    } catch (error) {
+      console.error('Error generating monthly meal plan:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate monthly meal plan', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Generate and download weekly meal plan PDF
+  app.post('/api/nutrition/meal-plan/weekly/pdf', requireAuth, async (req: any, res: any) => {
+    try {
+      const { cuisinePreference } = req.body;
+      
+      if (!cuisinePreference) {
+        return res.status(400).json({ error: 'Cuisine preference is required' });
+      }
+
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to get personalized meal plans' });
+      }
+
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      const weeklyPlan = await nutritionistService.generateWeeklyMealPlan(
+        healthConditions,
+        cuisinePreference,
+        onboardingData
+      );
+
+      const pdfBuffer = await pdfGeneratorService.generateWeeklyMealPlanPDF(
+        weeklyPlan,
+        { name: req.user.name, diet: onboardingData.diet },
+        cuisinePreference
+      );
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="weekly-meal-plan-${cuisinePreference.toLowerCase()}.pdf"`);
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error('Error generating weekly meal plan PDF:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate weekly meal plan PDF', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Generate and download monthly meal plan PDF
+  app.post('/api/nutrition/meal-plan/monthly/pdf', requireAuth, async (req: any, res: any) => {
+    try {
+      const { cuisinePreference } = req.body;
+      
+      if (!cuisinePreference) {
+        return res.status(400).json({ error: 'Cuisine preference is required' });
+      }
+
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to get personalized meal plans' });
+      }
+
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      const monthlyPlan = await nutritionistService.generateMonthlyMealPlan(
+        healthConditions,
+        cuisinePreference,
+        onboardingData
+      );
+
+      const pdfBuffer = await pdfGeneratorService.generateMonthlyMealPlanPDF(
+        monthlyPlan,
+        { name: req.user.name, diet: onboardingData.diet },
+        cuisinePreference
+      );
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="monthly-meal-plan-${cuisinePreference.toLowerCase()}.pdf"`);
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error('Error generating monthly meal plan PDF:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate monthly meal plan PDF', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   });
 

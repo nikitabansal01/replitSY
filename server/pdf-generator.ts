@@ -1,3 +1,4 @@
+// @ts-ignore
 import pdf from 'html-pdf-node';
 import { DailyMealPlan } from './nutritionist';
 
