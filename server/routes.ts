@@ -220,6 +220,34 @@ It's important to consult with healthcare providers for proper diagnosis and tre
         healthy: "Take 400mcg chromium picolinate with high-carbohydrate meals, combined with vitamin C for enhanced absorption"
       }
     ];
+  } else if (lowerMessage.includes('bloating') || lowerMessage.includes('digestion') || lowerMessage.includes('gas') || lowerMessage.includes('stomach')) {
+    demoMessage = `Bloating and digestive discomfort can be managed with specific foods and ingredients that support healthy digestion. Here are evidence-based options:`;
+    ingredients = [
+      {
+        name: "Ginger Root",
+        description: "Natural digestive aid that stimulates gastric motility and reduces bloating by 40% in clinical studies",
+        emoji: "🫚",
+        lazy: "Take 250mg ginger capsules before meals or keep crystallized ginger pieces handy",
+        tasty: "Make fresh ginger tea with lemon and honey, or add grated ginger to smoothies",
+        healthy: "Consume 1g fresh ginger daily: steep 1 inch piece in hot water for 10 minutes, drink 30 minutes before meals"
+      },
+      {
+        name: "Peppermint",
+        description: "Antispasmodic herb that relaxes digestive muscles and reduces IBS symptoms including bloating",
+        emoji: "🌿",
+        lazy: "Drink peppermint tea bags after meals or take enteric-coated peppermint oil capsules",
+        tasty: "Make iced peppermint tea with fresh mint leaves and cucumber slices",
+        healthy: "Take 0.2-0.4ml peppermint oil in enteric-coated capsules 30-60 minutes before meals"
+      },
+      {
+        name: "Fennel Seeds",
+        description: "Traditional digestive aid that reduces gas formation and promotes healthy gut motility",
+        emoji: "🌱",
+        lazy: "Chew 1 tsp fennel seeds after meals or steep in hot water as tea",
+        tasty: "Add toasted fennel seeds to roasted vegetables or make fennel tea with honey",
+        healthy: "Steep 1 tsp crushed fennel seeds in hot water for 15 minutes, drink after heavy meals"
+      }
+    ];
   } else {
     demoMessage = `Here are some general wellness ingredients that align with your ${diet} dietary preferences.`;
     ingredients = [
@@ -306,46 +334,48 @@ Use this scientific information to provide evidence-based recommendations.`;
   let systemPrompt;
   
   if (isDietQuestion) {
-    systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients and nutrition for hormonal health.
+    systemPrompt = `You are a knowledgeable women's health coach. Provide personalized, evidence-based advice about natural ingredients, foods, and nutrition for hormonal health and digestive wellness.
+
+For digestive issues like bloating, gas, or stomach discomfort, focus on foods and natural remedies that support digestion.
 
 ${ENHANCED_TRAINING_PROMPT}
 
 STRICT IMPLEMENTATION REQUIREMENTS:
 
 LAZY METHOD must include:
-- Specific dosage/amount (e.g., "2 capsules", "1 tsp powder")
+- Specific dosage/amount (e.g., "2 capsules", "1 tsp powder", "1 cup tea")
 - Convenience factor (e.g., "with breakfast", "pre-made", "tea bags")
 - Zero cooking or complex preparation
 - Grab-and-go solutions
 
 TASTY METHOD must include:
 - Flavor enhancement (e.g., "chocolate", "honey", "vanilla")
-- Culinary enjoyment (e.g., "smoothie", "latte", "energy balls")
+- Culinary enjoyment (e.g., "smoothie", "latte", "energy balls", "herbal tea")
 - Creative preparation that feels like a treat
 - Pleasant taste combinations
 
 HEALTHY METHOD must include:
-- Precise dosage with units (mg, mcg, g, IU, ml)
-- Absorption optimization (e.g., "with black pepper", "on empty stomach")
-- Timing guidance (e.g., "30 minutes before meals", "with dinner")
+- Precise dosage with units (mg, mcg, g, IU, ml, tsp)
+- Absorption optimization (e.g., "with black pepper", "on empty stomach", "after meals")
+- Timing guidance (e.g., "30 minutes before meals", "with dinner", "between meals")
 - Bioavailability enhancement
 
 Respond with exactly this JSON format:
 {
-  "message": "Your helpful response (include disclaimer about consulting healthcare providers)",
+  "message": "Your helpful response about foods/ingredients that help with the specific concern (include disclaimer about consulting healthcare providers)",
   "ingredients": [
     {
-      "name": "Ingredient Name",
+      "name": "Food/Ingredient Name",
       "description": "Health benefits explanation based on research",
       "emoji": "🌿",
-      "lazy": "[CONVENIENCE] Specific easy method with dosage",
+      "lazy": "[CONVENIENCE] Specific easy method with dosage/serving",
       "tasty": "[FLAVOR] Enjoyable culinary preparation",
-      "healthy": "[OPTIMAL] Evidence-based dosage with absorption guidance"
+      "healthy": "[OPTIMAL] Evidence-based dosage/timing with absorption guidance"
     }
   ]
 }
 
-Always provide 2-3 ingredient recommendations.${userContext}${researchContext}`;
+Always provide 2-3 food/ingredient recommendations that specifically address the user's question.${userContext}${researchContext}`;
   } else {
     systemPrompt = `You are a knowledgeable women's health coach. Provide evidence-based educational information about women's health conditions, symptoms, and general health knowledge.
 
