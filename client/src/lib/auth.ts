@@ -77,8 +77,14 @@ export async function signOutUser() {
     
     // Clear local storage
     localStorage.removeItem('authToken');
+    
+    // Force page reload to clear all state
+    window.location.href = '/';
   } catch (error) {
     console.error("Error signing out:", error);
+    // Even if signout fails, clear local state and redirect
+    localStorage.removeItem('authToken');
+    window.location.href = '/';
     throw error;
   }
 }

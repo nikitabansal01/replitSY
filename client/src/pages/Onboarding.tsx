@@ -9,10 +9,21 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OnboardingData {
   age: string;
+  gender: string;
+  height: string;
+  weight: string;
   diet: string;
   symptoms: string[];
   goals: string[];
   lifestyle: Record<string, any>;
+  medicalConditions: string[];
+  medications: string[];
+  allergies: string[];
+  menstrualCycle: Record<string, any>;
+  stressLevel: string;
+  sleepHours: string;
+  exerciseLevel: string;
+  waterIntake: string;
 }
 
 export default function Onboarding() {
