@@ -416,8 +416,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (token === 'demo-token') {
-        // Demo user for testing
-        req.user = { id: 1, firebaseUid: 'demo', email: 'demo@example.com', name: 'Demo User' };
+        // Demo user for testing - ensure user exists in storage
+        let demoUser = await storage.getUserByFirebaseUid('demo');
+        if (!demoUser) {
+          demoUser = await storage.createUser({
+            firebaseUid: 'demo',
+            email: 'demo@example.com',
+            name: 'Demo User'
+          });
+        }
+        req.user = demoUser;
         next();
       } else {
         // Verify Firebase token
