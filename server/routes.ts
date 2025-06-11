@@ -625,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Daily meal plan endpoint
-  app.post('/api/meal-plan/daily', requireAuth, async (req: any, res: any) => {
+  app.post('/api/nutrition/meal-plan', requireAuth, async (req: any, res: any) => {
     try {
       const { cuisinePreference = 'mediterranean' } = req.body;
 
@@ -665,6 +665,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Meal plan generation error:', error);
       res.status(500).json({ 
         error: 'Failed to generate meal plan',
+        message: 'Please try again with a different cuisine or check your health profile' 
+      });
+    }
+  });
+
+  // Weekly meal plan endpoint
+  app.post('/api/nutrition/meal-plan/weekly', requireAuth, async (req: any, res: any) => {
+    try {
+      const { cuisinePreference = 'mediterranean' } = req.body;
+
+      if (!cuisinePreference) {
+        return res.status(400).json({ error: 'Cuisine preference is required' });
+      }
+
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to get personalized meal plans' });
+      }
+
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      const weeklyPlan = await nutritionistService.generateWeeklyMealPlan(
+        healthConditions,
+        cuisinePreference,
+        onboardingData
+      );
+
+      const shoppingList = nutritionistService.generateWeeklyShoppingList(weeklyPlan.days);
+
+      res.json({
+        success: true,
+        mealPlan: { weeklyPlan },
+        shoppingList,
+        detectedConditions: healthConditions,
+        message: `Generated 7-day ${cuisinePreference} meal plan for your health profile`
+      });
+
+    } catch (error) {
+      console.error('Weekly meal plan error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate weekly meal plan',
+        message: 'Please try again with a different cuisine or check your health profile' 
+      });
+    }
+  });
+
+  // Monthly meal plan endpoint
+  app.post('/api/nutrition/meal-plan/monthly', requireAuth, async (req: any, res: any) => {
+    try {
+      const { cuisinePreference = 'mediterranean' } = req.body;
+
+      if (!cuisinePreference) {
+        return res.status(400).json({ error: 'Cuisine preference is required' });
+      }
+
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to get personalized meal plans' });
+      }
+
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      const monthlyPlan = await nutritionistService.generateMonthlyMealPlan(
+        healthConditions,
+        cuisinePreference,
+        onboardingData
+      );
+
+      const shoppingList = nutritionistService.generateMonthlyShoppingList(monthlyPlan.weeks);
+
+      res.json({
+        success: true,
+        mealPlan: { monthlyPlan },
+        shoppingList,
+        detectedConditions: healthConditions,
+        message: `Generated 4-week ${cuisinePreference} meal plan for your health profile`
+      });
+
+    } catch (error) {
+      console.error('Monthly meal plan error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate monthly meal plan',
         message: 'Please try again with a different cuisine or check your health profile' 
       });
     }

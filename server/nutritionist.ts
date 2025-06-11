@@ -529,19 +529,51 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
       const content = completion.choices[0]?.message?.content;
       if (!content) throw new Error('No OpenAI response');
 
-      // Clean the response - remove markdown code blocks if present
+      // Clean the response - remove markdown code blocks and other formatting
       let cleanedContent = content.trim();
+      
+      // Remove various markdown code block formats
       if (cleanedContent.startsWith('```json')) {
         cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
       } else if (cleanedContent.startsWith('```')) {
         cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
       }
-
+      
+      // Remove any leading/trailing non-JSON content
+      const jsonStart = cleanedContent.indexOf('{');
+      const jsonEnd = cleanedContent.lastIndexOf('}');
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleanedContent = cleanedContent.substring(jsonStart, jsonEnd + 1);
+      }
+      
+      // Remove any DOCTYPE declarations or HTML tags that might be present
+      cleanedContent = cleanedContent.replace(/<!DOCTYPE[^>]*>/gi, '');
+      cleanedContent = cleanedContent.replace(/<[^>]*>/g, '');
+      
       try {
-        return JSON.parse(cleanedContent);
+        const parsed = JSON.parse(cleanedContent);
+        console.log('Successfully parsed meal plan JSON');
+        return parsed;
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
-        console.error('Content to parse:', cleanedContent);
+        console.error('Original content length:', content.length);
+        console.error('Cleaned content:', cleanedContent.substring(0, 500) + '...');
+        
+        // Try a more aggressive cleaning approach
+        try {
+          // Extract JSON between first { and last }
+          const match = content.match(/\{[\s\S]*\}/);
+          if (match) {
+            const extractedJson = match[0];
+            const secondAttempt = JSON.parse(extractedJson);
+            console.log('Successfully parsed JSON on second attempt');
+            return secondAttempt;
+          }
+        } catch (secondError) {
+          console.error('Second parsing attempt failed:', secondError);
+        }
+        
         throw new Error('Invalid JSON response from AI');
       }
     } catch (error) {
