@@ -7,7 +7,7 @@ import OpenAI from 'openai';
 import { researchService } from './research';
 import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
 import { nutritionistService, type DailyMealPlan } from './nutritionist';
-import { pdfGeneratorService } from './pdf-generator';
+// import { pdfGeneratorService } from './pdf-generator';
 import { auth as firebaseAuth } from './firebase-admin';
 
 interface AuthenticatedRequest extends Request {
@@ -832,15 +832,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         onboardingData
       );
 
-      const pdfBuffer = await pdfGeneratorService.generateWeeklyMealPlanPDF(
-        weeklyPlan,
-        { name: req.user.name, diet: onboardingData.diet },
-        cuisinePreference
-      );
+      // Generate HTML content for download
+      const htmlContent = `
+        <html>
+          <head><title>Weekly Meal Plan - ${cuisinePreference}</title></head>
+          <body>
+            <h1>Weekly ${cuisinePreference} Meal Plan</h1>
+            <p>Generated for: ${req.user.name}</p>
+            <pre>${JSON.stringify(weeklyPlan, null, 2)}</pre>
+          </body>
+        </html>
+      `;
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="weekly-meal-plan-${cuisinePreference.toLowerCase()}.pdf"`);
-      res.send(pdfBuffer);
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `attachment; filename="weekly-meal-plan-${cuisinePreference.toLowerCase()}.html"`);
+      res.send(htmlContent);
 
     } catch (error) {
       console.error('Error generating weekly meal plan PDF:', error);
@@ -880,8 +886,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cuisinePreference
       );
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="monthly-meal-plan-${cuisinePreference.toLowerCase()}.pdf"`);
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `attachment; filename="monthly-meal-plan-${cuisinePreference.toLowerCase()}.html"`);
       res.send(pdfBuffer);
 
     } catch (error) {
