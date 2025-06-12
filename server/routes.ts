@@ -719,6 +719,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/evaluation/rag-metrics', requireAuth, async (req: any, res: any) => {
+    try {
+      const metrics = await evaluationMetricsService.evaluateRAGPerformance();
+      res.json({
+        success: true,
+        metrics,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('RAG metrics evaluation error:', error);
+      res.status(500).json({ error: 'Failed to evaluate RAG metrics' });
+    }
+  });
+
   app.get('/api/evaluation/comprehensive-report', requireAuth, async (req: any, res: any) => {
     try {
       const report = await evaluationMetricsService.generateEvaluationReport(req.user.id);
