@@ -443,9 +443,21 @@ export default function Dashboard() {
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="ghost" className="w-full justify-start">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => setLocation('/daily-planner')}
+                >
                   <i className="fas fa-calendar-check text-purple-500 mr-3"></i>
-                  Track Symptoms
+                  Daily Planner
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => setLocation('/evaluation')}
+                >
+                  <i className="fas fa-chart-bar text-blue-500 mr-3"></i>
+                  System Metrics
                 </Button>
                 <Button variant="ghost" className="w-full justify-start">
                   <i className="fas fa-utensils text-purple-500 mr-3"></i>

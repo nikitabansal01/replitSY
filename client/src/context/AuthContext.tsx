@@ -32,7 +32,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   useEffect(() => {
-    // Always listen for Firebase auth state changes
+    // Check for existing demo token first
+    const existingToken = localStorage.getItem('authToken');
+    if (existingToken === 'demo-token') {
+      setToken('demo-token');
+      setUser({ uid: 'demo', email: 'demo@example.com' } as User);
+      setLoading(false);
+      return;
+    }
+
+    // Listen for Firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -47,17 +56,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           localStorage.removeItem('authToken');
         }
       } else {
-        // Check for demo token and set it if in development
-        if (process.env.NODE_ENV === 'development') {
-          const demoToken = 'demo-token';
-          localStorage.setItem('authToken', demoToken);
-          setToken(demoToken);
-          setUser({ uid: 'demo', email: 'demo@example.com' } as User);
-        } else {
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem('authToken');
-        }
+        // Set demo token for development
+        const demoToken = 'demo-token';
+        localStorage.setItem('authToken', demoToken);
+        setToken(demoToken);
+        setUser({ uid: 'demo', email: 'demo@example.com' } as User);
       }
       setLoading(false);
     });
