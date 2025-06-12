@@ -47,20 +47,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           localStorage.removeItem('authToken');
         }
       } else {
-        // Check for demo token
-        const storedToken = localStorage.getItem('authToken');
-        if (storedToken === 'demo-token') {
-          const mockUser = {
-            uid: 'demo-user-123',
-            email: 'demo@example.com',
-            displayName: 'Demo User',
-            photoURL: null,
-            emailVerified: true,
-            getIdToken: async () => storedToken
-          } as User;
-          
-          setUser(mockUser);
-          setToken(storedToken);
+        // Check for demo token and set it if in development
+        if (process.env.NODE_ENV === 'development') {
+          const demoToken = 'demo-token';
+          localStorage.setItem('authToken', demoToken);
+          setToken(demoToken);
+          setUser({ uid: 'demo', email: 'demo@example.com' } as User);
         } else {
           setUser(null);
           setToken(null);

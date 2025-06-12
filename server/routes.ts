@@ -5,6 +5,7 @@ import { insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type
 import { z } from "zod";
 import OpenAI from 'openai';
 import { researchService } from './research';
+import { evaluationMetricsService } from './evaluation-metrics';
 import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
 import { nutritionistService, type DailyMealPlan } from './nutritionist';
 import { pdfGeneratorService } from './pdf-generator';
@@ -473,6 +474,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: 'demo@example.com',
             name: 'Demo User'
           });
+          
+          // Create demo onboarding data
+          await storage.saveOnboardingData({
+            userId: demoUser.id,
+            age: '25',
+            diet: 'Mediterranean',
+            symptoms: ['irregular_periods', 'fatigue_and_low_energy'],
+            goals: ['regulate_menstrual_cycle', 'improve_energy_levels'],
+            lifestyle: { stressLevel: 'Moderate', sleepHours: '7-8' },
+            height: '165cm',
+            weight: '60kg',
+            activityLevel: 'Moderate',
+            waterIntake: '8 glasses',
+            sleepHours: '7-8',
+            stressLevel: 'Moderate',
+            currentMedications: 'None',
+            allergies: 'None',
+            cuisinePreference: 'Mediterranean',
+            cookingTime: '30-45 minutes',
+            budget: 'Moderate',
+            kitchenEquipment: 'Full kitchen',
+            menstrualCycle: { cycleLength: '28', lastPeriod: new Date().toISOString().split('T')[0] },
+            lastPeriod: new Date().toISOString().split('T')[0]
+          });
         }
         req.user = demoUser;
         next();
@@ -622,6 +647,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sampleResultCount: 0,
         message: 'Research service unavailable'
       });
+    }
+  });
+
+  // Evaluation metrics endpoints
+  app.get('/api/evaluation/research-quality', requireAuth, async (req: any, res: any) => {
+    try {
+      const metrics = await evaluationMetricsService.evaluateResearchQuality();
+      res.json({
+        success: true,
+        metrics,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Research quality evaluation error:', error);
+      res.status(500).json({ error: 'Failed to evaluate research quality' });
+    }
+  });
+
+  app.get('/api/evaluation/meal-plan-quality', requireAuth, async (req: any, res: any) => {
+    try {
+      const metrics = await evaluationMetricsService.evaluateMealPlanQuality(req.user.id);
+      res.json({
+        success: true,
+        metrics,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Meal plan quality evaluation error:', error);
+      res.status(500).json({ error: 'Failed to evaluate meal plan quality' });
+    }
+  });
+
+  app.get('/api/evaluation/adaptive-responses', requireAuth, async (req: any, res: any) => {
+    try {
+      const metrics = await evaluationMetricsService.evaluateAdaptiveResponses(req.user.id);
+      res.json({
+        success: true,
+        metrics,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Adaptive responses evaluation error:', error);
+      res.status(500).json({ error: 'Failed to evaluate adaptive responses' });
+    }
+  });
+
+  app.get('/api/evaluation/chatbot-performance', requireAuth, async (req: any, res: any) => {
+    try {
+      const metrics = await evaluationMetricsService.evaluateChatbotPerformance();
+      res.json({
+        success: true,
+        metrics,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Chatbot performance evaluation error:', error);
+      res.status(500).json({ error: 'Failed to evaluate chatbot performance' });
+    }
+  });
+
+  app.get('/api/evaluation/comprehensive-report', requireAuth, async (req: any, res: any) => {
+    try {
+      const report = await evaluationMetricsService.generateEvaluationReport(req.user.id);
+      res.json({
+        success: true,
+        report,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Comprehensive evaluation error:', error);
+      res.status(500).json({ error: 'Failed to generate comprehensive evaluation report' });
     }
   });
 
