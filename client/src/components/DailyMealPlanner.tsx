@@ -129,7 +129,7 @@ export function DailyMealPlanner() {
   });
 
   const handleGeneratePlan = () => {
-    generateMealPlan.mutate();
+    generateMealPlan.mutate(undefined);
   };
 
   const handleSubmitFeedback = () => {
@@ -421,7 +421,7 @@ export function DailyMealPlanner() {
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
         </div>
       </div>
     );
