@@ -377,24 +377,24 @@ export default function Dashboard() {
                     </div>
 
                     {/* Medical Conditions Alert */}
-                    {profile.onboarding.medicalConditions && profile.onboarding.medicalConditions.length > 0 && (
+                    {profile.onboarding.symptoms && profile.onboarding.symptoms.length > 0 && (
                       <div className="bg-orange-50 rounded-lg p-3">
-                        <p className="text-orange-700 font-medium text-sm mb-1">Medical Considerations</p>
+                        <p className="text-orange-700 font-medium text-sm mb-1">Health Focus Areas</p>
                         <p className="text-orange-600 text-xs">
-                          {profile.onboarding.medicalConditions.slice(0, 2).join(', ')}
-                          {profile.onboarding.medicalConditions.length > 2 && ` +${profile.onboarding.medicalConditions.length - 2} more`}
+                          {profile.onboarding.symptoms.slice(0, 2).join(', ')}
+                          {profile.onboarding.symptoms.length > 2 && ` +${profile.onboarding.symptoms.length - 2} more`}
                         </p>
                       </div>
                     )}
 
-                    {/* Allergies Warning */}
-                    {profile.onboarding.allergies && profile.onboarding.allergies.length > 0 && (
-                      <div className="bg-red-50 rounded-lg p-3">
-                        <p className="text-red-700 font-medium text-sm mb-1 flex items-center">
-                          <span className="mr-1">⚠️</span>Allergies
+                    {/* Additional Health Info */}
+                    {profile.onboarding.currentMedications && profile.onboarding.currentMedications !== 'None' && (
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <p className="text-blue-700 font-medium text-sm mb-1 flex items-center">
+                          <span className="mr-1">💊</span>Current Medications
                         </p>
-                        <p className="text-red-600 text-xs">
-                          {profile.onboarding.allergies.join(', ')}
+                        <p className="text-blue-600 text-xs">
+                          {profile.onboarding.currentMedications}
                         </p>
                       </div>
                     )}
@@ -430,6 +430,14 @@ export default function Dashboard() {
                       <i className="fas fa-utensils mr-2"></i>Get Meal Plan
                     </Button>
                   )}
+                  
+                  <Button 
+                    onClick={signOutUser}
+                    variant="outline" 
+                    className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  >
+                    <i className="fas fa-sign-out-alt mr-2"></i>Sign Out
+                  </Button>
                 </div>
               </CardContent>
             </Card>

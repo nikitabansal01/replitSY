@@ -520,6 +520,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Register or login user
+  // Logout endpoint
+  app.post('/api/auth/logout', requireAuth, async (req: any, res: any) => {
+    try {
+      // Clear any server-side session data for this user
+      // For demo purposes, we don't need to do much here
+      res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ error: 'Failed to logout' });
+    }
+  });
+
   app.post('/api/auth/register', async (req: Request, res: Response) => {
     try {
       const { firebaseUid, email, name } = insertUserSchema.parse(req.body);

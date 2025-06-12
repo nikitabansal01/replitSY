@@ -32,40 +32,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   useEffect(() => {
+    let mounted = true;
+
     // Check for existing demo token first
     const existingToken = localStorage.getItem('authToken');
     if (existingToken === 'demo-token') {
-      setToken('demo-token');
-      setUser({ uid: 'demo', email: 'demo@example.com' } as User);
-      setLoading(false);
+      if (mounted) {
+        setToken('demo-token');
+        setUser({ uid: 'demo', email: 'demo@example.com' } as User);
+        setLoading(false);
+      }
       return;
     }
 
     // Listen for Firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!mounted) return;
+
       if (firebaseUser) {
         try {
           const idToken = await firebaseUser.getIdToken();
-          localStorage.setItem('authToken', idToken);
-          setUser(firebaseUser);
-          setToken(idToken);
+          if (mounted) {
+            localStorage.setItem('authToken', idToken);
+            setUser(firebaseUser);
+            setToken(idToken);
+            setLoading(false);
+          }
         } catch (error) {
           console.error('Error getting token:', error);
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem('authToken');
+          if (mounted) {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('authToken');
+            setLoading(false);
+          }
         }
       } else {
         // Set demo token for development
         const demoToken = 'demo-token';
-        localStorage.setItem('authToken', demoToken);
-        setToken(demoToken);
-        setUser({ uid: 'demo', email: 'demo@example.com' } as User);
+        if (mounted) {
+          localStorage.setItem('authToken', demoToken);
+          setToken(demoToken);
+          setUser({ uid: 'demo', email: 'demo@example.com' } as User);
+          setLoading(false);
+        }
       }
-      setLoading(false);
     });
     
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   return (
