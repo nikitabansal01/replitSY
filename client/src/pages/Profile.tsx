@@ -390,7 +390,7 @@ export default function Profile() {
                 <p className="text-sm text-gray-600 mb-2">Important for meal planning - list any allergies or foods to avoid:</p>
                 <Textarea 
                   id="allergies"
-                  value={(formData.allergies || []).join(', ')} 
+                  value={Array.isArray(formData.allergies) ? formData.allergies.join(', ') : (formData.allergies || '')} 
                   onChange={(e) => setFormData({...formData, allergies: e.target.value.split(', ').filter(Boolean)})}
                   placeholder="e.g., Gluten/Wheat, Dairy, Nuts, Shellfish"
                   rows={2}
