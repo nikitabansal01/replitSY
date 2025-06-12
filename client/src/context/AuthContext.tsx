@@ -68,12 +68,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
       } else {
-        // Set demo token for development
-        const demoToken = 'demo-token';
-        if (mounted) {
+        // Only set demo token if no token exists in localStorage
+        // This prevents auto-login after intentional sign-out
+        const existingToken = localStorage.getItem('authToken');
+        if (!existingToken && mounted) {
+          const demoToken = 'demo-token';
           localStorage.setItem('authToken', demoToken);
           setToken(demoToken);
           setUser({ uid: 'demo', email: 'demo@example.com' } as User);
+          setLoading(false);
+        } else if (mounted) {
+          // User has signed out or no token exists
+          setUser(null);
+          setToken(null);
           setLoading(false);
         }
       }
