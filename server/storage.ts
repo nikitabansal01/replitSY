@@ -1,4 +1,4 @@
-import { users, onboardingData, chatMessages, type User, type InsertUser, type OnboardingData, type InsertOnboardingData, type ChatMessage, type InsertChatMessage, type IngredientRecommendation } from "@shared/schema";
+import { users, onboardingData, chatMessages, dailyMealPlans, dailyFeedback, progressTracking, type User, type InsertUser, type OnboardingData, type InsertOnboardingData, type ChatMessage, type InsertChatMessage, type DailyMealPlan, type InsertDailyMealPlan, type DailyFeedback, type InsertDailyFeedback, type ProgressTracking, type InsertProgressTracking, type IngredientRecommendation } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -16,23 +16,48 @@ export interface IStorage {
   getChatHistory(userId: number): Promise<ChatMessage[]>;
   saveChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   clearChatHistory(userId: number): Promise<void>;
+
+  // Daily meal plans
+  getDailyMealPlan(userId: number, date: string): Promise<DailyMealPlan | undefined>;
+  saveDailyMealPlan(plan: InsertDailyMealPlan): Promise<DailyMealPlan>;
+  
+  // Daily feedback
+  getDailyFeedback(userId: number, date: string): Promise<DailyFeedback | undefined>;
+  saveDailyFeedback(feedback: InsertDailyFeedback): Promise<DailyFeedback>;
+  
+  // Progress tracking
+  getProgressTracking(userId: number, date: string): Promise<ProgressTracking | undefined>;
+  saveProgressTracking(progress: InsertProgressTracking): Promise<ProgressTracking>;
+  getUserProgressHistory(userId: number, days: number): Promise<ProgressTracking[]>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private onboardingData: Map<number, OnboardingData>;
   private chatMessages: Map<number, ChatMessage[]>;
+  private dailyMealPlans: Map<string, DailyMealPlan>;
+  private dailyFeedback: Map<string, DailyFeedback>;
+  private progressTracking: Map<string, ProgressTracking>;
   private currentUserId: number;
   private currentOnboardingId: number;
   private currentChatId: number;
+  private currentMealPlanId: number;
+  private currentFeedbackId: number;
+  private currentProgressId: number;
 
   constructor() {
     this.users = new Map();
     this.onboardingData = new Map();
     this.chatMessages = new Map();
+    this.dailyMealPlans = new Map();
+    this.dailyFeedback = new Map();
+    this.progressTracking = new Map();
     this.currentUserId = 1;
     this.currentOnboardingId = 1;
     this.currentChatId = 1;
+    this.currentMealPlanId = 1;
+    this.currentFeedbackId = 1;
+    this.currentProgressId = 1;
   }
 
   async getUser(id: number): Promise<User | undefined> {
