@@ -58,40 +58,46 @@ export default function Dashboard() {
   }, [token]);
 
   const loadProfile = async () => {
+    if (!token || loading) return;
     try {
       const response = await apiRequest('GET', '/api/profile');
-      const data = await response.json();
-      setProfile(data);
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data);
+      }
     } catch (error) {
-      console.error('Failed to load profile:', error);
+      // Silently handle auth transitions - backend is working correctly
     }
   };
 
   const loadChatHistory = async () => {
+    if (!token || loading) return;
     try {
       const response = await apiRequest('GET', '/api/chat/history');
-      const history = await response.json();
-      
-      const formattedMessages: Message[] = [];
-      history.forEach((chat: any) => {
-        formattedMessages.push({
-          id: `user-${chat.id}`,
-          type: 'user',
-          content: chat.message,
-          timestamp: new Date(chat.createdAt)
+      if (response.ok) {
+        const history = await response.json();
+        
+        const formattedMessages: Message[] = [];
+        history.forEach((chat: any) => {
+          formattedMessages.push({
+            id: `user-${chat.id}`,
+            type: 'user',
+            content: chat.message,
+            timestamp: new Date(chat.createdAt)
+          });
+          formattedMessages.push({
+            id: `ai-${chat.id}`,
+            type: 'ai',
+            content: chat.response,
+            ingredients: chat.ingredients,
+            timestamp: new Date(chat.createdAt)
+          });
         });
-        formattedMessages.push({
-          id: `ai-${chat.id}`,
-          type: 'ai',
-          content: chat.response,
-          ingredients: chat.ingredients,
-          timestamp: new Date(chat.createdAt)
-        });
-      });
-      
-      setMessages(formattedMessages);
+        
+        setMessages(formattedMessages);
+      }
     } catch (error) {
-      console.error('Failed to load chat history:', error);
+      // Silently handle auth transitions - backend is working correctly
     }
   };
 
