@@ -9,6 +9,7 @@ import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-t
 import { nutritionistService, type DailyMealPlan } from './nutritionist';
 import { pdfGeneratorService } from './pdf-generator';
 import { auth as firebaseAuth } from './firebase-admin';
+import { adaptiveMealPlannerService } from './adaptive-meal-planner';
 
 interface AuthenticatedRequest extends Request {
   user: User;
@@ -873,6 +874,93 @@ Generated with love for your health journey! 💖
         error: 'Failed to generate monthly meal plan PDF', 
         details: error instanceof Error ? error.message : 'Unknown error' 
       });
+    }
+  });
+
+  // Daily adaptive meal planning routes
+  
+  // Daily check-in endpoint
+  app.get('/api/daily/check-in', requireAuth, async (req: any, res: any) => {
+    try {
+      const checkInResponse = await adaptiveMealPlannerService.generateCheckInQuestions(req.user.id);
+      res.json(checkInResponse);
+    } catch (error) {
+      console.error('Error generating daily check-in:', error);
+      res.status(500).json({ error: 'Failed to generate daily check-in' });
+    }
+  });
+
+  // Generate today's meal plan
+  app.post('/api/daily/meal-plan', requireAuth, async (req: any, res: any) => {
+    try {
+      const { previousFeedback } = req.body;
+      const today = new Date().toISOString().split('T')[0];
+      
+      const mealPlan = await adaptiveMealPlannerService.generateTodaysMealPlan({
+        userId: req.user.id,
+        date: today,
+        previousFeedback
+      });
+
+      await adaptiveMealPlannerService.saveTodaysMealPlan(req.user.id, mealPlan);
+
+      res.json({
+        success: true,
+        mealPlan,
+        message: "Today's personalized meal plan is ready!"
+      });
+    } catch (error) {
+      console.error('Error generating daily meal plan:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate daily meal plan',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Submit daily feedback
+  app.post('/api/daily/feedback', requireAuth, async (req: any, res: any) => {
+    try {
+      const feedbackData = {
+        ...req.body,
+        userId: req.user.id
+      };
+
+      await adaptiveMealPlannerService.saveDailyFeedback(req.user.id, feedbackData);
+
+      res.json({
+        success: true,
+        message: "Thank you for your feedback! I'll use this to personalize tomorrow's meal plan."
+      });
+    } catch (error) {
+      console.error('Error saving daily feedback:', error);
+      res.status(500).json({ 
+        error: 'Failed to save feedback',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get today's meal plan
+  app.get('/api/daily/meal-plan/today', requireAuth, async (req: any, res: any) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const mealPlan = await storage.getDailyMealPlan(req.user.id, today);
+      
+      if (!mealPlan) {
+        return res.json({ 
+          success: false, 
+          message: "No meal plan found for today. Let's create one!" 
+        });
+      }
+
+      res.json({
+        success: true,
+        mealPlan
+      });
+    } catch (error) {
+      console.error('Error fetching today\'s meal plan:', error);
+      res.status(500).json({ error: 'Failed to fetch meal plan' });
     }
   });
 

@@ -123,6 +123,78 @@ export class MemStorage implements IStorage {
   async clearChatHistory(userId: number): Promise<void> {
     this.chatMessages.set(userId, []);
   }
+
+  // Daily meal plan methods
+  async getDailyMealPlan(userId: number, date: string): Promise<DailyMealPlan | undefined> {
+    const key = `${userId}-${date}`;
+    return this.dailyMealPlans.get(key);
+  }
+
+  async saveDailyMealPlan(plan: InsertDailyMealPlan): Promise<DailyMealPlan> {
+    const id = this.currentMealPlanId++;
+    const mealPlan: DailyMealPlan = {
+      ...plan,
+      id,
+      createdAt: new Date()
+    };
+    const key = `${plan.userId}-${plan.date}`;
+    this.dailyMealPlans.set(key, mealPlan);
+    return mealPlan;
+  }
+
+  // Daily feedback methods
+  async getDailyFeedback(userId: number, date: string): Promise<DailyFeedback | undefined> {
+    const key = `${userId}-${date}`;
+    return this.dailyFeedback.get(key);
+  }
+
+  async saveDailyFeedback(feedback: InsertDailyFeedback): Promise<DailyFeedback> {
+    const id = this.currentFeedbackId++;
+    const dailyFeedback: DailyFeedback = {
+      ...feedback,
+      id,
+      createdAt: new Date()
+    };
+    const key = `${feedback.userId}-${feedback.date}`;
+    this.dailyFeedback.set(key, dailyFeedback);
+    return dailyFeedback;
+  }
+
+  // Progress tracking methods
+  async getProgressTracking(userId: number, date: string): Promise<ProgressTracking | undefined> {
+    const key = `${userId}-${date}`;
+    return this.progressTracking.get(key);
+  }
+
+  async saveProgressTracking(progress: InsertProgressTracking): Promise<ProgressTracking> {
+    const id = this.currentProgressId++;
+    const progressData: ProgressTracking = {
+      ...progress,
+      id,
+      createdAt: new Date()
+    };
+    const key = `${progress.userId}-${progress.date}`;
+    this.progressTracking.set(key, progressData);
+    return progressData;
+  }
+
+  async getUserProgressHistory(userId: number, days: number): Promise<ProgressTracking[]> {
+    const result: ProgressTracking[] = [];
+    const today = new Date();
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const key = `${userId}-${dateStr}`;
+      const progress = this.progressTracking.get(key);
+      if (progress) {
+        result.push(progress);
+      }
+    }
+    
+    return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
 }
 
 // Database storage implementation for user privacy and data persistence

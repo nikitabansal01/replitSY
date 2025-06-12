@@ -9,6 +9,7 @@ import Login from "@/pages/Login";
 import OnboardingNew from "@/pages/OnboardingNew";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
+import DailyPlanner from "@/pages/DailyPlanner";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/" component={Login} />
       <Route path="/onboarding" component={OnboardingNew} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/daily-planner" component={DailyPlanner} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
