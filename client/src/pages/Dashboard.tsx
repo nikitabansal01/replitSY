@@ -197,15 +197,7 @@ export default function Dashboard() {
               >
                 Edit Profile
               </Button>
-              <Button
-                onClick={() => setLocation('/admin/login')}
-                variant="ghost"
-                size="sm"
-                className="text-xs text-gray-400 hover:text-gray-600"
-                title="System Administration"
-              >
-                ⚙️
-              </Button>
+
               <Button
                 onClick={handleSignOut}
                 variant="outline"
