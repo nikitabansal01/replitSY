@@ -47,8 +47,14 @@ export default function Dashboard() {
   useEffect(() => {
     if (!loading && !user) {
       setLocation('/');
+      return;
     }
-  }, [user, loading, setLocation]);
+    
+    // Check if user needs to complete onboarding
+    if (profile && !profile.onboarding && user) {
+      setLocation('/onboarding');
+    }
+  }, [user, loading, profile, setLocation]);
 
   useEffect(() => {
     if (token) {
@@ -190,6 +196,15 @@ export default function Dashboard() {
                 className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300"
               >
                 Edit Profile
+              </Button>
+              <Button
+                onClick={() => setLocation('/admin/login')}
+                variant="ghost"
+                size="sm"
+                className="text-xs text-gray-400 hover:text-gray-600"
+                title="System Administration"
+              >
+                ⚙️
               </Button>
               <Button
                 onClick={handleSignOut}

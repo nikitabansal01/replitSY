@@ -48,6 +48,8 @@ function Router() {
       <Route path="/daily-planner" component={DailyPlanner} />
       <Route path="/evaluation" component={EvaluationDashboard} />
       <Route path="/profile" component={Profile} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
