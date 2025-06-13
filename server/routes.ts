@@ -1087,5 +1087,105 @@ Generated with love for your health journey! 💖
     }
   });
 
+  // Admin authentication middleware
+  async function requireAdminAuth(req: any, res: any, next: any) {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        return res.status(401).json({ error: 'No admin token provided' });
+      }
+
+      // For demo purposes, accept "admin-token" as a valid admin token
+      if (token === 'admin-token') {
+        req.admin = { username: 'admin', email: 'admin@winnie.com' };
+        return next();
+      }
+
+      return res.status(401).json({ error: 'Invalid admin token' });
+    } catch (error) {
+      console.error('Admin authentication error:', error);
+      res.status(401).json({ error: 'Invalid admin token' });
+    }
+  }
+
+  // Admin login endpoint
+  app.post('/api/admin/login', async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+
+      // Demo admin credentials
+      if (username === 'admin' && password === 'admin123') {
+        res.json({ 
+          success: true, 
+          token: 'admin-token',
+          admin: { username: 'admin', email: 'admin@winnie.com' }
+        });
+        return;
+      }
+
+      // Try to validate against database
+      const admin = await adminAuthService.validateAdmin(username, password);
+      
+      if (!admin) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      res.json({ 
+        success: true, 
+        token: 'admin-token', // In production, generate a proper JWT
+        admin: { username: admin.username, email: admin.email }
+      });
+    } catch (error) {
+      console.error('Admin login error:', error);
+      res.status(500).json({ error: 'Login failed' });
+    }
+  });
+
+  // Get system metrics for admin dashboard
+  app.get('/api/admin/metrics', requireAdminAuth, async (req: any, res: any) => {
+    try {
+      const metrics = await adminAuthService.getSystemMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching admin metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch metrics' });
+    }
+  });
+
+  // Get metrics history
+  app.get('/api/admin/metrics/history', requireAdminAuth, async (req: any, res: any) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const history = await adminAuthService.getMetricsHistory(days);
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching metrics history:', error);
+      res.status(500).json({ error: 'Failed to fetch metrics history' });
+    }
+  });
+
+  // Get all users for admin dashboard
+  app.get('/api/admin/users', requireAdminAuth, async (req: any, res: any) => {
+    try {
+      const users = await adminAuthService.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  // Save current metrics
+  app.post('/api/admin/metrics/save', requireAdminAuth, async (req: any, res: any) => {
+    try {
+      const metrics = await adminAuthService.saveMetrics();
+      res.json({ success: true, metrics });
+    } catch (error) {
+      console.error('Error saving metrics:', error);
+      res.status(500).json({ error: 'Failed to save metrics' });
+    }
+  });
+
   return server;
 }

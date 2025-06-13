@@ -11,6 +11,8 @@ import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import DailyPlanner from "@/pages/DailyPlanner";
 import EvaluationDashboard from "@/pages/EvaluationDashboard";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
