@@ -68,10 +68,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
       } else {
-        // Only set demo token if no token exists in localStorage
-        // This prevents auto-login after intentional sign-out
+        // Check if user has intentionally signed out
+        const hasSignedOut = localStorage.getItem('signedOut') === 'true';
         const existingToken = localStorage.getItem('authToken');
-        if (!existingToken && mounted) {
+        
+        if (!hasSignedOut && !existingToken && mounted) {
+          // Only set demo token if user hasn't signed out and no token exists
           const demoToken = 'demo-token';
           localStorage.setItem('authToken', demoToken);
           setToken(demoToken);

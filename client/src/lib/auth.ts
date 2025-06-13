@@ -58,6 +58,9 @@ export async function signOutUser() {
   try {
     console.log("Starting sign out process...");
     
+    // Set a flag to prevent auto-login
+    localStorage.setItem('signedOut', 'true');
+    
     // Call server logout endpoint to clear chat history for privacy
     const token = localStorage.getItem('authToken');
     console.log("Current token:", token ? "exists" : "not found");
@@ -94,6 +97,7 @@ export async function signOutUser() {
   } catch (error) {
     console.error("Error signing out:", error);
     // Even if signout fails, clear local state and redirect
+    localStorage.setItem('signedOut', 'true');
     localStorage.removeItem('authToken');
     window.location.href = '/';
   }

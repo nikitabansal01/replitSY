@@ -41,6 +41,8 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Clear signedOut flag when user actively signs in
+      localStorage.removeItem('signedOut');
       await signInWithGoogle();
       toast({
         title: "Success",
@@ -67,6 +69,8 @@ export default function Login() {
     setIsLoading(true);
     
     try {
+      // Clear signedOut flag when user actively signs in
+      localStorage.removeItem('signedOut');
       await signInWithEmail(loginForm.email, loginForm.password);
       toast({
         title: "Success",
@@ -130,6 +134,8 @@ export default function Login() {
   };
 
   const handleDemoMode = () => {
+    // Clear signedOut flag when user actively chooses demo
+    localStorage.removeItem('signedOut');
     // Set demo token in localStorage for authentication
     localStorage.setItem('authToken', 'demo-token');
     // Force page reload to ensure auth context picks up the token
