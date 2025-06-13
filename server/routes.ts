@@ -486,18 +486,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lifestyle: { stressLevel: 'Moderate', sleepHours: '7-8' },
             height: '165cm',
             weight: '60kg',
-            activityLevel: 'Moderate',
-            waterIntake: '8 glasses',
-            sleepHours: '7-8',
             stressLevel: 'Moderate',
-            currentMedications: 'None',
-            allergies: 'None',
-            cuisinePreference: 'Mediterranean',
-            cookingTime: '30-45 minutes',
-            budget: 'Moderate',
-            kitchenEquipment: 'Full kitchen',
-            menstrualCycle: { cycleLength: '28', lastPeriod: new Date().toISOString().split('T')[0] },
-            lastPeriod: new Date().toISOString().split('T')[0]
+            sleepHours: '7-8',
+            waterIntake: '8 glasses',
+            medications: [],
+            allergies: [],
+            lastPeriodDate: new Date().toISOString().split('T')[0],
+            cycleLength: '28'
           });
         }
         req.user = demoUser;
@@ -505,10 +500,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Verify Firebase token
         const decodedToken = await firebaseAuth.verifyIdToken(token);
-        const user = await storage.getUserByFirebaseUid(decodedToken.uid);
+        let user = await storage.getUserByFirebaseUid(decodedToken.uid);
         
+        // If user doesn't exist, create them automatically
         if (!user) {
-          return res.status(401).json({ error: 'User not found' });
+          user = await storage.createUser({
+            firebaseUid: decodedToken.uid,
+            email: decodedToken.email || '',
+            name: decodedToken.name || 'User'
+          });
         }
         
         req.user = user;
@@ -521,17 +521,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Register or login user
-  // Logout endpoint
-  app.post('/api/auth/logout', requireAuth, async (req: any, res: any) => {
-    try {
-      // Clear any server-side session data for this user
-      // For demo purposes, we don't need to do much here
-      res.json({ success: true, message: 'Logged out successfully' });
-    } catch (error) {
-      console.error('Logout error:', error);
-      res.status(500).json({ error: 'Failed to logout' });
-    }
-  });
 
   app.post('/api/auth/register', async (req: Request, res: Response) => {
     try {
