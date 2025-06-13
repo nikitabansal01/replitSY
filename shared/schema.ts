@@ -123,6 +123,26 @@ export const progressTracking = pgTable("progress_tracking", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  email: text("email").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const systemMetrics = pgTable("system_metrics", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  totalUsers: integer("total_users").notNull(),
+  activeUsers: integer("active_users").notNull(),
+  totalMealPlans: integer("total_meal_plans").notNull(),
+  totalChatMessages: integer("total_chat_messages").notNull(),
+  avgUserSatisfaction: integer("avg_user_satisfaction"),
+  systemHealth: jsonb("system_health").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -153,6 +173,16 @@ export const insertProgressTrackingSchema = createInsertSchema(progressTracking)
   createdAt: true,
 });
 
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSystemMetricsSchema = createInsertSchema(systemMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type OnboardingData = typeof onboardingData.$inferSelect;
@@ -165,3 +195,7 @@ export type DailyFeedback = typeof dailyFeedback.$inferSelect;
 export type InsertDailyFeedback = z.infer<typeof insertDailyFeedbackSchema>;
 export type ProgressTracking = typeof progressTracking.$inferSelect;
 export type InsertProgressTracking = z.infer<typeof insertProgressTrackingSchema>;
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type SystemMetrics = typeof systemMetrics.$inferSelect;
+export type InsertSystemMetrics = z.infer<typeof insertSystemMetricsSchema>;

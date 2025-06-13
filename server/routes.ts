@@ -11,6 +11,7 @@ import { nutritionistService, type DailyMealPlan } from './nutritionist';
 import { pdfGeneratorService } from './pdf-generator';
 import { auth as firebaseAuth } from './firebase-admin';
 import { adaptiveMealPlannerService } from './adaptive-meal-planner';
+import { adminAuthService } from './admin-auth';
 
 interface AuthenticatedRequest extends Request {
   user: User;
