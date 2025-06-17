@@ -387,7 +387,7 @@ export default function AdminDashboard() {
               <CardContent>
                 {metrics?.userSymptoms && metrics.userSymptoms.length > 0 ? (
                   <div className="space-y-2">
-                    {metrics.userSymptoms.map((symptomData, index) => (
+                    {metrics.userSymptoms.map((symptomData: { symptoms: string[]; count: number }, index: number) => (
                       <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <span className="text-sm">
                           {Array.isArray(symptomData.symptoms) ? symptomData.symptoms.join(', ') : 'Unknown'}

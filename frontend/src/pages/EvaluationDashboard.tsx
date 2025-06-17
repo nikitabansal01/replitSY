@@ -13,33 +13,68 @@ interface MetricScore {
   color: string;
 }
 
+interface EvaluationReport {
+  overallScore: number;
+  researchQuality: {
+    qualityScore: number;
+  };
+  mealPlanQuality: {
+    overallQuality: number;
+  };
+  adaptiveResponses: {
+    userSatisfactionPredict: number;
+  };
+  chatbotPerformance: {
+    responseRelevance: number;
+    scientificAccuracy: number;
+  };
+  recommendations: string[];
+}
+
+interface ResearchData {
+  totalArticles: number;
+  averageContentLength: number;
+  recentArticlesPercentage: number;
+  topicCoverage: Record<string, number>;
+}
+
+interface MealPlanData {
+  overallQuality: number;
+  [key: string]: number;
+}
+
+interface ApiResponse<T> {
+  report?: T;
+  metrics?: T;
+}
+
 export default function EvaluationDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
 
   // Fetch comprehensive evaluation report
-  const { data: reportData, isLoading: reportLoading, refetch: refetchReport } = useQuery({
+  const { data: reportData, isLoading: reportLoading, refetch: refetchReport } = useQuery<ApiResponse<EvaluationReport>>({
     queryKey: ['/api/evaluation/comprehensive-report'],
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
   // Individual metric queries
-  const { data: researchData, refetch: refetchResearch } = useQuery({
+  const { data: researchData, refetch: refetchResearch } = useQuery<ApiResponse<ResearchData>>({
     queryKey: ['/api/evaluation/research-quality'],
     enabled: activeTab === 'research'
   });
 
-  const { data: mealPlanData, refetch: refetchMealPlan } = useQuery({
+  const { data: mealPlanData, refetch: refetchMealPlan } = useQuery<ApiResponse<MealPlanData>>({
     queryKey: ['/api/evaluation/meal-plan-quality'],
     enabled: activeTab === 'mealplans'
   });
 
-  const { data: adaptiveData, refetch: refetchAdaptive } = useQuery({
+  const { data: adaptiveData, refetch: refetchAdaptive } = useQuery<ApiResponse<any>>({
     queryKey: ['/api/evaluation/adaptive-responses'],
     enabled: activeTab === 'adaptive'
   });
 
-  const { data: chatbotData, refetch: refetchChatbot } = useQuery({
+  const { data: chatbotData, refetch: refetchChatbot } = useQuery<ApiResponse<any>>({
     queryKey: ['/api/evaluation/chatbot-performance'],
     enabled: activeTab === 'chatbot'
   });
@@ -180,14 +215,14 @@ export default function EvaluationDashboard() {
                 </div>
 
                 {/* Recommendations */}
-                {report.recommendations.length > 0 && (
+                {report.recommendations && report.recommendations.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle>Improvement Recommendations</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-2">
-                        {report.recommendations.map((rec, index) => (
+                        {report.recommendations.map((rec: string, index: number) => (
                           <li key={index} className="flex items-start gap-2">
                             <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
                             {rec}
@@ -250,7 +285,7 @@ export default function EvaluationDashboard() {
                       {Object.entries(researchData.metrics.topicCoverage).map(([topic, count]) => (
                         <div key={topic} className="flex items-center justify-between">
                           <span className="capitalize">{topic.replace('_', ' ')}</span>
-                          <Badge variant="outline">{count} articles</Badge>
+                          <Badge variant="outline">{String(count)} articles</Badge>
                         </div>
                       ))}
                     </div>
