@@ -4,14 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ChefHat, Globe, Sparkles } from 'lucide-react';
+import { Loader2, ChefHat, Globe, Sparkles, Calendar, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedMealPlanDisplay } from './EnhancedMealPlanDisplay';
+import { DailyMealPlanner } from './DailyMealPlanner';
 
 interface CuisineOption {
   id: string;
   name: string;
   description: string;
+}
+
+interface MealPlanGeneratorProps {
+  userDiet: string;
 }
 
 interface MealPlanResponse {
@@ -36,7 +41,26 @@ const DURATION_OPTIONS = [
   { id: 'monthly', name: '1 Month', description: '4-week comprehensive meal plan' }
 ];
 
-export function MealPlanGenerator() {
+// Only show 1 Day duration for custom meal plans
+const CUSTOM_DURATION_OPTIONS = DURATION_OPTIONS.filter(opt => opt.id === 'daily');
+
+const fadeInAnimation = {
+  '@keyframes fadeIn': {
+    '0%': { opacity: '0', transform: 'translateY(10px)' },
+    '100%': { opacity: '1', transform: 'translateY(0)' }
+  }
+};
+
+const styles = `
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+`;
+
+// Sort cuisines alphabetically for the select dropdown
+const SORTED_CUISINE_OPTIONS = [...CUISINE_OPTIONS].sort((a, b) => a.name.localeCompare(b.name));
+
+export function MealPlanGenerator({ userDiet }: MealPlanGeneratorProps) {
   const { toast } = useToast();
   const [selectedCuisine, setSelectedCuisine] = useState<string>('');
   const [selectedDuration, setSelectedDuration] = useState<string>('');
@@ -165,31 +189,34 @@ export function MealPlanGenerator() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ChefHat className="h-5 w-5" />
-            AI Nutritionist - Personalized Meal Plans
-          </CardTitle>
-          <CardDescription>
-            Get customized meal plans based on your health conditions and cuisine preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          
+    <Card className="shadow-xl rounded-2xl overflow-hidden">
+      {/* Gradient Header inside the card */}
+      <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-8 pb-4">
+        <div className="flex items-center gap-2 text-2xl font-bold">
+          <ChefHat className="h-6 w-6 text-purple-600" />
+          AI Nutritionist - Personalized Meal Plans
+        </div>
+        <div className="text-base mt-2 text-gray-700 dark:text-gray-200">
+          Get customized meal plans based on your health conditions and cuisine preferences
+        </div>
+      </div>
+      <CardContent className="p-8 pt-4 space-y-8">
+        {/* Remove Tab Navigation and always show Custom Meal Plans content */}
+        <div className="space-y-8 animate-fade-in">
           {/* Cuisine Selection */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Choose Your Cuisine Preference</label>
+            <label className="text-lg font-bold text-gray-800 dark:text-gray-100">Choose Your Cuisine Preference</label>
             <Select value={selectedCuisine} onValueChange={setSelectedCuisine}>
-              <SelectTrigger>
+              <SelectTrigger className="h-12 text-base">
                 <SelectValue placeholder="Select a cuisine style" />
               </SelectTrigger>
               <SelectContent>
-                {CUISINE_OPTIONS.map((cuisine) => (
+                {SORTED_CUISINE_OPTIONS.map((cuisine) => (
                   <SelectItem key={cuisine.id} value={cuisine.id}>
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
+                    <div className="flex items-center gap-3 py-1">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                        <Globe className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
                       <div>
                         <div className="font-medium">{cuisine.name}</div>
                         <div className="text-xs text-muted-foreground">{cuisine.description}</div>
@@ -201,107 +228,86 @@ export function MealPlanGenerator() {
             </Select>
           </div>
 
-          {/* Duration Selection */}
+          {/* Duration Selection (only 1 Day) */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Choose Meal Plan Duration</label>
-            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select plan duration" />
-              </SelectTrigger>
-              <SelectContent>
-                {DURATION_OPTIONS.map((duration) => (
-                  <SelectItem key={duration.id} value={duration.id}>
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <div className="font-medium">{duration.name}</div>
-                        <div className="text-xs text-muted-foreground">{duration.description}</div>
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-lg font-bold text-gray-800 dark:text-gray-100">Select Plan Duration</label>
+            <div className="grid grid-cols-1 gap-6">
+              {CUSTOM_DURATION_OPTIONS.map((duration) => (
+                <button
+                  key={duration.id}
+                  type="button"
+                  onClick={() => setSelectedDuration(duration.id)}
+                  className={`w-full rounded-xl border transition-all flex flex-col items-center p-5 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${
+                    selectedDuration === duration.id
+                      ? 'border-primary bg-primary/5 text-primary shadow-md'
+                      : 'border-gray-200 bg-white hover:border-primary/30 hover:bg-primary/5 text-gray-700 dark:bg-gray-900 dark:text-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full mb-2 bg-muted">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <div className="text-base font-semibold mb-1">{duration.name}</div>
+                  <div className="text-xs text-muted-foreground text-center leading-tight">
+                    {duration.description}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Cuisine Preview */}
-          {selectedCuisine && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-900 dark:text-blue-100">
-                  {CUISINE_OPTIONS.find(c => c.id === selectedCuisine)?.name} Cuisine
-                </span>
-              </div>
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                {CUISINE_OPTIONS.find(c => c.id === selectedCuisine)?.description}
-              </p>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="space-y-3">
+          {/* Generate Button */}
+          <div className="pt-2">
             <Button
-              onClick={handleGeneratePlan}
+              onClick={() => generateMealPlan.mutate({ cuisinePreference: selectedCuisine, duration: selectedDuration })}
               disabled={!selectedCuisine || !selectedDuration || generateMealPlan.isPending}
-              className="w-full"
-              size="lg"
+              className="w-full h-14 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg shadow-purple-500/20 rounded-xl"
             >
               {generateMealPlan.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Your Personalized Plan...
+                  <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                  Generating Your Plan...
                 </>
               ) : (
                 <>
-                  <ChefHat className="mr-2 h-4 w-4" />
-                  Generate Meal Plan
+                  <Wand2 className="mr-2 h-6 w-6" />
+                  Generate {selectedDuration === 'weekly' ? 'Weekly' : selectedDuration === 'monthly' ? 'Monthly' : 'Daily'} Plan
                 </>
               )}
             </Button>
-
-            {(selectedDuration === 'weekly' || selectedDuration === 'monthly') && (
-              <Button
-                onClick={handleDownloadPDF}
-                disabled={!selectedCuisine || !selectedDuration || downloadPDF.isPending}
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                {downloadPDF.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Preparing Download...
-                  </>
-                ) : (
-                  <>
-                    📄 Download {selectedDuration === 'weekly' ? '1-Week' : '1-Month'} Plan PDF
-                  </>
-                )}
-              </Button>
-            )}
           </div>
 
-          {/* Info Text */}
-          <div className="text-xs text-muted-foreground text-center space-y-1">
-            <p>Your meal plan will be customized based on:</p>
-            <div className="flex flex-wrap justify-center gap-1">
-              <Badge variant="outline" className="text-xs">Health conditions</Badge>
-              <Badge variant="outline" className="text-xs">Dietary preferences</Badge>
-              <Badge variant="outline" className="text-xs">Cultural authenticity</Badge>
-              <Badge variant="outline" className="text-xs">Nutritional science</Badge>
+          {/* Info Section */}
+          <div className="rounded-lg bg-muted/50 p-6 space-y-3 mt-4">
+            <p className="text-base font-semibold text-center text-gray-800 dark:text-gray-100">
+              Your meal plan will be customized based on:
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Badge variant="secondary" className="px-4 py-2 text-sm font-medium">
+                Health conditions
+              </Badge>
+              <Badge variant="secondary" className="px-4 py-2 text-sm font-medium">
+                Dietary preferences
+              </Badge>
+              <Badge variant="secondary" className="px-4 py-2 text-sm font-medium">
+                Cultural authenticity
+              </Badge>
+              <Badge variant="secondary" className="px-4 py-2 text-sm font-medium">
+                Nutritional science
+              </Badge>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
+        </div>
+      </CardContent>
       {/* Display Generated Meal Plan */}
       {generatedPlan && (
-        <EnhancedMealPlanDisplay 
-          mealPlan={generatedPlan.mealPlan}
-          shoppingList={generatedPlan.shoppingList}
-          detectedConditions={generatedPlan.detectedConditions}
-        />
+        <div className="animate-fade-in">
+          <EnhancedMealPlanDisplay 
+            mealPlan={generatedPlan.mealPlan}
+            shoppingList={generatedPlan.shoppingList}
+            detectedConditions={generatedPlan.detectedConditions}
+          />
+        </div>
       )}
-    </div>
+    </Card>
   );
 }

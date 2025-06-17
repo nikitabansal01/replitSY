@@ -112,6 +112,29 @@ export const HEALTH_CONDITIONS: Record<string, HealthCondition> = {
     meal_timing_considerations: [
       "eat_within_hour_of_waking", "protein_rich_breakfast", "regular_intervals"
     ]
+  },
+  acne: {
+    name: "Acne (Hormonal/Inflammatory)",
+    dietary_focus: ["anti_inflammatory", "glycemic_control", "skin_health"],
+    foods_to_include: [
+      "zinc_rich_foods", // e.g., pumpkin seeds, lentils, chickpeas
+      "omega3_fats", // e.g., salmon, walnuts, chia seeds
+      "fiber_rich_foods", // e.g., whole grains, legumes
+      "antioxidant_rich_foods", // e.g., berries, green tea
+      "probiotic_foods", // e.g., yogurt, kefir, kimchi
+      "vitamin_a_rich_foods", // e.g., sweet potato, carrots
+      "green_tea"
+    ],
+    foods_to_avoid: [
+      "high_glycemic_foods", // e.g., white bread, sugary snacks
+      "dairy_products", // especially skim milk
+      "excessive_sugar", // sodas, sweets
+      "processed_foods", // chips, fast food
+      "excessive_fats", // fried foods
+    ],
+    meal_timing_considerations: [
+      "regular_meal_times", "avoid_large_sugar_spikes"
+    ]
   }
 };
 
@@ -340,7 +363,7 @@ class NutritionistService {
       'fatigue_and_low_energy': ['thyroid_hypo', 'stress_adrenal'],
       'mood_swings': ['pcos', 'stress_adrenal'],
       'hair_loss_or_thinning': ['pcos', 'thyroid_hypo'],
-      'acne_or_skin_issues': ['pcos'],
+      'acne_or_skin_issues': ['acne', 'pcos'],
       'bloating_and_digestive_issues': ['digestive_health'],
       'stress_and_anxiety': ['stress_adrenal'],
       'sleep_problems': ['stress_adrenal'],
@@ -467,12 +490,18 @@ class NutritionistService {
     cuisinePreference: string,
     userProfile: any
   ): Promise<DailyMealPlan> {
+    console.log('DEBUG: generateMealPlan called with:', {
+      healthConditions,
+      cuisinePreference,
+      userProfile,
+    });
     const conditions = healthConditions.map(c => HEALTH_CONDITIONS[c]).filter(Boolean);
     const cuisine = CUISINE_PROFILES[cuisinePreference.toLowerCase()] || CUISINE_PROFILES.mediterranean;
 
     // Determine menstrual cycle phase for phase-specific recommendations
     const currentPhase = this.determineMenstrualPhase(userProfile);
     const phaseData = MENSTRUAL_CYCLE_PHASES[currentPhase as keyof typeof MENSTRUAL_CYCLE_PHASES];
+    console.log('DEBUG: Determined menstrual phase:', currentPhase, 'Phase data:', phaseData);
 
     // Get scientific research data including seed cycling (with timeout for faster response)
     let researchContext = '';
@@ -605,7 +634,11 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
       }
     } catch (error) {
       console.error('Error generating meal plan:', error);
-      console.log('Using fallback meal plan with improved formatting');
+      console.log('DEBUG: Using fallback meal plan with these params:', {
+        healthConditions,
+        cuisinePreference,
+        userProfile,
+      });
       // Return enhanced fallback meal plan instead of throwing error
       return this.generateFallbackMealPlan(healthConditions, cuisinePreference, userProfile);
     }

@@ -115,9 +115,13 @@ export default function Profile() {
     
     setIsSaving(true);
     try {
+      const menstrualCycle = (formData as any).menstrualCycle || {};
       const response = await apiRequest('POST', '/api/onboarding', {
         ...formData,
-        userId: profileData.user.id
+        userId: profileData.user.id,
+        lastPeriodDate: menstrualCycle.lastPeriodDate || formData.lastPeriodDate,
+        cycleLength: menstrualCycle.length || formData.cycleLength,
+        irregularPeriods: menstrualCycle.irregularPeriods ?? formData.irregularPeriods
       });
       
       if (response.ok) {

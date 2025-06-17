@@ -12,6 +12,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { ChevronDown, ChevronUp, Calendar, Clock, Utensils, ShoppingCart, Heart, Sparkles } from 'lucide-react';
 
+interface DailyMealPlannerProps {
+  cuisinePreference?: string;
+}
+
 interface MealItem {
   name: string;
   ingredients: string[];
@@ -60,7 +64,7 @@ interface FeedbackData {
   feedback: string;
 }
 
-export function DailyMealPlanner() {
+export function DailyMealPlanner({ cuisinePreference = 'balanced' }: DailyMealPlannerProps) {
   const [currentStep, setCurrentStep] = useState<'check-in' | 'meal-plan' | 'feedback'>('check-in');
   const [feedbackData, setFeedbackData] = useState<Partial<FeedbackData>>({});
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
@@ -68,29 +72,67 @@ export function DailyMealPlanner() {
   const queryClient = useQueryClient();
 
   // Check-in query
-  const { data: checkInData, isLoading: checkInLoading } = useQuery({
+  const { data: checkInData, isLoading: checkInLoading, error: checkInError } = useQuery({
     queryKey: ['/api/daily/check-in'],
+    queryFn: async () => {
+      const response = await fetch('/api/daily/check-in', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || 'demo-token'}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Failed to fetch check-in data');
+      }
+      
+      return response.json();
+    },
     enabled: currentStep === 'check-in'
-  }) as { data?: CheckInResponse; isLoading: boolean };
+  }) as { data?: CheckInResponse; isLoading: boolean; error?: Error };
 
   // Today's meal plan query
-  const { data: mealPlanData, isLoading: mealPlanLoading } = useQuery({
+  const { data: mealPlanData, isLoading: mealPlanLoading, error: mealPlanError } = useQuery({
     queryKey: ['/api/daily/meal-plan/today'],
+    queryFn: async () => {
+      const response = await fetch('/api/daily/meal-plan/today', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || 'demo-token'}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Failed to fetch meal plan');
+      }
+      
+      return response.json();
+    },
     enabled: currentStep === 'meal-plan'
-  }) as { data?: {success: boolean, mealPlan?: TodaysMealPlan}; isLoading: boolean };
+  }) as { data?: {success: boolean, mealPlan?: TodaysMealPlan}; isLoading: boolean; error?: Error };
 
   // Generate meal plan mutation
   const generateMealPlan = useMutation({
     mutationFn: async (previousFeedback?: any) => {
       const response = await fetch('/api/daily/meal-plan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ previousFeedback })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || 'demo-token'}`
+        },
+        body: JSON.stringify({ previousFeedback, cuisinePreference })
       });
-      if (!response.ok) throw new Error('Failed to generate meal plan');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Meal plan generation error:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Failed to generate meal plan');
+      }
+      
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Meal plan generated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/daily/meal-plan/today'] });
       setCurrentStep('meal-plan');
       toast({
@@ -98,10 +140,11 @@ export function DailyMealPlanner() {
         description: "Your personalized daily meal plan has been generated."
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error('Meal plan generation failed:', error);
       toast({
         title: "Generation Failed",
-        description: "Unable to generate meal plan. Please try again.",
+        description: error.message || "Unable to generate meal plan. Please try again.",
         variant: "destructive"
       });
     }
@@ -380,6 +423,17 @@ export function DailyMealPlanner() {
                 </div>
               </CardContent>
             </Card>
+          ) : checkInError ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-red-600 dark:text-red-400 mb-4">
+                  Error: {checkInError.message}
+                </p>
+                <Button onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
           ) : checkInData ? (
             <Card>
               <CardHeader>
@@ -436,7 +490,7 @@ export function DailyMealPlanner() {
             <Utensils className="w-8 h-8 text-green-600" />
             <h1 className="text-3xl font-bold">Today's Meal Plan</h1>
           </div>
-          {mealPlanData?.mealPlan && (
+          {mealPlanData?.mealPlan?.menstrualPhase && (
             <Badge variant="outline" className="text-sm">
               {mealPlanData.mealPlan.menstrualPhase} Phase
             </Badge>
@@ -457,15 +511,26 @@ export function DailyMealPlanner() {
               </Card>
             ))}
           </div>
+        ) : mealPlanError ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-red-600 dark:text-red-400 mb-4">
+                Error: {mealPlanError.message}
+              </p>
+              <Button onClick={() => setCurrentStep('check-in')}>
+                Start Over
+              </Button>
+            </CardContent>
+          </Card>
         ) : mealPlanData?.mealPlan ? (
           <div className="space-y-6">
             {/* Personalized message */}
             <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
               <CardContent className="p-6">
                 <p className="text-lg font-medium text-gray-800 dark:text-gray-200">
-                  {mealPlanData.mealPlan.personalizedMessage}
+                  {mealPlanData.mealPlan.personalizedMessage || 'Your personalized meal plan for today'}
                 </p>
-                {mealPlanData.mealPlan.adaptations.length > 0 && (
+                {mealPlanData.mealPlan.adaptations?.length > 0 && (
                   <div className="mt-4 space-y-2">
                     <Label className="text-sm font-medium">Today's Personalizations:</Label>
                     <ul className="space-y-1">
@@ -483,51 +548,65 @@ export function DailyMealPlanner() {
 
             {/* Meals */}
             <div className="space-y-4">
-              <MealCard meal={mealPlanData.mealPlan.breakfast} mealType="breakfast" />
-              <MealCard meal={mealPlanData.mealPlan.lunch} mealType="lunch" />
-              <MealCard meal={mealPlanData.mealPlan.dinner} mealType="dinner" />
-              {mealPlanData.mealPlan.snacks.map((snack, idx) => (
+              {mealPlanData.mealPlan.breakfast && (
+                <MealCard meal={mealPlanData.mealPlan.breakfast} mealType="breakfast" />
+              )}
+              {mealPlanData.mealPlan.lunch && (
+                <MealCard meal={mealPlanData.mealPlan.lunch} mealType="lunch" />
+              )}
+              {mealPlanData.mealPlan.dinner && (
+                <MealCard meal={mealPlanData.mealPlan.dinner} mealType="dinner" />
+              )}
+              {mealPlanData.mealPlan.snacks?.map((snack, idx) => (
                 <MealCard key={idx} meal={snack} mealType="snack" />
               ))}
             </div>
 
             {/* Shopping List */}
-            <ShoppingListCard shoppingList={mealPlanData.mealPlan.shoppingList} />
+            {mealPlanData.mealPlan.shoppingList && (
+              <ShoppingListCard shoppingList={mealPlanData.mealPlan.shoppingList} />
+            )}
 
             {/* Daily Guidelines */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Daily Guidelines</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium text-green-700 dark:text-green-400">
-                    Foods to Emphasize:
-                  </Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {mealPlanData.mealPlan.dailyGuidelines.foods_to_emphasize.map((food, idx) => (
-                      <Badge key={idx} className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        {food}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+            {mealPlanData.mealPlan.dailyGuidelines && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Daily Guidelines</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {mealPlanData.mealPlan.dailyGuidelines.foods_to_emphasize?.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium text-green-700 dark:text-green-400">
+                        Foods to Emphasize:
+                      </Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {mealPlanData.mealPlan.dailyGuidelines.foods_to_emphasize.map((food, idx) => (
+                          <Badge key={idx} className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            {food}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                <div>
-                  <Label className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                    Hydration Tips:
-                  </Label>
-                  <ul className="mt-1 space-y-1">
-                    {mealPlanData.mealPlan.dailyGuidelines.hydration_tips.map((tip, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-sm">
-                        <span className="w-1 h-1 bg-blue-500 rounded-full"></span>
-                        {tip}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+                  {mealPlanData.mealPlan.dailyGuidelines.hydration_tips?.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                        Hydration Tips:
+                      </Label>
+                      <ul className="mt-1 space-y-1">
+                        {mealPlanData.mealPlan.dailyGuidelines.hydration_tips.map((tip, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-sm">
+                            <span className="w-1 h-1 bg-blue-500 rounded-full"></span>
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Feedback Button */}
             <div className="text-center pt-6">

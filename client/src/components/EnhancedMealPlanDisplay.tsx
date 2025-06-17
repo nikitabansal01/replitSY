@@ -206,7 +206,7 @@ export function EnhancedMealPlanDisplay({ mealPlan, shoppingList, detectedCondit
   
   if (isWeeklyPlan) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 mt-8 mb-16 px-4 md:px-12">
         <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
           <CardHeader>
             <CardTitle className="text-2xl font-bold flex items-center gap-3">
@@ -321,7 +321,7 @@ export function EnhancedMealPlanDisplay({ mealPlan, shoppingList, detectedCondit
 
   // Single day meal plan
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-8 mb-16 px-4 md:px-12">
       <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">

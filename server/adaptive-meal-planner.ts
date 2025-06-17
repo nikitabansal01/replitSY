@@ -146,49 +146,78 @@ class AdaptiveMealPlannerService {
 
   // Generate today's personalized meal plan
   async generateTodaysMealPlan(request: AdaptiveMealPlanRequest): Promise<TodaysMealPlan> {
-    const userProfile = await storage.getOnboardingData(request.userId);
-    const currentPhase = this.determineMenstrualPhase(userProfile);
-    
-    // Get previous feedback for adaptations
-    const adaptations = request.previousFeedback ? 
-      await this.generateAdaptiveRecommendations(request.previousFeedback, userProfile) : [];
-
-    // Generate meal plan using OpenAI with adaptive context
-    const systemPrompt = this.buildAdaptivePrompt(userProfile, currentPhase, request.previousFeedback, adaptations);
-    
     try {
-      const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "system", content: systemPrompt }],
-        temperature: 0.7,
-        max_tokens: 2000,
-        response_format: { type: "json_object" },
-      });
+      const userProfile = await storage.getOnboardingData(request.userId);
+      if (!userProfile) {
+        throw new Error('User profile not found. Please complete onboarding first.');
+      }
 
-      const content = completion.choices[0]?.message?.content;
-      if (!content) throw new Error('No OpenAI response');
-
-      const mealPlan = JSON.parse(content);
+      const currentPhase = this.determineMenstrualPhase(userProfile);
       
-      // Generate personalized message
-      const personalizedMessage = this.generatePersonalizedMessage(currentPhase, adaptations, userProfile);
+      // Get previous feedback for adaptations
+      const adaptations = request.previousFeedback ? 
+        await this.generateAdaptiveRecommendations(request.previousFeedback, userProfile) : [];
 
-      return {
-        date: request.date,
-        menstrualPhase: currentPhase,
-        personalizedMessage,
-        breakfast: mealPlan.breakfast,
-        lunch: mealPlan.lunch,
-        dinner: mealPlan.dinner,
-        snacks: mealPlan.snacks || [],
-        dailyGuidelines: mealPlan.daily_guidelines,
-        shoppingList: this.generateDailyShoppingList(mealPlan),
-        adaptations
-      };
+      // Generate meal plan using OpenAI with adaptive context
+      const systemPrompt = this.buildAdaptivePrompt(userProfile, currentPhase, request.previousFeedback, adaptations);
+      
+      try {
+        const completion = await this.openai.chat.completions.create({
+          model: "gpt-4",  // Fixed model name
+          messages: [{ role: "system", content: systemPrompt }],
+          temperature: 0.7,
+          max_tokens: 2000,
+          response_format: { type: "json_object" },
+        });
+
+        const content = completion.choices[0]?.message?.content;
+        if (!content) {
+          console.error('OpenAI returned empty response');
+          throw new Error('Failed to generate meal plan: Empty response from AI');
+        }
+
+        let mealPlan;
+        try {
+          mealPlan = JSON.parse(content);
+        } catch (parseError) {
+          console.error('Failed to parse OpenAI response:', content);
+          throw new Error('Failed to generate meal plan: Invalid response format');
+        }
+
+        // Validate meal plan structure
+        if (!mealPlan.breakfast || !mealPlan.lunch || !mealPlan.dinner || !mealPlan.daily_guidelines) {
+          console.error('Invalid meal plan structure:', mealPlan);
+          throw new Error('Failed to generate meal plan: Invalid structure');
+        }
+        
+        // Generate personalized message
+        const personalizedMessage = this.generatePersonalizedMessage(currentPhase, adaptations, userProfile);
+
+        return {
+          date: request.date,
+          menstrualPhase: currentPhase,
+          personalizedMessage,
+          breakfast: mealPlan.breakfast,
+          lunch: mealPlan.lunch,
+          dinner: mealPlan.dinner,
+          snacks: mealPlan.snacks || [],
+          dailyGuidelines: mealPlan.daily_guidelines,
+          shoppingList: this.generateDailyShoppingList(mealPlan),
+          adaptations
+        };
+
+      } catch (openaiError) {
+        console.error('OpenAI API error:', openaiError);
+        throw new Error('Failed to generate meal plan: AI service error');
+      }
 
     } catch (error) {
-      console.error('Error generating adaptive meal plan:', error);
-      return this.generateFallbackMealPlan(request.date, currentPhase, userProfile);
+      console.error('Error in generateTodaysMealPlan:', error);
+      // Only use fallback for OpenAI errors, not for missing profile or other issues
+      if (error instanceof Error && error.message.includes('AI service error')) {
+        return this.generateFallbackMealPlan(request.date, this.determineMenstrualPhase({}), {});
+      }
+      throw error; // Re-throw other errors
     }
   }
 
@@ -327,9 +356,9 @@ Focus on practical, accessible meals that address the user's specific needs and 
       });
     });
 
-    // Remove duplicates
+    // Remove duplicates using Array.from
     Object.keys(shoppingList).forEach(category => {
-      shoppingList[category] = [...new Set(shoppingList[category])];
+      shoppingList[category] = Array.from(new Set(shoppingList[category]));
     });
 
     return shoppingList;

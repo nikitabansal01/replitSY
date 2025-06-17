@@ -14,18 +14,23 @@ interface OnboardingData {
   gender: string;
   height: string;
   weight: string;
-  diet: string;
+  diet: string[];
   symptoms: string[];
   goals: string[];
   lifestyle: Record<string, any>;
   medicalConditions: string[];
   medications: string[];
   allergies: string[];
-  menstrualCycle: Record<string, any>;
-  stressLevel: string;
-  sleepHours: string;
-  exerciseLevel: string;
-  waterIntake: string;
+  menstrualCycle: {
+    lastPeriodDate: string;
+    periodLength: string[];
+    length: string[];
+    irregularPeriods: boolean;
+    symptoms: string[];
+  };
+  stressLevel: string[];
+  sleepHours: string[];
+  exerciseLevel: string[];
 }
 
 export default function OnboardingNew() {
@@ -39,18 +44,23 @@ export default function OnboardingNew() {
     gender: '',
     height: '',
     weight: '',
-    diet: '',
+    diet: [],
     symptoms: [],
     goals: [],
     lifestyle: {},
     medicalConditions: [],
     medications: [],
     allergies: [],
-    menstrualCycle: {},
-    stressLevel: '',
-    sleepHours: '',
-    exerciseLevel: '',
-    waterIntake: ''
+    menstrualCycle: {
+      lastPeriodDate: '',
+      periodLength: [],
+      length: [],
+      irregularPeriods: false,
+      symptoms: []
+    },
+    stressLevel: [],
+    sleepHours: [],
+    exerciseLevel: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -79,11 +89,23 @@ export default function OnboardingNew() {
 
   const handleSubmit = async () => {
     if (!token) return;
-    
     setIsSubmitting(true);
     try {
-      const response = await apiRequest('POST', '/api/onboarding', formData);
-      
+      // Transform fields to match backend schema
+      const menstrualCycle = formData.menstrualCycle || {};
+      const payload = {
+        ...formData,
+        diet: Array.isArray(formData.diet) ? formData.diet[0] || '' : formData.diet,
+        stressLevel: Array.isArray(formData.stressLevel) ? formData.stressLevel[0] || '' : formData.stressLevel,
+        sleepHours: Array.isArray(formData.sleepHours) ? formData.sleepHours[0] || '' : formData.sleepHours,
+        exerciseLevel: Array.isArray(formData.exerciseLevel) ? formData.exerciseLevel[0] || '' : formData.exerciseLevel,
+        lastPeriodDate: menstrualCycle.lastPeriodDate || '',
+        cycleLength: Array.isArray(menstrualCycle.length) ? menstrualCycle.length[0] || '' : menstrualCycle.length || '',
+        periodLength: Array.isArray(menstrualCycle.periodLength) ? menstrualCycle.periodLength[0] || '' : menstrualCycle.periodLength || '',
+        irregularPeriods: menstrualCycle.irregularPeriods || false,
+      } as any;
+      if ('menstrualCycle' in payload) delete payload.menstrualCycle;
+      const response = await apiRequest('POST', '/api/onboarding', payload);
       if (response.ok) {
         toast({
           title: "Profile Complete!",
@@ -120,7 +142,7 @@ export default function OnboardingNew() {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Basic Information</h2>
             <div>
-              <label className="block text-sm font-medium mb-3">What's your age range?</label>
+              <label className="block text-sm font-medium mb-3">What's your age range? (Select one)</label>
               <div className="grid grid-cols-2 gap-3">
                 {['18-25', '26-35', '36-45', '46-55', '55+'].map((age) => (
                   <Button
@@ -130,21 +152,6 @@ export default function OnboardingNew() {
                     className="text-sm"
                   >
                     {age} years
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-3">Gender</label>
-              <div className="grid grid-cols-3 gap-3">
-                {['Female', 'Male', 'Non-binary'].map((gender) => (
-                  <Button
-                    key={gender}
-                    variant={formData.gender === gender ? "default" : "outline"}
-                    onClick={() => setFormData({...formData, gender})}
-                    className="text-sm"
-                  >
-                    {gender}
                   </Button>
                 ))}
               </div>
@@ -183,30 +190,22 @@ export default function OnboardingNew() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Medical Conditions</h2>
-            <p className="text-sm text-gray-600 text-center">Have you ever been diagnosed with any of these conditions?</p>
+            <p className="text-sm text-gray-600 text-center">Have you ever been diagnosed with any of these conditions? (Select all that apply)</p>
             <div className="grid grid-cols-1 gap-3">
               {[
-                'PCOS (Polycystic Ovary Syndrome)',
+                'PCOS (Polycystic Ovary Syndrome) / PCOD (Polycystic Ovary Disorder)',
                 'Endometriosis',
                 'Thyroid disorders (Hypo/Hyperthyroidism)',
-                'Diabetes (Type 1 or Type 2)',
-                'Insulin resistance',
-                'High blood pressure',
-                'Heart disease',
-                'Autoimmune disorders',
-                'Depression or anxiety',
-                'Eating disorders',
-                'Chronic fatigue syndrome',
-                'Fibromyalgia',
-                'IBS (Irritable Bowel Syndrome)',
-                'Celiac disease',
-                'Other digestive disorders'
+                'None of the above',
+                'Other'
               ].map((condition) => (
                 <div key={condition} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     id={condition}
                     checked={formData.medicalConditions.includes(condition)}
-                    onCheckedChange={() => handleArrayToggle('medicalConditions', condition)}
+                    onChange={() => handleArrayToggle('medicalConditions', condition)}
+                    className="form-checkbox h-5 w-5 text-pink-600"
                   />
                   <label htmlFor={condition} className="text-sm font-medium cursor-pointer flex-1">
                     {condition}
@@ -221,7 +220,7 @@ export default function OnboardingNew() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Current Symptoms</h2>
-            <p className="text-sm text-gray-600 text-center">What symptoms are you currently experiencing?</p>
+            <p className="text-sm text-gray-600 text-center">What symptoms are you currently experiencing? (Select all that apply)</p>
             <div className="grid grid-cols-1 gap-3">
               {[
                 'Irregular periods',
@@ -241,10 +240,12 @@ export default function OnboardingNew() {
                 'Joint pain or stiffness'
               ].map((symptom) => (
                 <div key={symptom} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     id={symptom}
                     checked={formData.symptoms.includes(symptom)}
-                    onCheckedChange={() => handleArrayToggle('symptoms', symptom)}
+                    onChange={() => handleArrayToggle('symptoms', symptom)}
+                    className="form-checkbox h-5 w-5 text-pink-600"
                   />
                   <label htmlFor={symptom} className="text-sm font-medium cursor-pointer flex-1">
                     {symptom}
@@ -258,9 +259,9 @@ export default function OnboardingNew() {
       case 5:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center text-pink-600">Medications & Supplements</h2>
+            <h2 className="text-2xl font-bold text-center text-pink-600">Medications</h2>
             <div>
-              <label className="block text-sm font-medium mb-3">Are you currently taking any medications or supplements?</label>
+              <label className="block text-sm font-medium mb-3">Are you currently taking any medications? (Select all that apply)</label>
               <div className="grid grid-cols-1 gap-3">
                 {[
                   'Birth control pills',
@@ -268,21 +269,19 @@ export default function OnboardingNew() {
                   'Thyroid medication',
                   'Antidepressants',
                   'Blood pressure medication',
-                  'Vitamins (multivitamin, D3, B12)',
-                  'Omega-3 supplements',
-                  'Probiotics',
-                  'Iron supplements',
-                  'Magnesium',
-                  'Inositol',
-                  'Spearmint tea/supplements',
-                  'Other herbal supplements',
+                  'IUI (Intrauterine Insemination)',
+                  'IVF (In Vitro Fertilization)',
+                  'Hormone replacement therapy',
+                  'Other fertility treatments',
                   'None of the above'
                 ].map((medication) => (
                   <div key={medication} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                    <Checkbox
+                    <input
+                      type="checkbox"
                       id={medication}
                       checked={formData.medications.includes(medication)}
-                      onCheckedChange={() => handleArrayToggle('medications', medication)}
+                      onChange={() => handleArrayToggle('medications', medication)}
+                      className="form-checkbox h-5 w-5 text-pink-600"
                     />
                     <label htmlFor={medication} className="text-sm font-medium cursor-pointer flex-1">
                       {medication}
@@ -294,7 +293,7 @@ export default function OnboardingNew() {
           </div>
         );
 
-      case 6:
+      /*case 6:
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Food Allergies & Restrictions</h2>
@@ -329,97 +328,135 @@ export default function OnboardingNew() {
             </div>
           </div>
         );
+        */
 
-      case 7:
+      case 6:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center text-pink-600">Menstrual Health</h2>
-            {formData.gender === 'Female' && (
+            <h2 className="text-2xl font-bold text-center text-pink-600">Menstrual Health & Period Tracking</h2>
+            <div className="space-y-6">
+              {/* Period Tracking Information */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-3">Cycle length (if applicable)</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {['20-25 days', '26-32 days', '33+ days', 'Irregular', 'No periods', 'Post-menopause'].map((length) => (
-                      <Button
-                        key={length}
-                        variant={formData.menstrualCycle.length === length ? "default" : "outline"}
-                        onClick={() => setFormData({
-                          ...formData, 
-                          menstrualCycle: { ...formData.menstrualCycle, length }
-                        })}
-                        className="text-sm"
-                      >
-                        {length}
-                      </Button>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium mb-3">When did your last period start?</label>
+                  <Input
+                    type="date"
+                    value={formData.menstrualCycle.lastPeriodDate || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      menstrualCycle: { ...formData.menstrualCycle, lastPeriodDate: e.target.value }
+                    })}
+                    className="w-full"
+                  />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium mb-3">Period symptoms</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {['Heavy bleeding', 'Severe cramps', 'PMS symptoms', 'Minimal symptoms'].map((symptom) => (
-                      <div key={symptom} className="flex items-center space-x-3">
+                  <label className="block text-sm font-medium mb-3">How many days does your period typically last? (Select all that apply)</label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {['1-3 days', '4-5 days', '6-7 days', '8+ days', 'Varies'].map((length) => (
+                      <div key={length} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
                         <Checkbox
-                          id={symptom}
-                          checked={formData.menstrualCycle.symptoms?.includes(symptom)}
+                          id={`period-${length}`}
+                          checked={formData.menstrualCycle.periodLength.includes(length)}
                           onCheckedChange={() => {
-                            const currentSymptoms = formData.menstrualCycle.symptoms || [];
-                            const newSymptoms = currentSymptoms.includes(symptom)
-                              ? currentSymptoms.filter((s: string) => s !== symptom)
-                              : [...currentSymptoms, symptom];
+                            const currentLengths = formData.menstrualCycle.periodLength || [];
+                            const newLengths = currentLengths.includes(length)
+                              ? currentLengths.filter(l => l !== length)
+                              : [...currentLengths, length];
                             setFormData({
                               ...formData,
-                              menstrualCycle: { ...formData.menstrualCycle, symptoms: newSymptoms }
+                              menstrualCycle: { ...formData.menstrualCycle, periodLength: newLengths }
                             });
                           }}
                         />
-                        <label htmlFor={symptom} className="text-sm cursor-pointer">
-                          {symptom}
+                        <label htmlFor={`period-${length}`} className="text-sm font-medium cursor-pointer flex-1">
+                          {length}
                         </label>
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
-            {formData.gender !== 'Female' && (
-              <p className="text-center text-gray-600">This section is not applicable based on your gender selection.</p>
-            )}
-          </div>
-        );
 
-      case 8:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center text-pink-600">Lifestyle Factors</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-3">How would you rate your stress level?</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {['Very Low', 'Low', 'Moderate', 'High', 'Very High'].map((level) => (
-                    <Button
-                      key={level}
-                      variant={formData.stressLevel === level ? "default" : "outline"}
-                      onClick={() => setFormData({...formData, stressLevel: level})}
-                      className="text-xs"
-                    >
-                      {level}
-                    </Button>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium mb-3">Cycle length (Select all that apply)</label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {['20-25 days', '26-32 days', '33+ days', 'Irregular', 'No periods', 'Post-menopause'].map((length) => (
+                      <div key={length} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <Checkbox
+                          id={`cycle-${length}`}
+                          checked={formData.menstrualCycle.length.includes(length)}
+                          onCheckedChange={() => {
+                            const currentLengths = formData.menstrualCycle.length || [];
+                            const newLengths = currentLengths.includes(length)
+                              ? currentLengths.filter(l => l !== length)
+                              : [...currentLengths, length];
+                            setFormData({
+                              ...formData,
+                              menstrualCycle: { ...formData.menstrualCycle, length: newLengths }
+                            });
+                          }}
+                        />
+                        <label htmlFor={`cycle-${length}`} className="text-sm font-medium cursor-pointer flex-1">
+                          {length}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-3">Do you experience irregular periods?</label>
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="irregularPeriods"
+                      checked={formData.menstrualCycle.irregularPeriods}
+                      onCheckedChange={(checked) => setFormData({
+                        ...formData,
+                        menstrualCycle: { ...formData.menstrualCycle, irregularPeriods: checked === true }
+                      })}
+                    />
+                    <label htmlFor="irregularPeriods" className="text-sm cursor-pointer">
+                      Yes, my periods are irregular
+                    </label>
+                  </div>
                 </div>
               </div>
+
+              {/* Period Symptoms */}
               <div>
-                <label className="block text-sm font-medium mb-3">How many hours of sleep do you get per night?</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {['Less than 6', '6-7 hours', '7-8 hours', '8+ hours'].map((hours) => (
-                    <Button
-                      key={hours}
-                      variant={formData.sleepHours === hours ? "default" : "outline"}
-                      onClick={() => setFormData({...formData, sleepHours: hours})}
-                      className="text-sm"
-                    >
-                      {hours}
-                    </Button>
+                <label className="block text-sm font-medium mb-3">Period symptoms (Select all that apply)</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    'Heavy bleeding',
+                    'Severe cramps',
+                    'PMS symptoms',
+                    'Minimal symptoms',
+                    'Mood swings',
+                    'Bloating',
+                    'Breast tenderness',
+                    'Headaches',
+                    'Fatigue',
+                    'Back pain'
+                  ].map((symptom) => (
+                    <div key={symptom} className="flex items-center space-x-3">
+                      <Checkbox
+                        id={symptom}
+                        checked={formData.menstrualCycle.symptoms?.includes(symptom)}
+                        onCheckedChange={() => {
+                          const currentSymptoms = formData.menstrualCycle.symptoms || [];
+                          const newSymptoms = currentSymptoms.includes(symptom)
+                            ? currentSymptoms.filter((s: string) => s !== symptom)
+                            : [...currentSymptoms, symptom];
+                          setFormData({
+                            ...formData,
+                            menstrualCycle: { ...formData.menstrualCycle, symptoms: newSymptoms }
+                          });
+                        }}
+                      />
+                      <label htmlFor={symptom} className="text-sm cursor-pointer">
+                        {symptom}
+                      </label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -427,14 +464,57 @@ export default function OnboardingNew() {
           </div>
         );
 
-      case 9:
+      case 7:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-center text-pink-600">Lifestyle Factors</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-3">How would you rate your stress level? (Select all that apply)</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {['Very Low', 'Low', 'Moderate', 'High', 'Very High'].map((level) => (
+                    <div key={level} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                      <Checkbox
+                        id={level}
+                        checked={formData.stressLevel.includes(level)}
+                        onCheckedChange={() => handleArrayToggle('stressLevel', level)}
+                      />
+                      <label htmlFor={level} className="text-sm font-medium cursor-pointer flex-1">
+                        {level}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-3">How many hours of sleep do you get per night? (Select all that apply)</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {['Less than 6', '6-7 hours', '7-8 hours', '8+ hours'].map((hours) => (
+                    <div key={hours} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                      <Checkbox
+                        id={hours}
+                        checked={formData.sleepHours.includes(hours)}
+                        onCheckedChange={() => handleArrayToggle('sleepHours', hours)}
+                      />
+                      <label htmlFor={hours} className="text-sm font-medium cursor-pointer flex-1">
+                        {hours}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 8:
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Diet & Exercise</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-3">What best describes your current diet?</label>
-                <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm font-medium mb-3">What best describes your current diet? (Select all that apply)</label>
+                <div className="grid grid-cols-1 gap-3">
                   {[
                     'Standard/Balanced',
                     'Mediterranean',
@@ -445,29 +525,33 @@ export default function OnboardingNew() {
                     'Anti-inflammatory',
                     'Other/Custom'
                   ].map((diet) => (
-                    <Button
-                      key={diet}
-                      variant={formData.diet === diet ? "default" : "outline"}
-                      onClick={() => setFormData({...formData, diet})}
-                      className="text-sm"
-                    >
-                      {diet}
-                    </Button>
+                    <div key={diet} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                      <Checkbox
+                        id={diet}
+                        checked={formData.diet.includes(diet)}
+                        onCheckedChange={() => handleArrayToggle('diet', diet)}
+                      />
+                      <label htmlFor={diet} className="text-sm font-medium cursor-pointer flex-1">
+                        {diet}
+                      </label>
+                    </div>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-3">Exercise frequency</label>
-                <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm font-medium mb-3">Exercise frequency (Select all that apply)</label>
+                <div className="grid grid-cols-1 gap-3">
                   {['Sedentary', 'Light (1-2x/week)', 'Moderate (3-4x/week)', 'Active (5+ times/week)'].map((level) => (
-                    <Button
-                      key={level}
-                      variant={formData.exerciseLevel === level ? "default" : "outline"}
-                      onClick={() => setFormData({...formData, exerciseLevel: level})}
-                      className="text-sm"
-                    >
-                      {level}
-                    </Button>
+                    <div key={level} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                      <Checkbox
+                        id={level}
+                        checked={formData.exerciseLevel.includes(level)}
+                        onCheckedChange={() => handleArrayToggle('exerciseLevel', level)}
+                      />
+                      <label htmlFor={level} className="text-sm font-medium cursor-pointer flex-1">
+                        {level}
+                      </label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -475,7 +559,7 @@ export default function OnboardingNew() {
           </div>
         );
 
-      case 10:
+      case 9:
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Health Goals</h2>
@@ -487,16 +571,8 @@ export default function OnboardingNew() {
                   'Manage PCOS symptoms',
                   'Improve fertility',
                   'Weight management',
-                  'Increase energy levels',
-                  'Reduce inflammation',
+                  'Improve thyroid function',
                   'Improve mood and mental health',
-                  'Better digestion',
-                  'Hormone balance',
-                  'Reduce stress',
-                  'Improve sleep quality',
-                  'Strengthen immune system',
-                  'Anti-aging and longevity',
-                  'Manage chronic conditions'
                 ].map((goal) => (
                   <div key={goal} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
                     <Checkbox
@@ -508,21 +584,6 @@ export default function OnboardingNew() {
                       {goal}
                     </label>
                   </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-3">Daily water intake</label>
-              <div className="grid grid-cols-4 gap-2">
-                {['Less than 4 cups', '4-6 cups', '6-8 cups', '8+ cups'].map((intake) => (
-                  <Button
-                    key={intake}
-                    variant={formData.waterIntake === intake ? "default" : "outline"}
-                    onClick={() => setFormData({...formData, waterIntake: intake})}
-                    className="text-sm"
-                  >
-                    {intake}
-                  </Button>
                 ))}
               </div>
             </div>

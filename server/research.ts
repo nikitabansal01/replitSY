@@ -13,21 +13,53 @@ interface ResearchArticle {
   embedding?: number[];
 }
 
+interface ScrapeResponse<T, E> {
+  success: boolean;
+  markdown?: string;
+  error?: E;
+  data?: T;
+}
+
 class ResearchService {
-  private firecrawl: FirecrawlApp;
-  private pinecone: Pinecone;
-  private openai: OpenAI;
+  private firecrawl?: FirecrawlApp;
+  private pinecone?: Pinecone;
+  private openai?: OpenAI;
   private indexName = 'health-research';
   private knowledgeGapThreshold = 0.7; // Similarity threshold to determine if new scraping is needed
+  private isEnabled = false;
 
   constructor() {
-    this.firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
-    this.pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY || '' });
-    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Only initialize services if API keys are available
+    if (process.env.FIRECRAWL_API_KEY) {
+      this.firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+    }
+    if (process.env.PINECONE_API_KEY) {
+      this.pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+    }
+    if (process.env.OPENAI_API_KEY) {
+      this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
+
+    // Enable research service only if all required APIs are available
+    this.isEnabled = !!(this.firecrawl && this.pinecone && this.openai);
+    
+    if (!this.isEnabled) {
+      console.log('Research service is disabled. Some features may be limited.');
+    }
+  }
+
+  // Check if research service is enabled
+  isServiceEnabled(): boolean {
+    return this.isEnabled;
   }
 
   // Initialize Pinecone index for health research
   async initializeIndex(): Promise<void> {
+    if (!this.isEnabled || !this.pinecone) {
+      console.log('Research service is disabled. Skipping index initialization.');
+      return;
+    }
+
     try {
       const indexList = await this.pinecone.listIndexes();
       const indexExists = indexList.indexes?.some(index => index.name === this.indexName);
@@ -55,9 +87,12 @@ class ResearchService {
 
   // Scrape research articles from health databases
   async scrapeHealthResearch(topics: string[]): Promise<ResearchArticle[]> {
+    if (!this.isEnabled || !this.firecrawl) {
+      console.log('Research service is disabled. Returning empty results.');
+      return [];
+    }
+
     const articles: ResearchArticle[] = [];
-    
-    // Health research URLs to scrape
     const researchSources = [
       'https://pubmed.ncbi.nlm.nih.gov',
       'https://www.niddk.nih.gov',
@@ -67,7 +102,6 @@ class ResearchService {
 
     for (const topic of topics) {
       try {
-        // Search for research articles using Firecrawl
         const searchUrl = `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(topic + ' women health hormones')}`;
         
         const crawlResult = await this.firecrawl.scrapeUrl(searchUrl, {
@@ -75,15 +109,13 @@ class ResearchService {
           includeTags: ['article', 'main', 'div'],
           excludeTags: ['nav', 'footer', 'aside'],
           waitFor: 2000
-        });
+        }) as ScrapeResponse<any, never>;
 
         if (crawlResult.success && crawlResult.markdown) {
-          // Extract article information from scraped content
           const extractedArticles = this.parseScrapedContent(crawlResult.markdown, topic, searchUrl);
           articles.push(...extractedArticles);
         }
 
-        // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
         console.error(`Error scraping research for topic ${topic}:`, error);
@@ -148,6 +180,11 @@ class ResearchService {
 
   // Generate embeddings for research articles
   async generateEmbeddings(articles: ResearchArticle[]): Promise<ResearchArticle[]> {
+    if (!this.isEnabled || !this.openai) {
+      console.log('Research service is disabled. Returning articles without embeddings.');
+      return articles;
+    }
+
     const articlesWithEmbeddings: ResearchArticle[] = [];
 
     for (const article of articles) {
@@ -165,7 +202,6 @@ class ResearchService {
           });
         }
 
-        // Rate limiting for OpenAI API
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.error(`Error generating embedding for article ${article.id}:`, error);
@@ -177,6 +213,11 @@ class ResearchService {
 
   // Store research articles in Pinecone vector database
   async storeInVectorDB(articles: ResearchArticle[]): Promise<void> {
+    if (!this.isEnabled || !this.pinecone) {
+      console.log('Research service is disabled. Skipping storeInVectorDB.');
+      return;
+    }
+
     try {
       const index = this.pinecone.index(this.indexName);
       
@@ -206,6 +247,11 @@ class ResearchService {
 
   // Check if we have sufficient knowledge on a topic
   async hasKnowledgeGaps(query: string, minSimilarity: number = 0.7): Promise<boolean> {
+    if (!this.isEnabled) {
+      console.log('Research service is disabled. Returning true for hasKnowledgeGaps.');
+      return true;
+    }
+
     try {
       const matches = await this.searchRelevantResearch(query, 5);
       
@@ -224,6 +270,11 @@ class ResearchService {
 
   // Optimized search that prioritizes existing data
   async searchWithSmartScraping(query: string, topK: number = 3): Promise<any[]> {
+    if (!this.isEnabled) {
+      console.log('Research service is disabled. Returning empty results.');
+      return [];
+    }
+
     let existingMatches: any[] = [];
     
     try {
@@ -254,37 +305,37 @@ class ResearchService {
 
   // Scrape specific topic when knowledge gaps are detected
   async scrapeSpecificTopic(topic: string): Promise<void> {
+    if (!this.isEnabled || !this.firecrawl) {
+      console.log('Research service is disabled. Skipping scrapeSpecificTopic.');
+      return;
+    }
+
     try {
       const targetedSources = this.getTargetedSources(topic);
-      const articles: ResearchArticle[] = [];
-
+      
       for (const source of targetedSources) {
         try {
           const crawlResult = await this.firecrawl.scrapeUrl(source, {
             formats: ['markdown'],
             includeTags: ['article', 'main', 'div', 'section'],
-            excludeTags: ['nav', 'footer', 'aside', 'header'],
+            excludeTags: ['nav', 'footer', 'aside'],
             waitFor: 2000
-          });
+          }) as ScrapeResponse<any, never>;
 
           if (crawlResult.success && crawlResult.markdown) {
-            const extractedArticles = this.parseScrapedContent(crawlResult.markdown, topic, source);
-            articles.push(...extractedArticles);
+            // Process the scraped content
+            const articles = this.parseScrapedContent(crawlResult.markdown, topic, source);
+            const articlesWithEmbeddings = await this.generateEmbeddings(articles);
+            await this.storeInVectorDB(articlesWithEmbeddings);
           }
 
           await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
-          console.error(`Error scraping ${source}:`, error);
+          console.error(`Error scraping source ${source}:`, error);
         }
       }
-
-      if (articles.length > 0) {
-        const articlesWithEmbeddings = await this.generateEmbeddings(articles);
-        await this.storeInVectorDB(articlesWithEmbeddings);
-        console.log(`Scraped and stored ${articlesWithEmbeddings.length} new articles for topic: ${topic}`);
-      }
     } catch (error) {
-      console.error(`Error scraping specific topic ${topic}:`, error);
+      console.error(`Error scraping topic ${topic}:`, error);
     }
   }
 
@@ -335,6 +386,11 @@ class ResearchService {
 
   // Search for relevant research based on user query
   async searchRelevantResearch(query: string, topK: number = 3): Promise<any[]> {
+    if (!this.isEnabled || !this.openai || !this.pinecone) {
+      console.log('Research service is disabled. Returning empty results.');
+      return [];
+    }
+
     try {
       // Generate embedding for the query
       const queryEmbeddingResponse = await this.openai.embeddings.create({
@@ -344,7 +400,8 @@ class ResearchService {
 
       const queryEmbedding = queryEmbeddingResponse.data[0]?.embedding;
       if (!queryEmbedding) {
-        throw new Error('Failed to generate query embedding');
+        console.error('Failed to generate embedding for query');
+        return [];
       }
 
       // Search in Pinecone
@@ -352,13 +409,21 @@ class ResearchService {
       const searchResponse = await index.query({
         vector: queryEmbedding,
         topK,
-        includeMetadata: true,
-        includeValues: false
+        includeMetadata: true
       });
 
-      return searchResponse.matches || [];
+      if (!searchResponse || !searchResponse.matches) {
+        console.error('No search results found');
+        return [];
+      }
+
+      return searchResponse.matches.map(match => ({
+        id: match.id,
+        score: match.score,
+        metadata: match.metadata
+      }));
     } catch (error) {
-      console.error('Error searching relevant research:', error);
+      console.error('Error searching research:', error);
       return [];
     }
   }
@@ -378,6 +443,25 @@ class ResearchService {
       'PCOS inflammatory type diet turmeric omega-3',
       'PCOS insulin resistant type low glycemic diet',
       'PCOS post-pill type hormonal recovery nutrition',
+      'PCOS polycystic ovary syndrome nutrition diet anti-inflammatory',
+      'PCOS insulin resistance myo-inositol D-chiro-inositol clinical studies',
+      'PCOS weight management chromium berberine metformin alternatives',
+      'PCOS hormonal balance spearmint tea anti-androgen effects',
+      'PCOS fertility natural conception omega-3 CoQ10',
+      'PCOS lean type normal weight treatment nutrition',
+      'PCOS inflammatory type diet turmeric omega-3',
+      'PCOS insulin resistant type low glycemic diet',
+      'PCOS post-pill type hormonal recovery nutrition',
+
+  // Research and clinical studies
+      'PCOS PCOD clinical studies with women diagnosed',
+      'Research on food ingredients for hormonal acne hirsutism hairloss bloating nausea irregular periods weight gain metabolism insulin resistance',
+      'Research on physical movement for PCOS: cardio strength yoga for acne hirsutism bloating nausea irregular periods metabolism insulin',
+      'Alternative therapies for PCOS: emotional healing for acne hirsutism hairloss bloating irregular periods weight gain',
+      'Cycle syncing and natural hormone rhythms in women',
+      'Triggers that worsen PCOS PCOD symptoms: stress sugar dairy gluten overexercise under-eating',
+      'Ethnicity and PCOS PCOD prevalence treatment responses',
+      'Functional foods for PCOS PCOD: flaxseed turmeric spearmint cinnamon inositol zinc omega-3',
       
       // Thyroid comprehensive topics
       'hypothyroidism women nutrition selenium iodine zinc',
@@ -524,4 +608,5 @@ class ResearchService {
   }
 }
 
+// Export a singleton instance
 export const researchService = new ResearchService();

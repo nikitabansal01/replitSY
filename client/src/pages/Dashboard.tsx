@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { IngredientCard } from '@/components/chat/IngredientCard';
+import { X } from 'lucide-react';
 
 import { MealPlanGenerator } from '@/components/MealPlanGenerator';
 import type { ChatResponse, IngredientRecommendation } from '@shared/schema';
@@ -33,6 +34,30 @@ interface UserProfile {
   };
 }
 
+// Daily tips array for frontend rotation
+const DAILY_TIPS = [
+  {
+    tip: "Magnesium-rich foods like spinach and almonds can help reduce PMS symptoms. Try adding them to your meals today!",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5485207/"
+  },
+  {
+    tip: "Flax seeds are rich in lignans and omega-3s, supporting hormone balance during the menstrual cycle.",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3074428/"
+  },
+  {
+    tip: "Ginger has anti-inflammatory properties that can help reduce menstrual cramps and nausea.",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6341159/"
+  },
+  {
+    tip: "Vitamin D from sunlight or fortified foods supports hormonal balance and immune health.",
+    source: "https://ods.od.nih.gov/factsheets/VitaminD-Consumer/"
+  },
+  {
+    tip: "Fermented foods like yogurt and kimchi support gut health, which is linked to hormone regulation.",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6723657/"
+  }
+];
+
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, token, loading } = useAuth();
@@ -48,11 +73,6 @@ export default function Dashboard() {
     if (!loading && !user) {
       setLocation('/');
       return;
-    }
-    
-    // Check if user needs to complete onboarding
-    if (profile && !profile.onboarding && user) {
-      setLocation('/onboarding');
     }
   }, [user, loading, profile, setLocation]);
 
@@ -163,7 +183,30 @@ export default function Dashboard() {
     }
   };
 
-
+  const handleRemoveSymptom = async (symptomToRemove: string) => {
+    if (!profile?.onboarding) return;
+    const updatedSymptoms = profile.onboarding.symptoms.filter(s => s !== symptomToRemove);
+    const updatedProfile = {
+      ...profile,
+      onboarding: {
+        ...profile.onboarding,
+        symptoms: updatedSymptoms,
+      },
+    };
+    setProfile(updatedProfile);
+    try {
+      await apiRequest('PUT', '/api/profile', {
+        ...profile.onboarding,
+        symptoms: updatedSymptoms,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update focus areas.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -172,6 +215,11 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const today = new Date();
+  const startOfYear = new Date(today.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / 86400000);
+  const dailyTip = DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
@@ -333,10 +381,32 @@ export default function Dashboard() {
                 </div>
               </div>
             </Card>
+
+            {/* AI Nutritionist - Personalized Meal Plans below the chatbot */}
+            <Card className="shadow-xl rounded-2xl mt-4">
+              <CardContent className="p-0">
+                <MealPlanGenerator userDiet={profile?.onboarding?.diet || 'balanced'} />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Onboarding gentle prompt banner */}
+            {profile && !profile.onboarding && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-2 flex items-center justify-between">
+                <span className="text-yellow-800 text-sm font-medium">
+                  Complete your health profile to unlock personalized insights.
+                </span>
+                <Button
+                  size="sm"
+                  className="ml-4 bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
+                  onClick={() => setLocation('/onboarding')}
+                >
+                  Complete Profile
+                </Button>
+              </div>
+            )}
             
             {/* Health Dashboard */}
             <Card className="shadow-xl">
@@ -361,8 +431,19 @@ export default function Dashboard() {
                         {profile.onboarding.symptoms && profile.onboarding.symptoms.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {profile.onboarding.symptoms.slice(0, 3).map((symptom, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                              <span
+                                key={idx}
+                                className="relative group px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center"
+                              >
                                 {symptom}
+                                <button
+                                  aria-label={`Remove ${symptom}`}
+                                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-purple-500 hover:text-red-500 focus:outline-none"
+                                  onClick={() => handleRemoveSymptom(symptom)}
+                                  tabIndex={0}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
                               </span>
                             ))}
                             {profile.onboarding.symptoms.length > 3 && (
@@ -389,25 +470,14 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Medical Conditions Alert */}
-                    {profile.onboarding.symptoms && profile.onboarding.symptoms.length > 0 && (
-                      <div className="bg-orange-50 rounded-lg p-3">
-                        <p className="text-orange-700 font-medium text-sm mb-1">Health Focus Areas</p>
-                        <p className="text-orange-600 text-xs">
-                          {profile.onboarding.symptoms.slice(0, 2).join(', ')}
-                          {profile.onboarding.symptoms.length > 2 && ` +${profile.onboarding.symptoms.length - 2} more`}
-                        </p>
-                      </div>
-                    )}
-
                     {/* Additional Health Info */}
-                    {profile.onboarding.currentMedications && profile.onboarding.currentMedications !== 'None' && (
+                    {profile.onboarding && typeof (profile.onboarding as any).currentMedications === 'string' && (profile.onboarding as any).currentMedications !== 'None' && (
                       <div className="bg-blue-50 rounded-lg p-3">
                         <p className="text-blue-700 font-medium text-sm mb-1 flex items-center">
                           <span className="mr-1">💊</span>Current Medications
                         </p>
                         <p className="text-blue-600 text-xs">
-                          {profile.onboarding.currentMedications}
+                          {(profile.onboarding as any).currentMedications}
                         </p>
                       </div>
                     )}
@@ -433,67 +503,48 @@ export default function Dashboard() {
                   >
                     <i className="fas fa-edit mr-2"></i>Edit Profile
                   </Button>
-                  
-                  {profile?.onboarding && (
-                    <Button 
-                      onClick={() => setInputMessage('Generate a personalized meal plan for my conditions')}
-                      variant="ghost" 
-                      className="w-full text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                    >
-                      <i className="fas fa-utensils mr-2"></i>Get Meal Plan
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    onClick={signOutUser}
-                    variant="outline" 
-                    className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                  >
-                    <i className="fas fa-sign-out-alt mr-2"></i>Sign Out
-                  </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* AI Nutritionist */}
-            <MealPlanGenerator />
-
             {/* Quick Actions */}
-            <Card className="shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => setLocation('/daily-planner')}
-                >
-                  <i className="fas fa-calendar-check text-purple-500 mr-3"></i>
-                  Daily Planner
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => setLocation('/evaluation')}
-                >
-                  <i className="fas fa-chart-bar text-blue-500 mr-3"></i>
-                  System Metrics
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <i className="fas fa-utensils text-purple-500 mr-3"></i>
-                  Meal Suggestions
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <i className="fas fa-dumbbell text-purple-500 mr-3"></i>
-                  Exercise Plans
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <i className="fas fa-chart-line text-purple-500 mr-3"></i>
-                  Progress Reports
-                </Button>
-              </CardContent>
-            </Card>
+            {profile?.user.email === 'shrvya.yalaka@gmail.com' && (
+              <Card className="shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-lg">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start"
+                    onClick={() => setLocation('/daily-planner')}
+                  >
+                    <i className="fas fa-calendar-check text-purple-500 mr-3"></i>
+                    Daily Planner
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start"
+                    onClick={() => setLocation('/evaluation')}
+                  >
+                    <i className="fas fa-chart-bar text-blue-500 mr-3"></i>
+                    System Metrics
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start">
+                    <i className="fas fa-utensils text-purple-500 mr-3"></i>
+                    Meal Suggestions
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start">
+                    <i className="fas fa-dumbbell text-purple-500 mr-3"></i>
+                    Exercise Plans
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start">
+                    <i className="fas fa-chart-line text-purple-500 mr-3"></i>
+                    Progress Reports
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Health Tip */}
             <Card className="shadow-xl border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
@@ -503,11 +554,12 @@ export default function Dashboard() {
                   Daily Tip
                 </h3>
                 <p className="text-sm text-gray-700 mb-4">
-                  Magnesium-rich foods like spinach and almonds can help reduce PMS symptoms. 
-                  Try adding them to your meals today!
+                  {dailyTip.tip}
                 </p>
-                <Button variant="link" className="text-purple-600 p-0 h-auto font-medium">
-                  Learn more →
+                <Button variant="link" className="text-purple-600 p-0 h-auto font-medium" asChild>
+                  <a href={dailyTip.source} target="_blank" rel="noopener noreferrer">
+                    Learn more →
+                  </a>
                 </Button>
               </CardContent>
             </Card>

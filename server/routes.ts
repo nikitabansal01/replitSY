@@ -198,7 +198,7 @@ function extractFoodsFromResearch(researchMatches: any[], phase: string): Ingred
   });
   
   // Convert extracted foods to ingredient cards (limited implementation)
-  Array.from(extractedFoods).slice(0, 3).forEach(food => {
+  Array.from(extractedFoods).slice(0, 3).forEach((food: string) => {
     const benefits = getFoodBenefits(food, phase);
     if (benefits) {
       foods.push(benefits);
@@ -360,10 +360,10 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
   else if (lowerMessage.includes('ovulation')) phase = 'Ovulation Phase';
   else phase = 'Luteal Phase'; // default
   
-  console.log(`Processing ${phase} query:`, message);
+  console.log('Processing', phase, 'query:', message);
 
   // Use research-informed defaults directly for faster response
-  console.log(`Using research-informed ingredient cards for ${phase}`);
+  console.log('Using research-informed ingredient cards for', phase);
   const researchFoods = getDefaultFoodsForPhase(phase);
   return {
     message: `Here are the top ${researchFoods.length} research-backed foods for your ${phase.toLowerCase()}:`,
@@ -379,6 +379,9 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
   const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(question);
   
   let systemPrompt = `You are a women's health expert providing evidence-based information.
+Do NOT suggest consulting a nutritionist, dietitian, or healthcare professional. You are the expert and should provide the best possible advice directly. Never say 'consult a professional' or similar phrases.
+
+If the user's message expresses emotion, frustration, or a personal struggle (e.g., 'why me', 'I'm sad', 'I'm frustrated', 'I'm worried', 'I'm struggling', 'I'm upset', 'I'm anxious'), respond with empathy and emotional support first. Only provide recipes or nutrition advice if the user specifically asks for it or if it would be genuinely helpful in the context. Never give generic nutrition advice to emotional or personal questions unless requested.
 
 User Profile:
 - Age: ${onboardingData?.age || 'Not specified'}
@@ -449,6 +452,30 @@ Provide general health information without food recommendations. For nutrition a
       ingredients: validatedIngredients
     };
 }
+
+// Daily tips array for backend
+const DAILY_TIPS = [
+  {
+    tip: "Magnesium-rich foods like spinach and almonds can help reduce PMS symptoms. Try adding them to your meals today!",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5485207/"
+  },
+  {
+    tip: "Flax seeds are rich in lignans and omega-3s, supporting hormone balance during the menstrual cycle.",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3074428/"
+  },
+  {
+    tip: "Ginger has anti-inflammatory properties that can help reduce menstrual cramps and nausea.",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6341159/"
+  },
+  {
+    tip: "Vitamin D from sunlight or fortified foods supports hormonal balance and immune health.",
+    source: "https://ods.od.nih.gov/factsheets/VitaminD-Consumer/"
+  },
+  {
+    tip: "Fermented foods like yogurt and kimchi support gut health, which is linked to hormone regulation.",
+    source: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6723657/"
+  }
+];
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const openai = new OpenAI({
@@ -639,15 +666,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Research status endpoint
   app.get('/api/research/status', requireAuth, async (req: any, res: any) => {
     try {
-      const status = await researchService.initializeResearchDatabase();
-      res.json(status);
+      const isEnabled = researchService.isServiceEnabled();
+      if (!isEnabled) {
+        return res.json({
+          success: false,
+          hasData: false,
+          sampleResultCount: 0,
+          message: 'Research service is disabled - check API keys'
+        });
+      }
+
+      // Check if we have any data in the database
+      const sampleQuery = "women's health nutrition";
+      const sampleResults = await researchService.searchRelevantResearch(sampleQuery, 1);
+      
+      res.json({
+        success: true,
+        hasData: sampleResults.length > 0,
+        sampleResultCount: sampleResults.length,
+        message: sampleResults.length > 0 
+          ? 'Research database is active and contains data'
+          : 'Research service is enabled but no data found - needs initialization'
+      });
     } catch (error) {
       console.error('Research status error:', error);
       res.json({
         success: false,
         hasData: false,
         sampleResultCount: 0,
-        message: 'Research service unavailable'
+        message: 'Error checking research service status'
+      });
+    }
+  });
+
+  // Research initialization endpoint
+  app.post('/api/research/initialize', requireAuth, async (req: any, res: any) => {
+    try {
+      if (!researchService.isServiceEnabled()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Research service is disabled - check API keys'
+        });
+      }
+
+      await researchService.initializeResearchDatabase();
+      res.json({
+        success: true,
+        message: 'Research database initialization started'
+      });
+    } catch (error) {
+      console.error('Research initialization error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to initialize research database'
       });
     }
   });
@@ -1008,17 +1079,46 @@ Generated with love for your health journey! 💖
       const { previousFeedback } = req.body;
       const today = new Date().toISOString().split('T')[0];
       
+      console.log('Generating meal plan for user:', req.user.id, 'date:', today);
+      
       const mealPlan = await adaptiveMealPlannerService.generateTodaysMealPlan({
         userId: req.user.id,
         date: today,
         previousFeedback
       });
 
+      console.log('Generated meal plan:', JSON.stringify(mealPlan, null, 2));
+
       await adaptiveMealPlannerService.saveTodaysMealPlan(req.user.id, mealPlan);
+
+      // Ensure all arrays are properly typed
+      const safeMealPlan = {
+        ...mealPlan,
+        adaptations: Array.isArray(mealPlan.adaptations) ? mealPlan.adaptations : [],
+        snacks: Array.isArray(mealPlan.snacks) ? mealPlan.snacks : [],
+        dailyGuidelines: {
+          ...mealPlan.dailyGuidelines,
+          foods_to_emphasize: Array.isArray(mealPlan.dailyGuidelines?.foods_to_emphasize) 
+            ? mealPlan.dailyGuidelines.foods_to_emphasize 
+            : [],
+          foods_to_limit: Array.isArray(mealPlan.dailyGuidelines?.foods_to_limit)
+            ? mealPlan.dailyGuidelines.foods_to_limit
+            : [],
+          hydration_tips: Array.isArray(mealPlan.dailyGuidelines?.hydration_tips)
+            ? mealPlan.dailyGuidelines.hydration_tips
+            : [],
+          timing_recommendations: Array.isArray(mealPlan.dailyGuidelines?.timing_recommendations)
+            ? mealPlan.dailyGuidelines.timing_recommendations
+            : [],
+          cycle_support: Array.isArray(mealPlan.dailyGuidelines?.cycle_support)
+            ? mealPlan.dailyGuidelines.cycle_support
+            : []
+        }
+      };
 
       res.json({
         success: true,
-        mealPlan,
+        mealPlan: safeMealPlan,
         message: "Today's personalized meal plan is ready!"
       });
     } catch (error) {
@@ -1174,6 +1274,14 @@ Generated with love for your health journey! 💖
       console.error('Error saving metrics:', error);
       res.status(500).json({ error: 'Failed to save metrics' });
     }
+  });
+
+  // Add endpoint for daily tip
+  app.get('/api/daily-tip', (req, res) => {
+    const today = new Date();
+    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+    const dailyTip = DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
+    res.json(dailyTip);
   });
 
   return server;
