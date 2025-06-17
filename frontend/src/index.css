@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(270, 3%, 96%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(270, 5%, 91%);
+  --input: hsl(270, 5%, 91%);
+  --primary: hsl(262, 83%, 63%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(270, 3%, 96%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(330, 81%, 60%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(262, 83%, 63%);
+  --radius: 0.75rem;
+  
+  /* Purple theme colors */
+  --purple-50: hsl(270, 100%, 98%);
+  --purple-100: hsl(269, 100%, 95%);
+  --purple-200: hsl(269, 100%, 92%);
+  --purple-300: hsl(268, 100%, 86%);
+  --purple-400: hsl(270, 95%, 75%);
+  --purple-500: hsl(262, 83%, 63%);
+  --purple-600: hsl(262, 83%, 58%);
+  --purple-700: hsl(263, 70%, 50%);
+  --purple-800: hsl(263, 69%, 42%);
+  --purple-900: hsl(264, 67%, 35%);
+  
+  /* Pink accent colors */
+  --pink-400: hsl(330, 81%, 75%);
+  --pink-500: hsl(330, 81%, 60%);
+  --pink-600: hsl(330, 81%, 55%);
+}
+
+.dark {
+  --background: hsl(264, 67%, 6%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(264, 10%, 15%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(264, 67%, 6%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(264, 67%, 6%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(264, 10%, 15%);
+  --input: hsl(264, 10%, 15%);
+  --primary: hsl(262, 83%, 63%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(264, 10%, 15%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(330, 81%, 60%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(262, 83%, 63%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-gradient-to-br from-purple-50 to-pink-50 text-foreground min-h-screen;
+  }
+  
+  .gradient-bg {
+    background: linear-gradient(135deg, hsl(262, 83%, 63%) 0%, hsl(330, 81%, 60%) 100%);
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+@layer components {
+  .chat-bubble-user {
+    @apply bg-gradient-to-r from-purple-500 to-pink-500 text-white;
+  }
+  
+  .chat-bubble-ai {
+    @apply bg-white border border-gray-200;
+  }
+  
+  .ingredient-card {
+    @apply bg-white border border-purple-100 rounded-xl p-4 transition-all hover:shadow-md;
+  }
+  
+  .option-button {
+    @apply w-full p-4 text-left border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all cursor-pointer;
+  }
+  
+  .option-button.selected {
+    @apply border-purple-500 bg-purple-50 text-purple-800;
+  }
+  
+  .checkbox-custom {
+    @apply w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center transition-all;
+  }
+  
+  .checkbox-custom.checked {
+    @apply border-purple-500 bg-purple-500 text-white;
+  }
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulseSoft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
