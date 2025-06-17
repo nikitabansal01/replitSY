@@ -14,6 +14,17 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          const timestamp = Date.now();
+          if (assetInfo.name?.endsWith('.css')) {
+            return `assets/index-${timestamp}.css`;
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
+      },
+    },
   },
   server: {
     fs: {
