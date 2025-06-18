@@ -10,11 +10,40 @@ const app = express();
 
 const allowedOrigins = [
   "https://hormoneinsightsrepo.vercel.app",
+  "https://hormoneinsights-repo.vercel.app",
+  "https://hormoneinsights.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://localhost:3000",
+  "https://localhost:5173",
+  "https://localhost:4173",
   // Add any other preview or custom domains you use
 ];
+
+// More flexible CORS configuration
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
+    // Log blocked origins for debugging
+    console.log(`CORS blocked origin: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
 app.use(express.json());
