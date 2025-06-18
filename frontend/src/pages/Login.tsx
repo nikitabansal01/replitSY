@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail, getAuthToken } from '@/lib/auth';
+import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +18,9 @@ export default function Login() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   const [loginForm, setLoginForm] = useState({
     email: "",
@@ -177,6 +181,46 @@ export default function Login() {
     window.location.href = '/onboarding';
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Import Firebase auth function for password reset
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      await sendPasswordResetEmail(auth, resetEmail);
+      setResetEmailSent(true);
+      toast({
+        title: "Success",
+        description: "Password reset email sent! Check your inbox."
+      });
+    } catch (error: any) {
+      let message = "Failed to send reset email";
+      if (error.code === 'auth/user-not-found') {
+        message = "No account found with this email address.";
+      } else if (error.code === 'auth/invalid-email') {
+        message = "Invalid email address.";
+      } else if (error.message) {
+        message = error.message;
+      }
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -268,6 +312,15 @@ export default function Login() {
                         onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                         required
                       />
+                      <div className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPassword(true)}
+                          className="text-sm text-purple-600 hover:text-purple-700 underline"
+                        >
+                          Forgot Password?
+                        </button>
+                      </div>
                     </div>
                     <Button type="submit" disabled={isLoading} className="w-full">
                       Sign In with Email
@@ -357,6 +410,63 @@ export default function Login() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Reset Password</h3>
+            {!resetEmailSent ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <Label htmlFor="reset-email">Email Address</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmail('');
+                      setResetEmailSent(false);
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isLoading} className="flex-1">
+                    {isLoading ? 'Sending...' : 'Send Reset Email'}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-green-600">
+                  Password reset email sent! Check your inbox and follow the link to reset your password.
+                </p>
+                <Button
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                    setResetEmailSent(false);
+                  }}
+                  className="w-full"
+                >
+                  Close
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
