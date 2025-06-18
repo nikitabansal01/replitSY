@@ -1,6 +1,20 @@
 {
-  "include": ["./*.ts", "shared/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "include": [
+    "backend/**/*.ts",
+    "shared/**/*"
+  ],
+  "exclude": [
+    "node_modules", 
+    "build", 
+    "dist", 
+    "**/*.test.ts",
+    "frontend/**/*",
+    "client/**/*",
+    "server/**/*",
+    "tailwind.config.ts",
+    "vite.config.ts",
+    "postcss.config.js"
+  ],
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
