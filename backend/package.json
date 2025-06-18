@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx index.ts",
-    "build": "tsc && esbuild index.ts --platform=node --bundle --format=esm --outdir=dist --external:express --external:firebase --external:firebase-admin --external:openai --external:postgres --external:ws",
+    "build": "tsc && esbuild index.ts --platform=node --bundle --format=esm --outdir=dist --external:express --external:firebase --external:firebase-admin --external:openai --external:postgres --external:ws --external:dotenv",
     "build:simple": "tsc",
     "start": "NODE_ENV=production node dist/index.js",
     "start:simple": "NODE_ENV=production tsx index.ts",
