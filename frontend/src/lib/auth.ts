@@ -18,14 +18,7 @@ export async function signUpWithEmail(email: string, password: string, displayNa
     const token = await result.user.getIdToken();
     localStorage.setItem('authToken', token);
 
-    // Call backend to create user onboarding record
-    await apiRequest('POST', '/api/onboarding', {
-      age: '',
-      diet: 'omnivore',
-      symptoms: [],
-      // Add more fields if you want to prefill them
-    });
-
+    // Do NOT create onboarding record here; let onboarding page handle it
     return result.user;
   } catch (error) {
     console.error("Error signing up with email:", error);
