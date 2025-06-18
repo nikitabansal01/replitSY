@@ -7,6 +7,7 @@ import {
   updateProfile
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
+import { apiRequest } from "./api";
 
 export async function signUpWithEmail(email: string, password: string, displayName: string) {
   try {
@@ -68,14 +69,8 @@ export async function signOutUser() {
     if (token && token !== 'demo-token') {
       try {
         console.log("Calling server logout endpoint...");
-        const response = await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log("Server logout response:", response.status);
+        await apiRequest('POST', '/api/auth/logout');
+        console.log("Server logout successful");
       } catch (error) {
         console.error("Error clearing server data:", error);
       }

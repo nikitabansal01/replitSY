@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getApiUrl } from "./api";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -9,10 +10,10 @@ async function throwIfResNotOk(res: Response) {
 
 export async function apiRequest(
   method: string,
-  url: string,
+  path: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  // Get token from localStorage or context
+  const url = getApiUrl(path);
   const token = localStorage.getItem('authToken') || 'demo-token';
   
   const headers: Record<string, string> = {
@@ -40,9 +41,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const path = queryKey[0] as string;
+    const url = getApiUrl(path);
     const token = localStorage.getItem('authToken') || 'demo-token';
     
-    const res = await fetch(queryKey[0] as string, {
+    const res = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
