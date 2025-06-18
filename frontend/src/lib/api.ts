@@ -26,17 +26,32 @@ export async function apiRequest(
     headers['Content-Type'] = 'application/json';
   }
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+  console.log(`Making API request: ${method} ${url}`);
+  console.log('Headers:', headers);
+  if (data) {
+    console.log('Request data:', data);
   }
-  
-  return res;
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+
+    console.log(`Response status: ${res.status}`);
+    console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+
+    if (!res.ok) {
+      const text = (await res.text()) || res.statusText;
+      console.error(`API request failed: ${res.status}: ${text}`);
+      throw new Error(`${res.status}: ${text}`);
+    }
+    
+    return res;
+  } catch (error) {
+    console.error('API request error:', error);
+    throw error;
+  }
 } 

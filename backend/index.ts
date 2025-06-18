@@ -95,6 +95,18 @@ app.use((req, res, next) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  // CORS debugging endpoint
+  app.get('/api/cors-debug', (req, res) => {
+    res.json({
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent'],
+      allowedOrigins,
+      nodeEnv: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Use PORT from environment variable (Railway will provide this)
   const port = process.env.PORT || 5000;
   server.listen({
