@@ -281,8 +281,16 @@ class NutritionistService {
     const irregularPeriods = userProfile.irregularPeriods;
     const cycleLength = parseInt(userProfile.cycleLength) || parseInt(userProfile.menstrualCycle?.cycleLength) || 28;
     
+    console.log('DEBUG: Menstrual phase calculation:', {
+      lastPeriodDate,
+      irregularPeriods,
+      cycleLength,
+      hasLastPeriodDate: !!lastPeriodDate
+    });
+    
     if (!lastPeriodDate || irregularPeriods) {
       // Use lunar cycle for irregular periods or missing data
+      console.log('DEBUG: Using lunar cycle due to missing data or irregular periods');
       return this.getLunarCyclePhase();
     }
 
@@ -290,25 +298,49 @@ class NutritionistService {
     const today = new Date();
     const daysSinceLastPeriod = Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24));
 
+    console.log('DEBUG: Date calculations:', {
+      lastPeriod: lastPeriod.toISOString(),
+      today: today.toISOString(),
+      daysSinceLastPeriod
+    });
+
     // If period data is very old (>60 days), use lunar cycle
     if (daysSinceLastPeriod > 60) {
+      console.log('DEBUG: Using lunar cycle due to old period data (>60 days)');
       return this.getLunarCyclePhase();
     }
 
-    // Determine phase based on user's cycle length
-    const menstrualPhase = Math.min(daysSinceLastPeriod, 5);
-    const follicularPhase = Math.floor(cycleLength * 0.5);
-    const ovulatoryPhase = Math.floor(cycleLength * 0.55);
+    // Handle case where we're in the current cycle (daysSinceLastPeriod is positive)
+    // or if we've passed the cycle length (start of new cycle)
+    const currentCycleDay = daysSinceLastPeriod % cycleLength;
     
-    if (daysSinceLastPeriod <= menstrualPhase) {
-      return 'menstrual';
-    } else if (daysSinceLastPeriod <= follicularPhase) {
-      return 'follicular';
-    } else if (daysSinceLastPeriod <= ovulatoryPhase) {
-      return 'ovulatory';
+    // Define phase boundaries based on typical cycle patterns
+    const menstrualPhaseEnd = 5; // Days 1-5
+    const follicularPhaseEnd = Math.floor(cycleLength * 0.5); // Usually around day 14 for 28-day cycle
+    const ovulatoryPhaseEnd = Math.floor(cycleLength * 0.6); // Usually around day 16-17 for 28-day cycle
+    
+    console.log('DEBUG: Phase boundaries:', {
+      currentCycleDay,
+      menstrualPhaseEnd,
+      follicularPhaseEnd,
+      ovulatoryPhaseEnd,
+      cycleLength
+    });
+    
+    // Determine phase based on current cycle day
+    let phase: string;
+    if (currentCycleDay >= 1 && currentCycleDay <= menstrualPhaseEnd) {
+      phase = 'menstrual';
+    } else if (currentCycleDay > menstrualPhaseEnd && currentCycleDay <= follicularPhaseEnd) {
+      phase = 'follicular';
+    } else if (currentCycleDay > follicularPhaseEnd && currentCycleDay <= ovulatoryPhaseEnd) {
+      phase = 'ovulatory';
     } else {
-      return 'luteal';
+      phase = 'luteal';
     }
+    
+    console.log('DEBUG: Determined phase:', phase);
+    return phase;
   }
 
   private getLunarCyclePhase(): string {

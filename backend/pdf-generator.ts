@@ -120,10 +120,25 @@ Generated with love for your health journey! 💖
       return this.getLunarCyclePhase();
     }
 
-    if (daysSinceLastPeriod <= 5) return 'menstrual';
-    else if (daysSinceLastPeriod <= Math.floor(cycleLength * 0.5)) return 'follicular';
-    else if (daysSinceLastPeriod <= Math.floor(cycleLength * 0.55)) return 'ovulatory';
-    else return 'luteal';
+    // Handle case where we're in the current cycle (daysSinceLastPeriod is positive)
+    // or if we've passed the cycle length (start of new cycle)
+    const currentCycleDay = daysSinceLastPeriod % cycleLength;
+    
+    // Define phase boundaries based on typical cycle patterns
+    const menstrualPhaseEnd = 5; // Days 1-5
+    const follicularPhaseEnd = Math.floor(cycleLength * 0.5); // Usually around day 14 for 28-day cycle
+    const ovulatoryPhaseEnd = Math.floor(cycleLength * 0.6); // Usually around day 16-17 for 28-day cycle
+    
+    // Determine phase based on current cycle day
+    if (currentCycleDay >= 1 && currentCycleDay <= menstrualPhaseEnd) {
+      return 'menstrual';
+    } else if (currentCycleDay > menstrualPhaseEnd && currentCycleDay <= follicularPhaseEnd) {
+      return 'follicular';
+    } else if (currentCycleDay > follicularPhaseEnd && currentCycleDay <= ovulatoryPhaseEnd) {
+      return 'ovulatory';
+    } else {
+      return 'luteal';
+    }
   }
 
   private getLunarCyclePhase(): string {
