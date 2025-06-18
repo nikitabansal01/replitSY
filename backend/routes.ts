@@ -1,13 +1,15 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type IngredientRecommendation, type ChatResponse, type User } from "@shared/schema";
+import express from 'express';
+import { db } from './db';
+import { users, onboardingData, chatMessages, dailyMealPlans, dailyFeedback, progressTracking, adminUsers, systemMetrics, insertUserSchema, insertOnboardingSchema, insertChatMessageSchema, type User, type InsertUser, type OnboardingData, type InsertOnboardingData, type ChatMessage, type InsertChatMessage, type DailyMealPlan, type InsertDailyMealPlan, type DailyFeedback, type InsertDailyFeedback, type ProgressTracking, type InsertProgressTracking, type IngredientRecommendation, type ChatResponse } from "./shared-schema";
 import { z } from "zod";
 import OpenAI from 'openai';
 import { researchService } from './research';
 import { evaluationMetricsService } from './evaluation-metrics';
 import { ENHANCED_TRAINING_PROMPT, validateImplementationMethods } from './llm-training-guide';
-import { nutritionistService, type DailyMealPlan } from './nutritionist';
+import { nutritionistService } from './nutritionist';
 import { pdfGeneratorService } from './pdf-generator';
 import { auth as firebaseAuth } from './firebase-admin';
 import { adaptiveMealPlannerService } from './adaptive-meal-planner';

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { db } from './db';
-import { adminUsers, systemMetrics, users, chatMessages, dailyMealPlans, onboardingData } from '@shared/schema';
+import { adminUsers, systemMetrics, users, chatMessages, dailyMealPlans, onboardingData } from './shared-schema';
 import { eq, count, gte, sql } from 'drizzle-orm';
 
 export class AdminAuthService {

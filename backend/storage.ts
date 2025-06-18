@@ -1,5 +1,7 @@
-import { users, onboardingData, chatMessages, dailyMealPlans, dailyFeedback, progressTracking, type User, type InsertUser, type OnboardingData, type InsertOnboardingData, type ChatMessage, type InsertChatMessage, type DailyMealPlan, type InsertDailyMealPlan, type DailyFeedback, type InsertDailyFeedback, type ProgressTracking, type InsertProgressTracking, type IngredientRecommendation } from "@shared/schema";
-import { db } from "./db";
+import { Storage } from '@google-cloud/storage';
+import { db } from './db';
+import { dailyMealPlans, dailyFeedback, progressTracking, users, onboardingData, chatMessages } from './shared-schema';
+import type { MealItem, DailyGuidelines, IngredientRecommendation, User, InsertUser, OnboardingData, InsertOnboardingData, ChatMessage, InsertChatMessage, DailyMealPlan, InsertDailyMealPlan, DailyFeedback, InsertDailyFeedback, ProgressTracking, InsertProgressTracking } from "./shared-schema";
 import { eq, and } from "drizzle-orm";
 
 export interface IStorage {

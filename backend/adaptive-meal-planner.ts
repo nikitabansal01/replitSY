@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { storage } from './storage';
 import { nutritionistService } from './nutritionist';
-import type { MealItem, DailyGuidelines, InsertDailyMealPlan, InsertDailyFeedback, InsertProgressTracking, CheckInResponse } from '@shared/schema';
+import type { MealItem, DailyGuidelines, InsertDailyMealPlan, InsertDailyFeedback, InsertProgressTracking, CheckInResponse } from './shared-schema';
 
 interface AdaptiveMealPlanRequest {
   userId: number;
