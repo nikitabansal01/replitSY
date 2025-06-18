@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
@@ -20,18 +19,11 @@ try {
   console.warn("Failed to initialize database connection:", error);
 }
 
-try {
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-    // Create Supabase client for auth and other Supabase features
-    supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
-  } else {
-    console.warn("SUPABASE_URL and SUPABASE_ANON_KEY not set - Supabase features disabled");
-  }
-} catch (error) {
-  console.warn("Failed to initialize Supabase connection:", error);
+// Supabase is optional - will be null if not configured
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  console.log("Supabase environment variables found - Supabase features will be available at runtime");
+} else {
+  console.warn("SUPABASE_URL and SUPABASE_ANON_KEY not set - Supabase features disabled");
 }
 
 export { db, supabase };
