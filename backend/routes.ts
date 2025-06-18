@@ -674,10 +674,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isMenstrualPhaseQuery = lowerMessage.includes('menstrual') || lowerMessage.includes('menstrual phase');
       const isOvulationPhaseQuery = lowerMessage.includes('ovulation') || lowerMessage.includes('ovulation phase');
       
+      // Check if this is a health-related question that should use research
+      const isHealthQuestion = /\b(bloating|digestion|pms|symptoms|pain|cramps|fatigue|mood|weight|acne|hair|skin|thyroid|pcos|endometriosis|hormones|nutrition|diet|food|eat|supplement|vitamin|mineral|exercise|stress|sleep|anxiety|depression|energy|tired|irregular|period|menstrual|fertility|pregnancy|menopause)\b/i.test(message);
+      
       let response;
       
-      // Use research-based response for cycle phase queries
-      if (isLutealPhaseQuery || isFollicularPhaseQuery || isMenstrualPhaseQuery || isOvulationPhaseQuery) {
+      // Use research-based response for cycle phase queries OR health-related questions
+      if (isLutealPhaseQuery || isFollicularPhaseQuery || isMenstrualPhaseQuery || isOvulationPhaseQuery || isHealthQuestion) {
         response = await generateResearchBasedCycleResponse(message, onboardingData, getOpenAI());
       } else {
         // Try ChatGPT with fast timeout, fallback to demo if needed
@@ -1355,6 +1358,56 @@ Generated with love for your health journey! 💖
     const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
     const dailyTip = DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
     res.json(dailyTip);
+  });
+
+  // CORS debugging endpoint
+  app.get('/api/cors-debug', (req, res) => {
+    res.json({
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent'],
+      nodeEnv: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Research debugging endpoint
+  app.get('/api/research/debug/:query', requireAuth, async (req: any, res: any) => {
+    try {
+      const query = req.params.query;
+      console.log(`Debug research retrieval for query: ${query}`);
+      
+      if (!researchService.isServiceEnabled()) {
+        return res.json({
+          success: false,
+          message: 'Research service is disabled',
+          query
+        });
+      }
+
+      const researchMatches = await researchService.searchWithSmartScraping(query, 5);
+      
+      res.json({
+        success: true,
+        query,
+        matchCount: researchMatches.length,
+        matches: researchMatches.map(match => ({
+          id: match.id,
+          score: match.score,
+          title: match.metadata?.title || 'No title',
+          source: match.metadata?.source || 'Unknown source',
+          contentPreview: match.metadata?.content?.substring(0, 200) + '...' || 'No content',
+          url: match.metadata?.url || 'No URL'
+        }))
+      });
+    } catch (error) {
+      console.error('Research debug error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        query: req.params.query
+      });
+    }
   });
 
   return server;
