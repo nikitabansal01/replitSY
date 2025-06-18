@@ -3,9 +3,20 @@ import 'dotenv/config';
 import dotenv from 'dotenv';
 dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 
 const app = express();
+
+const allowedOrigins = [
+  "https://hormoneinsightsrepo.vercel.app",
+  // Add any other preview or custom domains you use
+];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -48,19 +59,6 @@ app.use((req, res, next) => {
 
     res.status(status).json({ message });
     console.error(err);
-  });
-
-  // CORS configuration for frontend
-  app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(200);
-    } else {
-      next();
-    }
   });
 
   // Health check endpoint
