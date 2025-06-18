@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { signInWithGoogle, signInWithEmail, signUpWithEmail, getAuthToken } from '@/lib/auth';
+import { signInWithGoogle as baseSignInWithGoogle, signInWithEmail, signUpWithEmail, getAuthToken } from '@/lib/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/api';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -43,14 +44,24 @@ export default function Login() {
     }
   }, [user, loading, setLocation]);
 
-
+  async function signInWithGoogleAndRegister() {
+    const user = await baseSignInWithGoogle();
+    if (user) {
+      await apiRequest('POST', '/api/auth/register', {
+        firebaseUid: user.uid,
+        email: user.email,
+        name: user.displayName || 'User'
+      });
+    }
+    return user;
+  }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setGoogleError(null);
     try {
       localStorage.removeItem('signedOut');
-      await signInWithGoogle();
+      await signInWithGoogleAndRegister();
       toast({
         title: "Success",
         description: "Successfully signed in with Google!"

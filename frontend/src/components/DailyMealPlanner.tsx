@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronDown, ChevronUp, Calendar, Clock, Utensils, ShoppingCart, Heart, Sparkles } from 'lucide-react';
+import { getApiUrl } from '@/lib/api';
 
 interface DailyMealPlannerProps {
   cuisinePreference?: string;
@@ -75,7 +76,7 @@ export function DailyMealPlanner({ cuisinePreference = 'balanced' }: DailyMealPl
   const { data: checkInData, isLoading: checkInLoading, error: checkInError } = useQuery({
     queryKey: ['/api/daily/check-in'],
     queryFn: async () => {
-      const response = await fetch('/api/daily/check-in', {
+      const response = await fetch(getApiUrl('/api/daily/check-in'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken') || 'demo-token'}`
         }
@@ -95,7 +96,7 @@ export function DailyMealPlanner({ cuisinePreference = 'balanced' }: DailyMealPl
   const { data: mealPlanData, isLoading: mealPlanLoading, error: mealPlanError } = useQuery({
     queryKey: ['/api/daily/meal-plan/today'],
     queryFn: async () => {
-      const response = await fetch('/api/daily/meal-plan/today', {
+      const response = await fetch(getApiUrl('/api/daily/meal-plan/today'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken') || 'demo-token'}`
         }
@@ -114,7 +115,7 @@ export function DailyMealPlanner({ cuisinePreference = 'balanced' }: DailyMealPl
   // Generate meal plan mutation
   const generateMealPlan = useMutation({
     mutationFn: async (previousFeedback?: any) => {
-      const response = await fetch('/api/daily/meal-plan', {
+      const response = await fetch(getApiUrl('/api/daily/meal-plan'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -153,7 +154,7 @@ export function DailyMealPlanner({ cuisinePreference = 'balanced' }: DailyMealPl
   // Submit feedback mutation
   const submitFeedback = useMutation({
     mutationFn: async (feedback: FeedbackData) => {
-      const response = await fetch('/api/daily/feedback', {
+      const response = await fetch(getApiUrl('/api/daily/feedback'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feedback)

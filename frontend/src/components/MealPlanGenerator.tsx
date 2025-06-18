@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { EnhancedMealPlanDisplay } from './EnhancedMealPlanDisplay';
 import { DailyMealPlanner } from './DailyMealPlanner';
 import { getApiUrl } from '@/lib/api';
+import { signInWithGoogle as baseSignInWithGoogle } from '@/lib/auth';
+import { apiRequest } from '@/lib/api';
 
 interface CuisineOption {
   id: string;
@@ -60,6 +62,20 @@ const styles = `
 
 // Sort cuisines alphabetically for the select dropdown
 const SORTED_CUISINE_OPTIONS = [...CUISINE_OPTIONS].sort((a, b) => a.name.localeCompare(b.name));
+
+// Replace the signInWithGoogle usage with a wrapper that also registers the user in the backend
+async function signInWithGoogleAndRegister() {
+  const user = await baseSignInWithGoogle();
+  if (user) {
+    // Register user in backend
+    await apiRequest('POST', '/api/auth/register', {
+      firebaseUid: user.uid,
+      email: user.email,
+      name: user.displayName || 'User'
+    });
+  }
+  return user;
+}
 
 export function MealPlanGenerator({ userDiet }: MealPlanGeneratorProps) {
   const { toast } = useToast();
