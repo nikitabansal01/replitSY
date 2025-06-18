@@ -742,7 +742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Research initialization endpoint
+  // Research initialization endpoint (requires auth)
   app.post('/api/research/initialize', requireAuth, async (req: any, res: any) => {
     try {
       if (!researchService.isServiceEnabled()) {
@@ -762,6 +762,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Failed to initialize research database'
+      });
+    }
+  });
+
+  // Public research initialization endpoint (no auth required)
+  app.post('/api/research/initialize-public', async (req: any, res: any) => {
+    try {
+      if (!researchService.isServiceEnabled()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Research service is disabled - check API keys'
+        });
+      }
+
+      // Start the initialization process
+      researchService.initializeResearchDatabase().then(() => {
+        console.log('Research database initialization completed successfully');
+      }).catch((error) => {
+        console.error('Research initialization failed:', error);
+      });
+
+      res.json({
+        success: true,
+        message: 'Research database initialization started in background'
+      });
+    } catch (error) {
+      console.error('Research initialization error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to start research database initialization'
       });
     }
   });
