@@ -192,7 +192,7 @@ function extractFoodsFromResearch(researchMatches: any[], phase: string): Ingred
     commonFoodPatterns.forEach(pattern => {
       const matches = content.match(pattern);
       if (matches) {
-        matches.forEach(food => extractedFoods.add(food.toLowerCase()));
+        matches.forEach((food: string) => extractedFoods.add(food.toLowerCase()));
       }
     });
   });
@@ -510,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             diet: 'Mediterranean',
             symptoms: ['irregular_periods', 'fatigue_and_low_energy'],
             goals: ['regulate_menstrual_cycle', 'improve_energy_levels'],
-            lifestyle: { stressLevel: 'Moderate', sleepHours: '7-8' },
+            lifestyle: { stressLevel: 'Moderate', sleepHours: '7-8' } as Record<string, any>,
             height: '165cm',
             weight: '60kg',
             stressLevel: 'Moderate',
@@ -551,7 +551,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/register', async (req: Request, res: Response) => {
     try {
-      const { firebaseUid, email, name } = insertUserSchema.parse(req.body);
+      const parsed = insertUserSchema.parse(req.body);
+      const { firebaseUid, email, name } = parsed as any;
       
       let user = await storage.getUserByFirebaseUid(firebaseUid);
       
@@ -1279,7 +1280,7 @@ Generated with love for your health journey! 💖
   // Add endpoint for daily tip
   app.get('/api/daily-tip', (req, res) => {
     const today = new Date();
-    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
     const dailyTip = DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
     res.json(dailyTip);
   });

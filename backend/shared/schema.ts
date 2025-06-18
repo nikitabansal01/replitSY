@@ -143,45 +143,21 @@ export const systemMetrics = pgTable("system_metrics", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertUserSchema = createInsertSchema(users);
 
-export const insertOnboardingSchema = createInsertSchema(onboardingData).omit({
-  id: true,
-  completedAt: true,
-});
+export const insertOnboardingSchema = createInsertSchema(onboardingData);
 
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
 
-export const insertDailyMealPlanSchema = createInsertSchema(dailyMealPlans).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertDailyMealPlanSchema = createInsertSchema(dailyMealPlans);
 
-export const insertDailyFeedbackSchema = createInsertSchema(dailyFeedback).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertDailyFeedbackSchema = createInsertSchema(dailyFeedback);
 
-export const insertProgressTrackingSchema = createInsertSchema(progressTracking).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertProgressTrackingSchema = createInsertSchema(progressTracking);
 
-export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertAdminUserSchema = createInsertSchema(adminUsers);
 
-export const insertSystemMetricsSchema = createInsertSchema(systemMetrics).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSystemMetricsSchema = createInsertSchema(systemMetrics);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

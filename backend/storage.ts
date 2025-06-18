@@ -1,6 +1,6 @@
 import { users, onboardingData, chatMessages, dailyMealPlans, dailyFeedback, progressTracking, type User, type InsertUser, type OnboardingData, type InsertOnboardingData, type ChatMessage, type InsertChatMessage, type DailyMealPlan, type InsertDailyMealPlan, type DailyFeedback, type InsertDailyFeedback, type ProgressTracking, type InsertProgressTracking, type IngredientRecommendation } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -72,10 +72,13 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
+    const userData = insertUser as any;
     const user: User = { 
-      ...insertUser, 
       id,
-      profilePicture: insertUser.profilePicture || null,
+      firebaseUid: userData.firebaseUid,
+      email: userData.email,
+      name: userData.name,
+      profilePicture: userData.profilePicture ?? null,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -88,15 +91,31 @@ export class MemStorage implements IStorage {
 
   async saveOnboardingData(data: InsertOnboardingData): Promise<OnboardingData> {
     const id = this.currentOnboardingId++;
+    const dataObj = data as any;
     const onboarding: OnboardingData = {
-      ...data,
       id,
-      symptoms: data.symptoms as string[],
-      goals: data.goals as string[] || null,
-      lifestyle: data.lifestyle as Record<string, any> || null,
+      userId: dataObj.userId,
+      age: dataObj.age,
+      height: dataObj.height ?? null,
+      weight: dataObj.weight ?? null,
+      diet: dataObj.diet,
+      symptoms: dataObj.symptoms as string[],
+      goals: dataObj.goals as string[] ?? null,
+      lifestyle: dataObj.lifestyle as Record<string, any> ?? null,
+      medicalConditions: dataObj.medicalConditions as string[] ?? null,
+      medications: dataObj.medications as string[] ?? null,
+      allergies: dataObj.allergies as string[] ?? null,
+      lastPeriodDate: dataObj.lastPeriodDate ?? null,
+      cycleLength: dataObj.cycleLength ?? null,
+      periodLength: dataObj.periodLength ?? null,
+      irregularPeriods: dataObj.irregularPeriods ?? false,
+      stressLevel: dataObj.stressLevel ?? null,
+      sleepHours: dataObj.sleepHours ?? null,
+      exerciseLevel: dataObj.exerciseLevel ?? null,
+      waterIntake: dataObj.waterIntake ?? null,
       completedAt: new Date(),
     };
-    this.onboardingData.set(data.userId, onboarding);
+    this.onboardingData.set(dataObj.userId, onboarding);
     return onboarding;
   }
 
@@ -106,16 +125,19 @@ export class MemStorage implements IStorage {
 
   async saveChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
     const id = this.currentChatId++;
+    const messageObj = message as any;
     const chatMessage: ChatMessage = {
-      ...message,
       id,
-      ingredients: (message.ingredients as any) || null,
+      userId: messageObj.userId,
+      message: messageObj.message,
+      response: messageObj.response,
+      ingredients: (messageObj.ingredients as IngredientRecommendation[]) ?? null,
       createdAt: new Date(),
     };
     
-    const userMessages = this.chatMessages.get(message.userId) || [];
+    const userMessages = this.chatMessages.get(messageObj.userId) || [];
     userMessages.push(chatMessage);
-    this.chatMessages.set(message.userId, userMessages);
+    this.chatMessages.set(messageObj.userId, userMessages);
     
     return chatMessage;
   }
@@ -132,12 +154,21 @@ export class MemStorage implements IStorage {
 
   async saveDailyMealPlan(plan: InsertDailyMealPlan): Promise<DailyMealPlan> {
     const id = this.currentMealPlanId++;
+    const planObj = plan as any;
     const mealPlan: DailyMealPlan = {
-      ...plan,
       id,
+      date: planObj.date,
+      userId: planObj.userId,
+      menstrualPhase: planObj.menstrualPhase,
+      breakfast: planObj.breakfast,
+      lunch: planObj.lunch,
+      dinner: planObj.dinner,
+      snacks: planObj.snacks,
+      dailyGuidelines: planObj.dailyGuidelines,
+      shoppingList: planObj.shoppingList ?? null,
       createdAt: new Date()
     };
-    const key = `${plan.userId}-${plan.date}`;
+    const key = `${planObj.userId}-${planObj.date}`;
     this.dailyMealPlans.set(key, mealPlan);
     return mealPlan;
   }
@@ -150,12 +181,23 @@ export class MemStorage implements IStorage {
 
   async saveDailyFeedback(feedback: InsertDailyFeedback): Promise<DailyFeedback> {
     const id = this.currentFeedbackId++;
+    const feedbackObj = feedback as any;
     const dailyFeedback: DailyFeedback = {
-      ...feedback,
       id,
+      date: feedbackObj.date,
+      userId: feedbackObj.userId,
+      mealPlanId: feedbackObj.mealPlanId,
+      followedPlan: feedbackObj.followedPlan ?? null,
+      enjoyedMeals: feedbackObj.enjoyedMeals ?? null,
+      dislikedMeals: feedbackObj.dislikedMeals ?? null,
+      symptomsImprovement: feedbackObj.symptomsImprovement ?? null,
+      energyLevel: feedbackObj.energyLevel ?? null,
+      digestiveHealth: feedbackObj.digestiveHealth ?? null,
+      moodRating: feedbackObj.moodRating ?? null,
+      feedback: feedbackObj.feedback ?? null,
       createdAt: new Date()
     };
-    const key = `${feedback.userId}-${feedback.date}`;
+    const key = `${feedbackObj.userId}-${feedbackObj.date}`;
     this.dailyFeedback.set(key, dailyFeedback);
     return dailyFeedback;
   }
@@ -168,12 +210,18 @@ export class MemStorage implements IStorage {
 
   async saveProgressTracking(progress: InsertProgressTracking): Promise<ProgressTracking> {
     const id = this.currentProgressId++;
+    const progressObj = progress as any;
     const progressData: ProgressTracking = {
-      ...progress,
       id,
+      date: progressObj.date,
+      userId: progressObj.userId,
+      menstrualPhase: progressObj.menstrualPhase,
+      symptomsSeverity: progressObj.symptomsSeverity ?? null,
+      overallWellbeing: progressObj.overallWellbeing ?? null,
+      notes: progressObj.notes ?? null,
       createdAt: new Date()
     };
-    const key = `${progress.userId}-${progress.date}`;
+    const key = `${progressObj.userId}-${progressObj.date}`;
     this.progressTracking.set(key, progressData);
     return progressData;
   }
@@ -210,9 +258,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    const userData = insertUser as any;
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(userData)
       .returning();
     return user;
   }
@@ -224,42 +273,22 @@ export class DatabaseStorage implements IStorage {
 
   async saveOnboardingData(data: InsertOnboardingData): Promise<OnboardingData> {
     // Check if onboarding data already exists for this user
-    const existing = await this.getOnboardingData(data.userId);
+    const dataObj = data as any;
+    const existing = await this.getOnboardingData(dataObj.userId);
     
     if (existing) {
       // Update existing record
       const [onboarding] = await db
         .update(onboardingData)
-        .set({
-          age: data.age,
-          gender: data.gender || 'Female',
-          height: data.height || '',
-          weight: data.weight || '',
-          diet: data.diet,
-          symptoms: data.symptoms,
-          goals: data.goals || [],
-          lifestyle: data.lifestyle || {},
-          medicalConditions: data.medicalConditions || [],
-          medications: data.medications || [],
-          allergies: data.allergies || [],
-          menstrualCycle: data.menstrualCycle || {},
-          stressLevel: data.stressLevel || '',
-          sleepHours: data.sleepHours || '',
-          exerciseLevel: data.exerciseLevel || '',
-          waterIntake: data.waterIntake || '',
-          completedAt: new Date()
-        })
-        .where(eq(onboardingData.userId, data.userId))
+        .set(dataObj)
+        .where(eq(onboardingData.userId, dataObj.userId))
         .returning();
       return onboarding;
     } else {
       // Insert new record
       const [onboarding] = await db
         .insert(onboardingData)
-        .values({
-          ...data,
-          completedAt: new Date()
-        })
+        .values(dataObj)
         .returning();
       return onboarding;
     }
@@ -273,20 +302,81 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const messageObj = message as any;
     const [chatMessage] = await db
       .insert(chatMessages)
-      .values({
-        message: message.message,
-        userId: message.userId,
-        response: message.response,
-        ingredients: message.ingredients
-      })
+      .values(messageObj)
       .returning();
     return chatMessage;
   }
 
   async clearChatHistory(userId: number): Promise<void> {
     await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+  }
+
+  // Daily meal plan methods
+  async getDailyMealPlan(userId: number, date: string): Promise<DailyMealPlan | undefined> {
+    const [mealPlan] = await db.select().from(dailyMealPlans)
+      .where(and(eq(dailyMealPlans.userId, userId), eq(dailyMealPlans.date, date)));
+    return mealPlan || undefined;
+  }
+
+  async saveDailyMealPlan(plan: InsertDailyMealPlan): Promise<DailyMealPlan> {
+    const planObj = plan as any;
+    const [mealPlan] = await db
+      .insert(dailyMealPlans)
+      .values(planObj)
+      .returning();
+    return mealPlan;
+  }
+
+  // Daily feedback methods
+  async getDailyFeedback(userId: number, date: string): Promise<DailyFeedback | undefined> {
+    const [feedback] = await db.select().from(dailyFeedback)
+      .where(and(eq(dailyFeedback.userId, userId), eq(dailyFeedback.date, date)));
+    return feedback || undefined;
+  }
+
+  async saveDailyFeedback(feedback: InsertDailyFeedback): Promise<DailyFeedback> {
+    const feedbackObj = feedback as any;
+    const [dailyFeedbackResult] = await db
+      .insert(dailyFeedback)
+      .values(feedbackObj)
+      .returning();
+    return dailyFeedbackResult;
+  }
+
+  // Progress tracking methods
+  async getProgressTracking(userId: number, date: string): Promise<ProgressTracking | undefined> {
+    const [progress] = await db.select().from(progressTracking)
+      .where(and(eq(progressTracking.userId, userId), eq(progressTracking.date, date)));
+    return progress || undefined;
+  }
+
+  async saveProgressTracking(progress: InsertProgressTracking): Promise<ProgressTracking> {
+    const progressObj = progress as any;
+    const [progressData] = await db
+      .insert(progressTracking)
+      .values(progressObj)
+      .returning();
+    return progressData;
+  }
+
+  async getUserProgressHistory(userId: number, days: number): Promise<ProgressTracking[]> {
+    const result: ProgressTracking[] = [];
+    const today = new Date();
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const progress = await this.getProgressTracking(userId, dateStr);
+      if (progress) {
+        result.push(progress);
+      }
+    }
+    
+    return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 }
 

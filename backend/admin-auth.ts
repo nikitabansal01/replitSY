@@ -98,26 +98,11 @@ export class AdminAuthService {
       // Update existing metrics
       await db
         .update(systemMetrics)
-        .set({
-          totalUsers: metrics.totalUsers,
-          activeUsers: metrics.activeUsers,
-          totalMealPlans: metrics.totalMealPlans,
-          totalChatMessages: metrics.totalChatMessages,
-          avgUserSatisfaction: metrics.avgUserSatisfaction,
-          systemHealth: metrics.systemHealth
-        })
+        .set(metrics as any)
         .where(eq(systemMetrics.date, today));
     } else {
       // Insert new metrics
-      await db.insert(systemMetrics).values({
-        date: today,
-        totalUsers: metrics.totalUsers,
-        activeUsers: metrics.activeUsers,
-        totalMealPlans: metrics.totalMealPlans,
-        totalChatMessages: metrics.totalChatMessages,
-        avgUserSatisfaction: metrics.avgUserSatisfaction,
-        systemHealth: metrics.systemHealth
-      });
+      await db.insert(systemMetrics).values(metrics as any);
     }
 
     return metrics;
