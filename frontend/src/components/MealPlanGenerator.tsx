@@ -8,6 +8,7 @@ import { Loader2, ChefHat, Globe, Sparkles, Calendar, Wand2 } from 'lucide-react
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedMealPlanDisplay } from './EnhancedMealPlanDisplay';
 import { DailyMealPlanner } from './DailyMealPlanner';
+import { getApiUrl } from '@/lib/api';
 
 interface CuisineOption {
   id: string;
@@ -68,11 +69,11 @@ export function MealPlanGenerator({ userDiet }: MealPlanGeneratorProps) {
 
   const generateMealPlan = useMutation({
     mutationFn: async ({ cuisinePreference, duration }: { cuisinePreference: string, duration: string }) => {
-      let endpoint = '/api/nutrition/meal-plan';
+      let endpoint = getApiUrl('/api/nutrition/meal-plan');
       if (duration === 'weekly') {
-        endpoint = '/api/nutrition/meal-plan/weekly';
+        endpoint = getApiUrl('/api/nutrition/meal-plan/weekly');
       } else if (duration === 'monthly') {
-        endpoint = '/api/nutrition/meal-plan/monthly';
+        endpoint = getApiUrl('/api/nutrition/meal-plan/monthly');
       }
 
       const response = await fetch(endpoint, {
@@ -109,9 +110,9 @@ export function MealPlanGenerator({ userDiet }: MealPlanGeneratorProps) {
 
   const downloadPDF = useMutation({
     mutationFn: async ({ cuisinePreference, duration }: { cuisinePreference: string, duration: string }) => {
-      let endpoint = '/api/nutrition/meal-plan/weekly/pdf';
+      let endpoint = getApiUrl('/api/nutrition/meal-plan/weekly/pdf');
       if (duration === 'monthly') {
-        endpoint = '/api/nutrition/meal-plan/monthly/pdf';
+        endpoint = getApiUrl('/api/nutrition/meal-plan/monthly/pdf');
       }
 
       const response = await fetch(endpoint, {
