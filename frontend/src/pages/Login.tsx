@@ -14,6 +14,9 @@ export default function Login() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [signupError, setSignupError] = useState<string | null>(null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const [loginForm, setLoginForm] = useState({
     email: "",
@@ -40,23 +43,33 @@ export default function Login() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setGoogleError(null);
     try {
-      // Clear signedOut flag when user actively signs in
       localStorage.removeItem('signedOut');
       await signInWithGoogle();
       toast({
         title: "Success",
         description: "Successfully signed in with Google!"
       });
-      // Force navigation to dashboard
       setTimeout(() => {
         setLocation('/dashboard');
       }, 500);
     } catch (error: any) {
       console.error('Sign in failed:', error);
+      let message = "Failed to sign in with Google";
+      if (error.code === 'auth/popup-closed-by-user') {
+        message = "Google sign-in was cancelled.";
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        message = "An account already exists with a different sign-in method.";
+      } else if (error.code === 'auth/network-request-failed') {
+        message = "Network error. Please check your connection and try again.";
+      } else if (error.message) {
+        message = error.message;
+      }
+      setGoogleError(message);
       toast({
         title: "Error",
-        description: error.message || "Failed to sign in with Google",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -67,23 +80,34 @@ export default function Login() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setLoginError(null);
     try {
-      // Clear signedOut flag when user actively signs in
       localStorage.removeItem('signedOut');
       await signInWithEmail(loginForm.email, loginForm.password);
       toast({
         title: "Success",
         description: "Successfully signed in!"
       });
-      // Force navigation to dashboard
       setTimeout(() => {
         setLocation('/dashboard');
       }, 500);
     } catch (error: any) {
+      let message = "Failed to sign in";
+      if (error.code === 'auth/user-not-found') {
+        message = "No account found with this email.";
+      } else if (error.code === 'auth/wrong-password') {
+        message = "Incorrect password. Please try again.";
+      } else if (error.code === 'auth/invalid-email') {
+        message = "Invalid email address.";
+      } else if (error.code === 'auth/too-many-requests') {
+        message = "Too many failed attempts. Please try again later.";
+      } else if (error.message) {
+        message = error.message;
+      }
+      setLoginError(message);
       toast({
         title: "Error",
-        description: error.message || "Failed to sign in",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -93,39 +117,50 @@ export default function Login() {
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setSignupError(null);
     if (signupForm.password !== signupForm.confirmPassword) {
+      const message = "Passwords do not match";
+      setSignupError(message);
       toast({
         title: "Error",
-        description: "Passwords do not match",
+        description: message,
         variant: "destructive"
       });
       return;
     }
-
     if (signupForm.password.length < 6) {
+      const message = "Password must be at least 6 characters";
+      setSignupError(message);
       toast({
         title: "Error",
-        description: "Password must be at least 6 characters",
+        description: message,
         variant: "destructive"
       });
       return;
     }
-
     setIsLoading(true);
-    
     try {
       const user = await signUpWithEmail(signupForm.email, signupForm.password, signupForm.name);
       toast({
         title: "Success",
         description: "Account created successfully!"
       });
-      // Force navigation after successful account creation
       setTimeout(() => setLocation('/onboarding'), 500);
     } catch (error: any) {
+      let message = "Failed to create account";
+      if (error.code === 'auth/email-already-in-use') {
+        message = "An account with this email already exists.";
+      } else if (error.code === 'auth/invalid-email') {
+        message = "Invalid email address.";
+      } else if (error.code === 'auth/weak-password') {
+        message = "Password is too weak.";
+      } else if (error.message) {
+        message = error.message;
+      }
+      setSignupError(message);
       toast({
         title: "Error",
-        description: error.message || "Failed to create account",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -187,6 +222,10 @@ export default function Login() {
                 Continue with Google
               </Button>
 
+              {googleError && (
+                <div className="text-red-600 text-sm text-center mt-2">{googleError}</div>
+              )}
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300"></div>
@@ -204,6 +243,9 @@ export default function Login() {
                 </TabsList>
                 
                 <TabsContent value="login" className="space-y-4">
+                  {loginError && (
+                    <div className="text-red-600 text-sm text-center">{loginError}</div>
+                  )}
                   <form onSubmit={handleEmailLogin} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="login-email">Email</Label>
@@ -234,6 +276,9 @@ export default function Login() {
                 </TabsContent>
                 
                 <TabsContent value="signup" className="space-y-4">
+                  {signupError && (
+                    <div className="text-red-600 text-sm text-center">{signupError}</div>
+                  )}
                   <form onSubmit={handleEmailSignup} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signup-name">Full Name</Label>

@@ -85,24 +85,22 @@ export default function Profile() {
 
   const fetchProfileData = async () => {
     try {
-      const response = await fetch('/api/profile', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      
+      const response = await apiRequest('GET', '/api/profile');
       if (response.ok) {
         const data = await response.json();
         setProfileData(data);
         if (data.onboarding) {
           setFormData(data.onboarding);
         }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to load profile data');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch profile:', error);
       toast({
         title: "Error",
-        description: "Failed to load profile data",
+        description: error.message || "Failed to load profile data",
         variant: "destructive"
       });
     } finally {
@@ -112,7 +110,6 @@ export default function Profile() {
 
   const handleSave = async () => {
     if (!profileData?.user.id) return;
-    
     setIsSaving(true);
     try {
       const menstrualCycle = (formData as any).menstrualCycle || {};
@@ -123,7 +120,6 @@ export default function Profile() {
         cycleLength: menstrualCycle.length || formData.cycleLength,
         irregularPeriods: menstrualCycle.irregularPeriods ?? formData.irregularPeriods
       });
-      
       if (response.ok) {
         toast({
           title: "Success",
@@ -131,12 +127,13 @@ export default function Profile() {
         });
         await fetchProfileData(); // Refresh data
       } else {
-        throw new Error('Failed to update profile');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update profile');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error", 
-        description: "Failed to update profile. Please try again.",
+        description: error.message || "Failed to update profile. Please try again.",
         variant: "destructive"
       });
     } finally {
