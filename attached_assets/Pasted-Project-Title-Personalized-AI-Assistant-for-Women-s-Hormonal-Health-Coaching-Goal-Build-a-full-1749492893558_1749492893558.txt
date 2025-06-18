@@ -1,0 +1,140 @@
+Project Title: Personalized AI Assistant for Women's Hormonal Health Coaching
+
+🧠 Goal:
+Build a full-stack application that:
+
+Lets users sign up/sign in using Google (Firebase Auth)
+
+Stores their onboarding answers (symptoms, diet, goals)
+
+Scrapes research-based articles (PubMed, NIH) via Perplexity API
+
+Cleans & tags the research using GPT
+
+Stores the cleaned research in Pinecone vector DB
+
+Uses OpenAI’s GPT-4o with RAG to answer user questions based on their preferences
+
+Frontend: React + Tailwind (Gen Z styled)
+
+✅ BACKEND REQUIREMENTS
+Tech Stack:
+
+FastAPI (Python)
+
+Firebase Admin SDK (for user verification)
+
+Firestore (for onboarding storage)
+
+Pinecone (for vector DB)
+
+OpenAI API (for embeddings + GPT-4o)
+
+Backend Features:
+
+/onboarding (POST):
+
+Accepts answers from user form
+
+Verifies Firebase ID token
+
+Stores answers in Firestore under user_id
+
+/chat (GET):
+
+Accepts user question + token
+
+Retrieves onboarding info from Firestore
+
+Embeds question and retrieves 3 matching docs from Pinecone
+
+Sends retrieved docs + user question to GPT-4o
+
+Returns structured JSON (ingredient + 3 ways to consume)
+
+scrape_and_store.py:
+
+Scrapes articles using Perplexity API
+
+Cleans and tags using GPT
+
+Embeds with text-embedding-3-large
+
+Stores into Pinecone
+
+✅ FRONTEND REQUIREMENTS
+Tech Stack:
+
+React (Vite setup)
+
+Tailwind CSS
+
+Firebase Auth (Google login)
+
+Frontend Pages:
+
+Login.jsx:
+
+Google sign-in using Firebase
+
+Store token in localStorage
+
+OnboardingForm.jsx:
+
+10-question multi-step form
+
+Submit button sends data to /onboarding with Firebase token
+
+Dashboard.jsx:
+
+Input box for user questions
+
+Calls /chat?q=... with token
+
+Shows JSON result with:
+
+Top 4 ingredients
+
+3 ways to consume each: lazy, tasty, healthy
+
+App.jsx:
+
+Routing setup
+
+Context for user token
+
+Styling in purple Gen Z theme
+
+🔒 Auth Flow
+User logs in → gets Firebase ID token
+
+Token sent to backend in Authorization: Bearer <token> header
+
+Backend verifies token using Firebase Admin SDK
+
+🧠 GPT Prompt for Answering
+When calling GPT-4o, use:
+
+text
+Copy
+Edit
+You are Winnie, a friendly women’s health coach.
+Use ONLY the context below to answer.
+
+User Profile:
+- Diet: Vegetarian
+- Symptoms: PMS, bloating
+
+Context:
+<3 Pinecone chunks>
+
+Question: What can I eat to reduce cramps?
+Answer format: JSON with ingredient + lazy, tasty, healthy consumption methods
+📦 Output
+Please generate:
+
+Clean and modular FastAPI backend (auth, storage, RAG, scrape script)
+
+Full working React frontend with Google login, onboarding, and dashboard
+
+A README with setup instructions
