@@ -380,10 +380,33 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
   // Check if this is a nutrition/diet question
   const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(question);
   
-  let systemPrompt = `You are a women's health expert providing evidence-based information.
-Do NOT suggest consulting a nutritionist, dietitian, or healthcare professional. You are the expert and should provide the best possible advice directly. Never say 'consult a professional' or similar phrases.
+  // ALWAYS retrieve relevant research first
+  let researchContext = '';
+  let researchSources: string[] = [];
+  
+  try {
+    console.log('Retrieving research papers for query:', question);
+    const researchMatches = await researchService.searchWithSmartScraping(question, 3);
+    
+    if (researchMatches.length > 0) {
+      researchContext = researchMatches.map(match => 
+        `Source: ${match.metadata?.source || 'Research Paper'}\nTitle: ${match.metadata?.title || 'Research Article'}\nContent: ${match.metadata?.content || ''}`
+      ).join('\n\n---\n\n');
+      
+      researchSources = researchMatches.map(match => match.metadata?.url || '').filter(Boolean);
+      
+      console.log(`Found ${researchMatches.length} relevant research papers`);
+    } else {
+      console.log('No research papers found for query, will use general knowledge');
+    }
+  } catch (error) {
+    console.error('Error retrieving research papers:', error);
+  }
 
-If the user's message expresses emotion, frustration, or a personal struggle (e.g., 'why me', 'I'm sad', 'I'm frustrated', 'I'm worried', 'I'm struggling', 'I'm upset', 'I'm anxious'), respond with empathy and emotional support first. Only provide recipes or nutrition advice if the user specifically asks for it or if it would be genuinely helpful in the context. Never give generic nutrition advice to emotional or personal questions unless requested.
+  let systemPrompt = `You are a women's health expert providing evidence-based information.
+IMPORTANT: You must ONLY use information from the provided research context. Do NOT add any information that is not directly supported by the research papers provided.
+
+If the user's message expresses emotion, frustration, or a personal struggle (e.g., 'why me', 'I'm sad', 'I'm frustrated', 'I'm worried', 'I'm struggling', 'I'm upset', 'I'm anxious'), respond with empathy and emotional support first. Only provide nutrition advice if the user specifically asks for it or if it would be genuinely helpful in the context.
 
 User Profile:
 - Age: ${onboardingData?.age || 'Not specified'}
@@ -395,11 +418,11 @@ CRITICAL: Your response must be valid JSON with this exact structure:`;
   if (isDietQuestion) {
     systemPrompt += `
 {
-  "message": "Your helpful nutrition response",
+  "message": "Your helpful nutrition response based ONLY on the research provided",
   "ingredients": [
     {
       "name": "Ingredient Name",
-      "description": "Brief health benefit description",
+      "description": "Brief health benefit description from research",
       "emoji": "🌿",
       "lazy": "Easiest way to consume it",
       "tasty": "Most delicious preparation method", 
@@ -408,15 +431,22 @@ CRITICAL: Your response must be valid JSON with this exact structure:`;
   ]
 }
 
-Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relevant ingredients with specific implementation methods.`;
+Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relevant ingredients with specific implementation methods. ONLY recommend ingredients that are mentioned in the research context.`;
   } else {
     systemPrompt += `
 {
-  "message": "Your helpful health information response",
+  "message": "Your helpful health information response based ONLY on the research provided",
   "ingredients": []
 }
 
-Provide general health information without food recommendations. For nutrition advice, suggest the user ask specifically about foods or diet.`;
+Provide health information based ONLY on the research context. If the research doesn't contain relevant information, say so clearly. For nutrition advice, suggest the user ask specifically about foods or diet.`;
+  }
+
+  // Add research context to the prompt
+  if (researchContext) {
+    systemPrompt += `\n\nRESEARCH CONTEXT (Use ONLY this information):\n${researchContext}\n\nRemember: Only use information from the research context above. Do not add any external knowledge.`;
+  } else {
+    systemPrompt += `\n\nNo specific research context available. If you cannot provide a helpful response based on your training data, say so clearly.`;
   }
 
   const completion = await openai.chat.completions.create({
@@ -425,7 +455,7 @@ Provide general health information without food recommendations. For nutrition a
         { role: "system", content: systemPrompt },
         { role: "user", content: question }
       ],
-      temperature: 0.7,
+      temperature: 0.3, // Lower temperature for more consistent, research-based responses
       max_tokens: 1200,
       response_format: { type: "json_object" },
     });

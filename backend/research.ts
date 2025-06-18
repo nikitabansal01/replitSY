@@ -428,167 +428,81 @@ class ResearchService {
     }
   }
 
-  // Scrape and store research for common women's health topics
+  // Scrape and store research for core women's hormonal health topics only
   async initializeResearchDatabase(): Promise<void> {
-    console.log('Initializing comprehensive women\'s health research database...');
+    console.log('Initializing focused women\'s hormonal health research database...');
     
     const healthTopics = [
-      // PCOS comprehensive topics
-      'PCOS polycystic ovary syndrome nutrition diet anti-inflammatory',
-      'PCOS insulin resistance myo-inositol D-chiro-inositol clinical studies',
-      'PCOS weight management chromium berberine metformin alternatives',
-      'PCOS hormonal balance spearmint tea anti-androgen effects',
-      'PCOS fertility natural conception omega-3 CoQ10',
-      'PCOS lean type normal weight treatment nutrition',
-      'PCOS inflammatory type diet turmeric omega-3',
-      'PCOS insulin resistant type low glycemic diet',
-      'PCOS post-pill type hormonal recovery nutrition',
-      'PCOS polycystic ovary syndrome nutrition diet anti-inflammatory',
-      'PCOS insulin resistance myo-inositol D-chiro-inositol clinical studies',
-      'PCOS weight management chromium berberine metformin alternatives',
-      'PCOS hormonal balance spearmint tea anti-androgen effects',
-      'PCOS fertility natural conception omega-3 CoQ10',
-      'PCOS lean type normal weight treatment nutrition',
-      'PCOS inflammatory type diet turmeric omega-3',
-      'PCOS insulin resistant type low glycemic diet',
-      'PCOS post-pill type hormonal recovery nutrition',
-
-  // Research and clinical studies
-      'PCOS PCOD clinical studies with women diagnosed',
-      'Research on food ingredients for hormonal acne hirsutism hairloss bloating nausea irregular periods weight gain metabolism insulin resistance',
-      'Research on physical movement for PCOS: cardio strength yoga for acne hirsutism bloating nausea irregular periods metabolism insulin',
-      'Alternative therapies for PCOS: emotional healing for acne hirsutism hairloss bloating irregular periods weight gain',
-      'Cycle syncing and natural hormone rhythms in women',
-      'Triggers that worsen PCOS PCOD symptoms: stress sugar dairy gluten overexercise under-eating',
-      'Ethnicity and PCOS PCOD prevalence treatment responses',
-      'Functional foods for PCOS PCOD: flaxseed turmeric spearmint cinnamon inositol zinc omega-3',
-      
-      // Thyroid comprehensive topics
-      'hypothyroidism women nutrition selenium iodine zinc',
-      'hashimoto thyroid autoimmune diet gluten-free AIP',
-      'hyperthyroidism graves disease nutrition management',
-      'thyroid nodules diet iodine restriction nutrition',
-      'subclinical hypothyroidism TSH levels nutrition intervention',
-      'thyroid medication food interactions timing absorption',
-      'thyroid function vitamin D B12 iron deficiency connection',
-      'postpartum thyroiditis nutrition recovery treatment',
-      'thyroid hormone conversion T4 T3 selenium zinc',
-      
-      // Endometriosis detailed research
-      'endometriosis pain management anti-inflammatory diet omega-3',
-      'endometriosis iron deficiency anemia nutrition supplementation',
-      'endometriosis hormonal therapy natural alternatives',
-      'endometriosis fertility preservation nutrition CoQ10',
-      'endometriosis digestive symptoms IBS connection nutrition',
-      'endometriosis estrogen dominance detox nutrition',
-      'endometriosis surgical recovery nutrition healing',
-      
-      // Digestive health specific to women
-      'women digestive health bloating hormonal connection menstrual cycle',
-      'SIBO small intestinal bacterial overgrowth women treatment',
-      'IBS irritable bowel syndrome women hormonal triggers',
-      'constipation women hormonal causes magnesium fiber',
-      'acid reflux GERD women pregnancy menopause',
-      'gut microbiome women hormones estrogen progesterone',
-      'leaky gut syndrome women autoimmune connection',
-      
-      // Hormonal balance and cycles
-      'menstrual cramps dysmenorrhea magnesium omega-3 natural relief',
-      'heavy menstrual bleeding iron B vitamins nutrition',
-      'irregular periods PCOS thyroid nutrition hormonal balance',
-      'PMS premenstrual syndrome magnesium B6 calcium',
-      'PMDD premenstrual dysphoric disorder nutrition serotonin',
-      'amenorrhea missing periods nutrition weight restoration',
-      'ovulation nutrition fertility signs tracking',
-      
-      // Seed cycling comprehensive research
-      'seed cycling menstrual cycle hormonal balance flax pumpkin sesame sunflower',
-      'flax seeds lignans estrogen metabolism follicular phase clinical studies',
-      'pumpkin seeds zinc hormone production progesterone support',
-      'sesame seeds lignans progesterone support luteal phase research',
-      'sunflower seeds vitamin E hormone balance menstrual cycle',
-      'seed cycling PCOS hormonal imbalance natural treatment',
-      'menstrual cycle phases nutrition follicular luteal ovulation',
-      'hormone support foods estrogen progesterone natural balance',
-      'seed cycling clinical evidence scientific research women health',
-      'phytoestrogens seeds nuts hormonal balance menstruation',
-      'essential fatty acids omega-3 omega-6 menstrual health',
-      'seed cycling endometriosis pain management hormonal support',
-      'natural hormone therapy seeds nuts menopause perimenopause',
-      
-      // Stress and adrenal health
-      'chronic stress cortisol women adrenal fatigue nutrition',
-      'adaptogens ashwagandha rhodiola holy basil women stress',
-      'adrenal insufficiency women nutrition mineral support',
-      'stress eating emotional eating women hormonal triggers',
-      'sleep disorders women hormones melatonin magnesium',
-      'anxiety women hormonal connection GABA nutrients',
-      
-      // Reproductive and fertility
-      'fertility nutrition preconception health folate omega-3 CoQ10',
-      'infertility women nutritional deficiencies testing',
-      'miscarriage prevention nutrition folic acid progesterone',
-      'egg quality nutrition antioxidants CoQ10 resveratrol',
-      'sperm health partner nutrition zinc selenium vitamin C',
-      'IVF nutrition support pre-during transfer',
-      'postpartum nutrition breastfeeding recovery depletion',
-      
-      // Menopause and aging
-      'menopause symptoms nutrition phytoestrogens isoflavones',
-      'perimenopause nutrition hormone fluctuations management',
-      'postmenopausal bone health calcium magnesium vitamin D K2',
-      'menopause weight gain metabolism nutrition strategies',
-      'hot flashes natural treatment black cohosh nutrition',
-      'menopause mood changes serotonin nutrition support',
-      'hormone replacement therapy nutrition interactions',
-      
-      // Autoimmune conditions in women
-      'autoimmune diseases women nutrition AIP diet',
-      'lupus women nutrition anti-inflammatory omega-3',
-      'rheumatoid arthritis women nutrition turmeric',
-      'celiac disease women nutrition gluten-free healing',
-      'inflammatory bowel disease women nutrition healing',
-      'multiple sclerosis women nutrition vitamin D omega-3',
-      
-      // Skin and hair health
-      'hormonal acne women nutrition zinc omega-3 probiotics',
-      'hair loss women iron deficiency biotin nutrition',
-      'melasma women nutrition antioxidants vitamin C',
-      'eczema women hormonal triggers nutrition healing',
-      'rosacea women nutrition triggers anti-inflammatory',
-      
-      // Mental health and nutrition
-      'depression women hormonal connection omega-3 B vitamins',
-      'anxiety women nutrition magnesium GABA amino acids',
-      'bipolar disorder women nutrition lithium omega-3',
-      'eating disorders women nutrition recovery healing',
-      'seasonal affective disorder women vitamin D',
-      
-      // Cancer prevention and nutrition
-      'breast cancer prevention nutrition cruciferous vegetables',
-      'ovarian cancer prevention nutrition antioxidants',
-      'cervical cancer prevention nutrition folate vitamin C',
-      'endometrial cancer prevention nutrition fiber phytoestrogens',
-      
-      // Metabolic health
-      'insulin resistance women nutrition chromium cinnamon',
-      'diabetes type 2 women nutrition prevention management',
-      'metabolic syndrome women nutrition omega-3 fiber',
-      'obesity women hormonal causes nutrition strategies',
-      'fatty liver disease women nutrition choline',
-      
-      // Bone and joint health
-      'osteoporosis women nutrition calcium magnesium vitamin D K2',
-      'osteopenia women nutrition prevention bone building',
-      'joint pain women inflammation nutrition omega-3',
-      'fibromyalgia women nutrition magnesium B vitamins',
-      'chronic fatigue syndrome women nutrition mitochondrial support'
+      // Reproductive system and health
+      'female reproductive system anatomy function',
+      'reproductive health women hormones',
+      'menstrual cycle phases hormones',
+      'ovulation women hormonal regulation',
+      'fertility women hormonal health',
+      'infertility women hormonal causes',
+      'amenorrhea missing periods hormonal causes',
+      'menstrual irregularities hormonal imbalance',
+      'luteal phase defect hormonal causes',
+      'follicular phase hormonal regulation',
+      'ovarian reserve hormones',
+      'egg quality hormones',
+      'reproductive aging menopause hormones',
+      // Hormone imbalance
+      'hormone imbalance women symptoms causes',
+      'estrogen dominance women',
+      'progesterone deficiency women',
+      'androgen excess women',
+      'testosterone imbalance women',
+      'FSH LH imbalance women',
+      'prolactin imbalance women',
+      'cortisol imbalance women',
+      'insulin resistance women hormones',
+      // PCOS/PCOD
+      'PCOS polycystic ovary syndrome nutrition diet',
+      'PCOS insulin resistance hormonal imbalance',
+      'PCOS weight gain hormonal causes',
+      'PCOS acne hirsutism androgen excess',
+      'PCOS fertility ovulation',
+      'PCOS treatment lifestyle nutrition',
+      'PCOD polycystic ovarian disease hormonal imbalance',
+      // Thyroid
+      'thyroid disorders women hypothyroidism hyperthyroidism',
+      'thyroid hormones menstrual cycle',
+      'thyroid and fertility women',
+      'thyroid and weight gain women',
+      'thyroid and skin hair issues women',
+      'hashimoto thyroiditis women',
+      'graves disease women',
+      // Weight gain (hormonal)
+      'weight gain women hormonal causes',
+      'insulin resistance weight gain women',
+      'cortisol stress weight gain women',
+      'hormonal weight gain menopause',
+      // Acne, hirsutism, skin/hair (hormonal)
+      'acne women hormonal causes',
+      'hirsutism women androgen excess',
+      'hair loss women hormonal imbalance',
+      'skin changes women hormones',
+      'seborrhea women hormones',
+      // Other related
+      'menstrual cramps dysmenorrhea hormones',
+      'PMS premenstrual syndrome hormones',
+      'PMDD premenstrual dysphoric disorder hormones',
+      'ovarian cysts hormonal causes',
+      'endometriosis hormonal regulation',
+      'uterine fibroids hormones',
+      'prolactinomas women',
+      'adrenal disorders women hormones',
+      'hormonal migraines women',
+      'hormonal bone health women',
+      'hormonal mood changes women',
+      'hormonal sleep disturbances women',
     ];
 
     try {
       await this.initializeIndex();
       
-      console.log(`Starting to scrape ${healthTopics.length} specialized women's health topics...`);
+      console.log(`Starting to scrape ${healthTopics.length} focused women's hormonal health topics...`);
       const articles = await this.scrapeHealthResearch(healthTopics);
       console.log(`Successfully scraped ${articles.length} research articles`);
 
@@ -597,7 +511,7 @@ class ResearchService {
         console.log(`Generated embeddings for ${articlesWithEmbeddings.length} articles`);
 
         await this.storeInVectorDB(articlesWithEmbeddings);
-        console.log('Comprehensive women\'s health research database initialization complete');
+        console.log('Focused women\'s hormonal health research database initialization complete');
       } else {
         console.log('No articles were scraped - please check Firecrawl API key and connection');
       }
