@@ -484,6 +484,19 @@ class ResearchService {
       ];
     }
     
+    if (lowerTopic.includes('bloating') || lowerTopic.includes('digestive') || lowerTopic.includes('gut') || lowerTopic.includes('ibs')) {
+      return [
+        `${baseUrl}${encodeURIComponent('bloating women hormonal causes treatment')}`,
+        `${baseUrl}${encodeURIComponent('digestive issues women hormones')}`,
+        `${baseUrl}${encodeURIComponent('IBS irritable bowel syndrome women hormones')}`,
+        `${baseUrl}${encodeURIComponent('gut health women hormonal balance')}`,
+        `${baseUrl}${encodeURIComponent('anti-inflammatory diet women bloating')}`,
+        'https://www.niddk.nih.gov/health-information/digestive-diseases',
+        'https://www.womenshealth.gov/a-z-topics/irritable-bowel-syndrome',
+        'https://www.gastro.org/practice-guidance/gi-patient-center/topic/irritable-bowel-syndrome-ibs'
+      ];
+    }
+    
     // Default sources for general women's health topics
     return [
       `${baseUrl}${encodeURIComponent(topic + ' women health nutrition')}`,
@@ -606,6 +619,20 @@ class ResearchService {
       'ovulation women hormonal regulation',
       'luteal phase defect hormonal causes',
       'follicular phase hormonal regulation',
+      
+      // Digestive Health & Bloating
+      'bloating women hormonal causes treatment',
+      'digestive issues women hormones',
+      'gut health women hormonal balance',
+      'IBS irritable bowel syndrome women hormones',
+      'constipation women hormonal causes',
+      'diarrhea women hormonal causes',
+      'food sensitivities women hormones',
+      'inflammation women digestive health',
+      'microbiome gut health women hormones',
+      'probiotics women digestive health',
+      'fiber women digestive health',
+      'anti-inflammatory diet women bloating',
       
       // Fertility & Reproductive Health
       'fertility women hormonal health',
