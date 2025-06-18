@@ -344,27 +344,15 @@ class ResearchService {
     const lowerTopic = topic.toLowerCase();
     const baseUrl = 'https://pubmed.ncbi.nlm.nih.gov/?term=';
     
-    if (lowerTopic.includes('pcos')) {
+    if (lowerTopic.includes('pcos') || lowerTopic.includes('pcod')) {
       return [
         `${baseUrl}${encodeURIComponent('PCOS polycystic ovary syndrome women nutrition diet')}`,
         `${baseUrl}${encodeURIComponent('PCOS natural treatment insulin resistance')}`,
-        'https://www.womenshealth.gov/a-z-topics/polycystic-ovary-syndrome'
-      ];
-    }
-    
-    if (lowerTopic.includes('endometriosis')) {
-      return [
-        `${baseUrl}${encodeURIComponent('endometriosis pain management nutrition anti-inflammatory')}`,
-        `${baseUrl}${encodeURIComponent('endometriosis diet omega-3 antioxidants')}`,
-        'https://www.womenshealth.gov/a-z-topics/endometriosis'
-      ];
-    }
-    
-    if (lowerTopic.includes('stress') || lowerTopic.includes('cortisol')) {
-      return [
-        `${baseUrl}${encodeURIComponent('stress management women cortisol adaptogens')}`,
-        `${baseUrl}${encodeURIComponent('chronic stress hormonal balance women nutrition')}`,
-        'https://www.niddk.nih.gov/health-information/endocrine-diseases'
+        `${baseUrl}${encodeURIComponent('PCOS supplements inositol berberine')}`,
+        `${baseUrl}${encodeURIComponent('PCOS lifestyle exercise stress management')}`,
+        'https://www.womenshealth.gov/a-z-topics/polycystic-ovary-syndrome',
+        'https://www.niddk.nih.gov/health-information/endocrine-diseases/polycystic-ovary-syndrome-pcos',
+        'https://www.acog.org/womens-health/faqs/polycystic-ovary-syndrome-pcos'
       ];
     }
     
@@ -372,15 +360,138 @@ class ResearchService {
       return [
         `${baseUrl}${encodeURIComponent('thyroid health women nutrition selenium iodine')}`,
         `${baseUrl}${encodeURIComponent('hypothyroidism diet treatment women')}`,
-        'https://www.niddk.nih.gov/health-information/endocrine-diseases/hypothyroidism'
+        `${baseUrl}${encodeURIComponent('hashimoto thyroiditis women treatment')}`,
+        `${baseUrl}${encodeURIComponent('thyroid and fertility women')}`,
+        'https://www.niddk.nih.gov/health-information/endocrine-diseases/hypothyroidism',
+        'https://www.niddk.nih.gov/health-information/endocrine-diseases/hyperthyroidism',
+        'https://www.womenshealth.gov/a-z-topics/thyroid-disease',
+        'https://www.thyroid.org/patient-thyroid-information/'
+      ];
+    }
+    
+    if (lowerTopic.includes('insulin resistance') || lowerTopic.includes('metabolic')) {
+      return [
+        `${baseUrl}${encodeURIComponent('insulin resistance women PCOS diabetes')}`,
+        `${baseUrl}${encodeURIComponent('insulin resistance diet low glycemic index')}`,
+        `${baseUrl}${encodeURIComponent('metabolic syndrome women hormonal causes')}`,
+        `${baseUrl}${encodeURIComponent('blood sugar regulation women hormones')}`,
+        'https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/prediabetes-insulin-resistance',
+        'https://www.womenshealth.gov/a-z-topics/diabetes',
+        'https://www.cdc.gov/diabetes/basics/insulin-resistance.html'
+      ];
+    }
+    
+    if (lowerTopic.includes('nutrition') || lowerTopic.includes('diet')) {
+      return [
+        `${baseUrl}${encodeURIComponent('women nutrition hormonal balance')}`,
+        `${baseUrl}${encodeURIComponent('anti-inflammatory diet women hormonal health')}`,
+        `${baseUrl}${encodeURIComponent('Mediterranean diet women hormonal health')}`,
+        `${baseUrl}${encodeURIComponent('omega-3 fatty acids women hormonal health')}`,
+        'https://www.womenshealth.gov/healthy-eating',
+        'https://www.niddk.nih.gov/health-information/weight-management',
+        'https://www.nutrition.gov/topics/life-stages/women',
+        'https://www.acog.org/womens-health/faqs/nutrition-during-pregnancy'
+      ];
+    }
+    
+    if (lowerTopic.includes('menstrual') || lowerTopic.includes('periods') || lowerTopic.includes('pms')) {
+      return [
+        `${baseUrl}${encodeURIComponent('irregular periods women hormonal causes')}`,
+        `${baseUrl}${encodeURIComponent('PMS premenstrual syndrome hormones')}`,
+        `${baseUrl}${encodeURIComponent('dysmenorrhea painful periods hormonal causes')}`,
+        `${baseUrl}${encodeURIComponent('amenorrhea missing periods hormonal causes')}`,
+        'https://www.womenshealth.gov/menstrual-cycle',
+        'https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding',
+        'https://www.acog.org/womens-health/faqs/premenstrual-syndrome'
+      ];
+    }
+    
+    if (lowerTopic.includes('fertility') || lowerTopic.includes('infertility')) {
+      return [
+        `${baseUrl}${encodeURIComponent('fertility women hormonal health')}`,
+        `${baseUrl}${encodeURIComponent('infertility women hormonal causes')}`,
+        `${baseUrl}${encodeURIComponent('ovarian reserve hormones')}`,
+        `${baseUrl}${encodeURIComponent('fertility supplements women')}`,
+        'https://www.womenshealth.gov/pregnancy/you-get-pregnant/trying-conceive',
+        'https://www.acog.org/womens-health/faqs/evaluating-infertility',
+        'https://www.nichd.nih.gov/health/topics/infertility'
+      ];
+    }
+    
+    if (lowerTopic.includes('acne') || lowerTopic.includes('hirsutism') || lowerTopic.includes('hair loss')) {
+      return [
+        `${baseUrl}${encodeURIComponent('acne women hormonal causes treatment')}`,
+        `${baseUrl}${encodeURIComponent('hirsutism women androgen excess treatment')}`,
+        `${baseUrl}${encodeURIComponent('hair loss women hormonal imbalance')}`,
+        `${baseUrl}${encodeURIComponent('skin changes women hormones')}`,
+        'https://www.aad.org/public/diseases/acne/really-acne/hormonal-acne',
+        'https://www.womenshealth.gov/a-z-topics/hirsutism'
+      ];
+    }
+    
+    if (lowerTopic.includes('weight') || lowerTopic.includes('metabolism')) {
+      return [
+        `${baseUrl}${encodeURIComponent('weight gain women hormonal causes')}`,
+        `${baseUrl}${encodeURIComponent('metabolism women hormones')}`,
+        `${baseUrl}${encodeURIComponent('cortisol stress weight gain women')}`,
+        `${baseUrl}${encodeURIComponent('body composition women hormones')}`,
+        'https://www.niddk.nih.gov/health-information/weight-management',
+        'https://www.womenshealth.gov/healthy-weight',
+        'https://www.cdc.gov/healthyweight/index.html'
+      ];
+    }
+    
+    if (lowerTopic.includes('mental health') || lowerTopic.includes('anxiety') || lowerTopic.includes('depression') || lowerTopic.includes('mood')) {
+      return [
+        `${baseUrl}${encodeURIComponent('hormonal mood changes women')}`,
+        `${baseUrl}${encodeURIComponent('anxiety women hormones')}`,
+        `${baseUrl}${encodeURIComponent('depression women hormones')}`,
+        `${baseUrl}${encodeURIComponent('stress management women cortisol')}`,
+        'https://www.womenshealth.gov/mental-health',
+        'https://www.nimh.nih.gov/health/topics/women-and-mental-health',
+        'https://www.nimh.nih.gov/health/publications/depression-in-women'
+      ];
+    }
+    
+    if (lowerTopic.includes('bone') || lowerTopic.includes('osteoporosis')) {
+      return [
+        `${baseUrl}${encodeURIComponent('hormonal bone health women')}`,
+        `${baseUrl}${encodeURIComponent('osteoporosis women hormones')}`,
+        `${baseUrl}${encodeURIComponent('calcium vitamin D women hormones')}`,
+        'https://www.niams.nih.gov/health-topics/osteoporosis',
+        'https://www.womenshealth.gov/a-z-topics/osteoporosis',
+        'https://www.bones.nih.gov/health-info/bone/osteoporosis/conditions-behaviors/osteoporosis-women'
+      ];
+    }
+    
+    if (lowerTopic.includes('endometriosis')) {
+      return [
+        `${baseUrl}${encodeURIComponent('endometriosis pain management nutrition anti-inflammatory')}`,
+        `${baseUrl}${encodeURIComponent('endometriosis diet omega-3 antioxidants')}`,
+        `${baseUrl}${encodeURIComponent('endometriosis hormonal regulation')}`,
+        'https://www.womenshealth.gov/a-z-topics/endometriosis',
+        'https://www.acog.org/womens-health/faqs/endometriosis'
+      ];
+    }
+    
+    if (lowerTopic.includes('stress') || lowerTopic.includes('cortisol')) {
+      return [
+        `${baseUrl}${encodeURIComponent('stress management women cortisol adaptogens')}`,
+        `${baseUrl}${encodeURIComponent('chronic stress hormonal balance women nutrition')}`,
+        `${baseUrl}${encodeURIComponent('cortisol imbalance women')}`,
+        'https://www.niddk.nih.gov/health-information/endocrine-diseases',
+        'https://www.womenshealth.gov/mental-health/good-mental-health/stress-and-your-health'
       ];
     }
     
     // Default sources for general women's health topics
     return [
       `${baseUrl}${encodeURIComponent(topic + ' women health nutrition')}`,
+      `${baseUrl}${encodeURIComponent(topic + ' women hormonal health')}`,
       'https://www.womenshealth.gov',
-      'https://www.niddk.nih.gov/health-information'
+      'https://www.niddk.nih.gov/health-information',
+      'https://www.acog.org/womens-health',
+      'https://www.cdc.gov/women'
     ];
   }
 
@@ -428,71 +539,129 @@ class ResearchService {
     }
   }
 
-  // Scrape and store research for core women's hormonal health topics only
+  // Scrape and store research for comprehensive women's hormonal health topics
   async initializeResearchDatabase(): Promise<void> {
-    console.log('Initializing focused women\'s hormonal health research database...');
+    console.log('Initializing comprehensive women\'s hormonal health research database...');
     
     const healthTopics = [
-      // Reproductive system and health
-      'female reproductive system anatomy function',
-      'reproductive health women hormones',
+      // PCOS & PCOD
+      'PCOS polycystic ovary syndrome women nutrition diet',
+      'PCOS insulin resistance hormonal imbalance treatment',
+      'PCOS weight gain hormonal causes management',
+      'PCOS acne hirsutism androgen excess treatment',
+      'PCOS fertility ovulation natural treatment',
+      'PCOS lifestyle changes exercise stress management',
+      'PCOD polycystic ovarian disease hormonal imbalance',
+      'PCOS supplements vitamins minerals natural remedies',
+      'PCOS anti-inflammatory diet omega-3 antioxidants',
+      'PCOS gut health microbiome probiotics',
+      'PCOS sleep quality hormonal regulation',
+      'PCOS mental health anxiety depression',
+      
+      // Thyroid Health
+      'thyroid disorders women hypothyroidism hyperthyroidism',
+      'thyroid hormones menstrual cycle fertility',
+      'thyroid and weight gain women metabolism',
+      'thyroid and skin hair issues women',
+      'hashimoto thyroiditis women autoimmune',
+      'graves disease women hyperthyroidism',
+      'thyroid nutrition selenium iodine zinc',
+      'thyroid supplements natural treatment',
+      'thyroid and pregnancy women',
+      'thyroid and menopause women',
+      
+      // Insulin Resistance & Metabolic Health
+      'insulin resistance women PCOS diabetes',
+      'insulin resistance weight gain women',
+      'insulin resistance diet low glycemic index',
+      'insulin resistance exercise physical activity',
+      'insulin resistance supplements berberine inositol',
+      'metabolic syndrome women hormonal causes',
+      'blood sugar regulation women hormones',
+      'diabetes prevention women hormonal health',
+      'prediabetes women insulin resistance',
+      
+      // Nutrition for Women's Hormonal Health
+      'women nutrition hormonal balance',
+      'macronutrients women hormonal health protein carbs fats',
+      'micronutrients women hormones vitamins minerals',
+      'omega-3 fatty acids women hormonal health',
+      'antioxidants women hormonal health',
+      'fiber women gut health hormones',
+      'probiotics women gut microbiome hormones',
+      'anti-inflammatory diet women hormonal health',
+      'Mediterranean diet women hormonal health',
+      'ketogenic diet women hormonal health',
+      'intermittent fasting women hormonal health',
+      'plant-based diet women hormonal health',
+      
+      // Menstrual Health
+      'irregular periods women hormonal causes',
+      'amenorrhea missing periods hormonal causes',
+      'heavy periods menorrhagia hormonal causes',
+      'painful periods dysmenorrhea hormonal causes',
+      'PMS premenstrual syndrome hormones',
+      'PMDD premenstrual dysphoric disorder hormones',
       'menstrual cycle phases hormones',
       'ovulation women hormonal regulation',
-      'fertility women hormonal health',
-      'infertility women hormonal causes',
-      'amenorrhea missing periods hormonal causes',
-      'menstrual irregularities hormonal imbalance',
       'luteal phase defect hormonal causes',
       'follicular phase hormonal regulation',
+      
+      // Fertility & Reproductive Health
+      'fertility women hormonal health',
+      'infertility women hormonal causes',
       'ovarian reserve hormones',
       'egg quality hormones',
       'reproductive aging menopause hormones',
-      // Hormone imbalance
-      'hormone imbalance women symptoms causes',
-      'estrogen dominance women',
-      'progesterone deficiency women',
-      'androgen excess women',
-      'testosterone imbalance women',
-      'FSH LH imbalance women',
-      'prolactin imbalance women',
-      'cortisol imbalance women',
-      'insulin resistance women hormones',
-      // PCOS/PCOD
-      'PCOS polycystic ovary syndrome nutrition diet',
-      'PCOS insulin resistance hormonal imbalance',
-      'PCOS weight gain hormonal causes',
-      'PCOS acne hirsutism androgen excess',
-      'PCOS fertility ovulation',
-      'PCOS treatment lifestyle nutrition',
-      'PCOD polycystic ovarian disease hormonal imbalance',
-      // Thyroid
-      'thyroid disorders women hypothyroidism hyperthyroidism',
-      'thyroid hormones menstrual cycle',
-      'thyroid and fertility women',
-      'thyroid and weight gain women',
-      'thyroid and skin hair issues women',
-      'hashimoto thyroiditis women',
-      'graves disease women',
-      // Weight gain (hormonal)
-      'weight gain women hormonal causes',
-      'insulin resistance weight gain women',
-      'cortisol stress weight gain women',
-      'hormonal weight gain menopause',
-      // Acne, hirsutism, skin/hair (hormonal)
-      'acne women hormonal causes',
-      'hirsutism women androgen excess',
+      'fertility supplements women',
+      'fertility diet women',
+      'fertility exercise women',
+      
+      // Skin & Hair Issues (Hormonal)
+      'acne women hormonal causes treatment',
+      'hirsutism women androgen excess treatment',
       'hair loss women hormonal imbalance',
       'skin changes women hormones',
       'seborrhea women hormones',
-      // Other related
-      'menstrual cramps dysmenorrhea hormones',
-      'PMS premenstrual syndrome hormones',
-      'PMDD premenstrual dysphoric disorder hormones',
+      'melasma women hormones',
+      'rosacea women hormones',
+      
+      // Weight & Metabolism
+      'weight gain women hormonal causes',
+      'cortisol stress weight gain women',
+      'hormonal weight gain menopause',
+      'metabolism women hormones',
+      'body composition women hormones',
+      'fat distribution women hormones',
+      
+      // Mental Health & Mood
+      'hormonal mood changes women',
+      'anxiety women hormones',
+      'depression women hormones',
+      'stress management women cortisol',
+      'sleep disturbances women hormones',
+      'brain fog women hormones',
+      
+      // Bone Health
+      'hormonal bone health women',
+      'osteoporosis women hormones',
+      'calcium vitamin D women hormones',
+      'bone density women hormones',
+      
+      // Other Hormonal Issues
+      'adrenal disorders women hormones',
+      'prolactinomas women',
+      'hormonal migraines women',
+      'breast health women hormones',
+      'libido women hormones',
+      'energy levels women hormones',
+      
+      // Reproductive system and health (keeping some original topics)
+      'female reproductive system anatomy function',
+      'reproductive health women hormones',
       'ovarian cysts hormonal causes',
       'endometriosis hormonal regulation',
       'uterine fibroids hormones',
-      'prolactinomas women',
-      'adrenal disorders women hormones',
       'hormonal migraines women',
       'hormonal bone health women',
       'hormonal mood changes women',
@@ -502,7 +671,7 @@ class ResearchService {
     try {
       await this.initializeIndex();
       
-      console.log(`Starting to scrape ${healthTopics.length} focused women's hormonal health topics...`);
+      console.log(`Starting to scrape ${healthTopics.length} comprehensive women's hormonal health topics...`);
       const articles = await this.scrapeHealthResearch(healthTopics);
       console.log(`Successfully scraped ${articles.length} research articles`);
 
@@ -511,7 +680,7 @@ class ResearchService {
         console.log(`Generated embeddings for ${articlesWithEmbeddings.length} articles`);
 
         await this.storeInVectorDB(articlesWithEmbeddings);
-        console.log('Focused women\'s hormonal health research database initialization complete');
+        console.log('Comprehensive women\'s hormonal health research database initialization complete');
       } else {
         console.log('No articles were scraped - please check Firecrawl API key and connection');
       }
