@@ -19,8 +19,7 @@
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    "../shared/**/*.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules",
