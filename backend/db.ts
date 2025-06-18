@@ -3,26 +3,35 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to set up the database connection?",
-  );
+// Create a fallback database client that doesn't require connection
+let db: any = null;
+let supabase: any = null;
+
+try {
+  if (process.env.DATABASE_URL) {
+    // Create a PostgreSQL client using the direct connection string
+    const client = postgres(process.env.DATABASE_URL);
+    // Create Drizzle ORM instance
+    db = drizzle(client, { schema });
+  } else {
+    console.warn("DATABASE_URL not set - using in-memory storage only");
+  }
+} catch (error) {
+  console.warn("Failed to initialize database connection:", error);
 }
 
-// Create Supabase client for auth and other Supabase features
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-  throw new Error(
-    "SUPABASE_URL and SUPABASE_ANON_KEY must be set for Supabase features",
-  );
+try {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    // Create Supabase client for auth and other Supabase features
+    supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+  } else {
+    console.warn("SUPABASE_URL and SUPABASE_ANON_KEY not set - Supabase features disabled");
+  }
+} catch (error) {
+  console.warn("Failed to initialize Supabase connection:", error);
 }
 
-export const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
-
-// Create a PostgreSQL client using the direct connection string
-const client = postgres(process.env.DATABASE_URL);
-
-// Create Drizzle ORM instance
-export const db = drizzle(client, { schema });
+export { db, supabase };

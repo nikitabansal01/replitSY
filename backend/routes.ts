@@ -478,9 +478,19 @@ const DAILY_TIPS = [
 ];
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  let openai: OpenAI | null = null;
+
+  const getOpenAI = (): OpenAI => {
+    if (!openai) {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is required for AI features');
+      }
+      openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+    }
+    return openai;
+  };
 
   const server = createServer(app);
 
@@ -636,12 +646,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Use research-based response for cycle phase queries
       if (isLutealPhaseQuery || isFollicularPhaseQuery || isMenstrualPhaseQuery || isOvulationPhaseQuery) {
-        response = await generateResearchBasedCycleResponse(message, onboardingData, openai);
+        response = await generateResearchBasedCycleResponse(message, onboardingData, getOpenAI());
       } else {
         // Try ChatGPT with fast timeout, fallback to demo if needed
         try {
           response = await Promise.race([
-            generateChatGPTResponse(openai, message, onboardingData),
+            generateChatGPTResponse(getOpenAI(), message, onboardingData),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
           ]) as ChatResponse;
         } catch (error) {

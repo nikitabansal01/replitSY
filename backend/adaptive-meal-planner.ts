@@ -31,12 +31,22 @@ interface TodaysMealPlan {
 }
 
 class AdaptiveMealPlannerService {
-  private openai: OpenAI;
+  private openai: OpenAI | null = null;
 
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // Don't initialize OpenAI client in constructor
+  }
+
+  private getOpenAI(): OpenAI {
+    if (!this.openai) {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is required for AI features');
+      }
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+    }
+    return this.openai;
   }
 
   // Determine current menstrual phase
@@ -162,7 +172,7 @@ class AdaptiveMealPlannerService {
       const systemPrompt = this.buildAdaptivePrompt(userProfile, currentPhase, request.previousFeedback, adaptations);
       
       try {
-        const completion = await this.openai.chat.completions.create({
+        const completion = await this.getOpenAI().chat.completions.create({
           model: "gpt-4",  // Fixed model name
           messages: [{ role: "system", content: systemPrompt }],
           temperature: 0.7,
@@ -467,4 +477,15 @@ Focus on practical, accessible meals that address the user's specific needs and 
   }
 }
 
-export const adaptiveMealPlannerService = new AdaptiveMealPlannerService();
+// Lazy singleton pattern
+let _adaptiveMealPlannerService: AdaptiveMealPlannerService | null = null;
+
+export function getAdaptiveMealPlannerService(): AdaptiveMealPlannerService {
+  if (!_adaptiveMealPlannerService) {
+    _adaptiveMealPlannerService = new AdaptiveMealPlannerService();
+  }
+  return _adaptiveMealPlannerService;
+}
+
+// For backward compatibility
+export const adaptiveMealPlannerService = getAdaptiveMealPlannerService();

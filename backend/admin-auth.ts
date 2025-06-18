@@ -31,6 +31,26 @@ export class AdminAuthService {
   }
 
   async getSystemMetrics() {
+    if (!db) {
+      console.warn("Database not available, returning mock metrics");
+      return {
+        totalUsers: 0,
+        activeUsers: 0,
+        totalMealPlans: 0,
+        totalChatMessages: 0,
+        avgUserSatisfaction: 85,
+        systemHealth: {
+          databaseStatus: 'disconnected',
+          responseTime: 0,
+          uptime: '0%',
+          memoryUsage: 0,
+          cpuUsage: 0,
+        },
+        userSymptoms: [],
+        date: new Date().toISOString().split('T')[0]
+      };
+    }
+
     const today = new Date().toISOString().split('T')[0];
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -85,6 +105,11 @@ export class AdminAuthService {
   }
 
   async saveMetrics() {
+    if (!db) {
+      console.warn("Database not available, skipping metrics save");
+      return await this.getSystemMetrics();
+    }
+
     const metrics = await this.getSystemMetrics();
     const today = new Date().toISOString().split('T')[0];
 
@@ -109,6 +134,11 @@ export class AdminAuthService {
   }
 
   async getMetricsHistory(days: number = 30) {
+    if (!db) {
+      console.warn("Database not available, returning empty metrics history");
+      return [];
+    }
+    
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
     return await db
@@ -119,6 +149,11 @@ export class AdminAuthService {
   }
 
   async getAllUsers() {
+    if (!db) {
+      console.warn("Database not available, returning empty users list");
+      return [];
+    }
+    
     return await db
       .select({
         id: users.id,

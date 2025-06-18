@@ -256,13 +256,23 @@ export const CUISINE_PROFILES: Record<string, CuisineProfile> = {
 };
 
 class NutritionistService {
-  private openai: OpenAI;
+  private openai: OpenAI | null = null;
 
   constructor() {
-    this.openai = new OpenAI({ 
-      apiKey: process.env.OPENAI_API_KEY,
-      timeout: 45000
-    });
+    // Don't initialize OpenAI client in constructor
+  }
+
+  private getOpenAI(): OpenAI {
+    if (!this.openai) {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is required for AI features');
+      }
+      this.openai = new OpenAI({ 
+        apiKey: process.env.OPENAI_API_KEY,
+        timeout: 45000
+      });
+    }
+    return this.openai;
   }
 
   // Extract health conditions from comprehensive user profile
@@ -570,7 +580,7 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
 
     try {
       const completion = await Promise.race([
-        this.openai.chat.completions.create({
+        this.getOpenAI().chat.completions.create({
           model: "gpt-4o",
           messages: [{ role: "system", content: systemPrompt }],
           temperature: 0.7,
@@ -868,4 +878,15 @@ CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations.
   }
 }
 
-export const nutritionistService = new NutritionistService();
+// Lazy singleton pattern
+let _nutritionistService: NutritionistService | null = null;
+
+export function getNutritionistService(): NutritionistService {
+  if (!_nutritionistService) {
+    _nutritionistService = new NutritionistService();
+  }
+  return _nutritionistService;
+}
+
+// For backward compatibility
+export const nutritionistService = getNutritionistService();

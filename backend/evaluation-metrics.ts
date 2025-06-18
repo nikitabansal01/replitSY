@@ -50,10 +50,20 @@ interface RAGEvaluationMetrics {
 }
 
 class EvaluationMetricsService {
-  private openai: OpenAI;
+  private openai: OpenAI | null = null;
 
   constructor() {
-    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Don't initialize OpenAI client in constructor
+  }
+
+  private getOpenAI(): OpenAI {
+    if (!this.openai) {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is required for AI features');
+      }
+      this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
+    return this.openai;
   }
 
   // Evaluate scraped research data quality
@@ -377,7 +387,7 @@ Question: ${query}
 
 Provide a scientifically accurate answer based only on the provided context. If the context doesn't contain sufficient information, say so.`;
 
-    const response = await this.openai.chat.completions.create({
+    const response = await this.getOpenAI().chat.completions.create({
       model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 300,
@@ -409,7 +419,7 @@ Rate each metric from 0-10:
 Respond with only JSON: {"accuracy": X, "precision": X, "recall": X, "contextRelevance": X}`;
 
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.getOpenAI().chat.completions.create({
         model: 'gpt-4',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 150,
@@ -447,7 +457,7 @@ Rate from 0-10:
 Respond with only JSON: {"faithfulness": X, "hasHallucination": true/false}`;
 
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.getOpenAI().chat.completions.create({
         model: 'gpt-4',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 100,
@@ -547,7 +557,7 @@ Respond with only JSON: {"faithfulness": X, "hasHallucination": true/false}`;
     `;
 
     try {
-      const completion = await this.openai.chat.completions.create({
+      const completion = await this.getOpenAI().chat.completions.create({
         model: "gpt-4o",
         messages: [{ role: "user", content: evaluationPrompt }],
         temperature: 0.3,
@@ -579,7 +589,7 @@ Respond with only JSON: {"faithfulness": X, "hasHallucination": true/false}`;
     `;
 
     try {
-      const completion = await this.openai.chat.completions.create({
+      const completion = await this.getOpenAI().chat.completions.create({
         model: "gpt-4o",
         messages: [{ role: "user", content: evaluationPrompt }],
         temperature: 0.3,
@@ -653,4 +663,15 @@ Respond with only JSON: {"faithfulness": X, "hasHallucination": true/false}`;
   }
 }
 
-export const evaluationMetricsService = new EvaluationMetricsService();
+// Lazy singleton pattern
+let _evaluationMetricsService: EvaluationMetricsService | null = null;
+
+export function getEvaluationMetricsService(): EvaluationMetricsService {
+  if (!_evaluationMetricsService) {
+    _evaluationMetricsService = new EvaluationMetricsService();
+  }
+  return _evaluationMetricsService;
+}
+
+// For backward compatibility
+export const evaluationMetricsService = getEvaluationMetricsService();
