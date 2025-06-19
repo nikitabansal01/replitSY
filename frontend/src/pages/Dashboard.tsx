@@ -556,11 +556,14 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-700 mb-4">
                   {dailyTip.tip}
                 </p>
-                <Button variant="link" className="text-purple-600 p-0 h-auto font-medium" asChild>
-                  <a href={dailyTip.source} target="_blank" rel="noopener noreferrer">
-                    Learn more →
-                  </a>
-                </Button>
+                {/* Only show Learn More for non-demo users or when explicitly enabled */}
+                {profile?.user.email !== 'demo@example.com' && (
+                  <Button variant="link" className="text-purple-600 p-0 h-auto font-medium" asChild>
+                    <a href={dailyTip.source} target="_blank" rel="noopener noreferrer">
+                      Learn more →
+                    </a>
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
