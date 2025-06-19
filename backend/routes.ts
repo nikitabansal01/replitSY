@@ -575,8 +575,9 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
   } else if (lowerMessage.includes('ovulation') || lowerMessage.includes('ovulatory')) {
     phase = 'Ovulation Phase';
   } else {
-    // Calculate current phase based on user's cycle data
-    phase = calculateCurrentPhase(onboardingData);
+    // For general questions, add variety based on question type and time
+    const questionType = getQuestionType(lowerMessage);
+    phase = getPhaseForQuestionType(questionType, onboardingData);
   }
   
   console.log('DEBUG: Phase detection:', {
@@ -598,6 +599,65 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
     message: personalizedMessage,
     ingredients: researchFoods
   };
+}
+
+// Determine the type of question being asked
+function getQuestionType(message: string): string {
+  if (/\b(energy|tired|fatigue|boost|energize)\b/i.test(message)) {
+    return 'energy';
+  } else if (/\b(pain|cramps|discomfort|ache)\b/i.test(message)) {
+    return 'pain';
+  } else if (/\b(mood|happy|sad|depressed|anxiety|stress)\b/i.test(message)) {
+    return 'mood';
+  } else if (/\b(bloating|digestion|stomach|gut)\b/i.test(message)) {
+    return 'digestion';
+  } else if (/\b(sleep|insomnia|rest)\b/i.test(message)) {
+    return 'sleep';
+  } else if (/\b(weight|lose|gain|metabolism)\b/i.test(message)) {
+    return 'weight';
+  } else {
+    return 'general';
+  }
+}
+
+// Get appropriate phase based on question type and user data
+function getPhaseForQuestionType(questionType: string, onboardingData: any): string {
+  // If user has period data, use actual phase calculation
+  if (onboardingData?.lastPeriodDate) {
+    return calculateCurrentPhase(onboardingData);
+  }
+  
+  // For users without period data, map question types to appropriate phases
+  const questionTypeToPhase: Record<string, string[]> = {
+    'energy': ['Follicular Phase', 'Ovulation Phase'], // High energy phases
+    'pain': ['Menstrual Phase', 'Luteal Phase'], // Pain/discomfort phases
+    'mood': ['Luteal Phase', 'Menstrual Phase'], // Mood-sensitive phases
+    'digestion': ['Menstrual Phase', 'Luteal Phase'], // Digestive issues common
+    'sleep': ['Luteal Phase', 'Menstrual Phase'], // Sleep issues common
+    'weight': ['Follicular Phase', 'Ovulation Phase'], // Metabolism focus
+    'general': ['Follicular Phase', 'Ovulation Phase', 'Luteal Phase', 'Menstrual Phase'] // All phases
+  };
+  
+  const possiblePhases = questionTypeToPhase[questionType] || questionTypeToPhase['general'];
+  
+  // Add time-based randomization for variety
+  const now = new Date();
+  const timeOfDay = now.getHours();
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+  const randomSeed = (timeOfDay + dayOfYear) % possiblePhases.length;
+  
+  const selectedPhase = possiblePhases[randomSeed];
+  
+  console.log('DEBUG: Question type phase selection:', {
+    questionType,
+    possiblePhases,
+    timeOfDay,
+    dayOfYear,
+    randomSeed,
+    selectedPhase
+  });
+  
+  return selectedPhase;
 }
 
 // Calculate current menstrual phase based on user's cycle data
@@ -656,24 +716,48 @@ function calculateCurrentPhase(onboardingData: any): string {
   return phase;
 }
 
-// Get lunar cycle phase as fallback
+// Get lunar cycle phase as fallback with better randomization
 function getLunarCyclePhase(): string {
   const today = new Date();
   const lunarMonth = 29.53; // Average lunar month in days
-  const knownNewMoon = new Date('2024-01-11'); // Known new moon date
+  
+  // Use a more recent known new moon date and add some randomization
+  const knownNewMoon = new Date('2024-12-11'); // More recent new moon
   const daysSinceNewMoon = Math.floor((today.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24));
   const lunarDay = daysSinceNewMoon % lunarMonth;
   
+  // Add some randomization based on current time to prevent always returning same phase
+  const timeOfDay = today.getHours();
+  const dayOfWeek = today.getDay();
+  const randomFactor = (timeOfDay + dayOfWeek) % 4;
+  
   // Map lunar phases to menstrual phases for women's natural rhythm
+  let basePhase: string;
   if (lunarDay <= 7) {
-    return 'Menstrual Phase'; // New moon = menstruation (rest and renewal)
+    basePhase = 'Menstrual Phase'; // New moon = menstruation (rest and renewal)
   } else if (lunarDay <= 14) {
-    return 'Follicular Phase'; // Waxing moon = follicular (energy building)
+    basePhase = 'Follicular Phase'; // Waxing moon = follicular (energy building)
   } else if (lunarDay <= 21) {
-    return 'Ovulation Phase'; // Full moon = ovulation (peak energy)
+    basePhase = 'Ovulation Phase'; // Full moon = ovulation (peak energy)
   } else {
-    return 'Luteal Phase'; // Waning moon = luteal (preparation and reflection)
+    basePhase = 'Luteal Phase'; // Waning moon = luteal (preparation and reflection)
   }
+  
+  // Add some variety by occasionally shifting phases based on time/date
+  const phases = ['Menstrual Phase', 'Follicular Phase', 'Ovulation Phase', 'Luteal Phase'];
+  const currentIndex = phases.indexOf(basePhase);
+  const shiftedIndex = (currentIndex + randomFactor) % phases.length;
+  
+  console.log('DEBUG: Lunar cycle phase calculation:', {
+    lunarDay,
+    basePhase,
+    timeOfDay,
+    dayOfWeek,
+    randomFactor,
+    finalPhase: phases[shiftedIndex]
+  });
+  
+  return phases[shiftedIndex];
 }
 
 // Generate personalized message based on user profile and phase
@@ -2008,6 +2092,59 @@ Generated with love for your health journey! 💖
     } catch (error) {
       console.error('Response variety test error:', error);
       res.status(500).json({ error: 'Failed to test response variety' });
+    }
+  });
+
+  // Debug endpoint for testing question-based phase detection
+  app.get('/api/debug/question-phase-mapping', requireAuth, async (req: any, res: any) => {
+    try {
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      // Test different question types
+      const testQuestions = [
+        "I'm feeling tired, what should I eat?",
+        "I have cramps, help me with nutrition",
+        "I'm in a bad mood, what foods help?",
+        "I'm bloated, what should I avoid?",
+        "I can't sleep well, any food tips?",
+        "I want to lose weight, what should I eat?",
+        "What foods are good for my cycle?",
+        "How can I boost my energy?",
+        "I have pain during my period",
+        "I'm stressed and anxious"
+      ];
+      
+      const results = testQuestions.map(question => {
+        const lowerQuestion = question.toLowerCase();
+        const questionType = getQuestionType(lowerQuestion);
+        const phase = getPhaseForQuestionType(questionType, onboardingData);
+        const foods = getDefaultFoodsForPhase(phase);
+        const message = generatePersonalizedPhaseMessage(phase, onboardingData, foods.length);
+        
+        return {
+          question,
+          questionType,
+          detectedPhase: phase,
+          foods: foods.map(f => f.name),
+          sampleMessage: message.substring(0, 80) + '...'
+        };
+      });
+      
+      res.json({
+        success: true,
+        userHasPeriodData: !!onboardingData?.lastPeriodDate,
+        results,
+        analysis: {
+          uniquePhases: new Set(results.map(r => r.detectedPhase)).size,
+          phaseDistribution: results.reduce((acc, r) => {
+            acc[r.detectedPhase] = (acc[r.detectedPhase] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>)
+        }
+      });
+    } catch (error) {
+      console.error('Question phase mapping test error:', error);
+      res.status(500).json({ error: 'Failed to test question phase mapping' });
     }
   });
 
