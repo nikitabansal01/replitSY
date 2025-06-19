@@ -589,7 +589,7 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
   } else {
     // For general questions, add variety based on question type and time
     const questionType = getQuestionType(lowerMessage);
-    phase = getPhaseForQuestionType(questionType, onboardingData);
+    phase = getPhaseForQuestionType(questionType, onboardingData, message);
   }
   
   console.log('DEBUG: Phase detection:', {
@@ -633,10 +633,10 @@ function getQuestionType(message: string): string {
 }
 
 // Get appropriate phase based on question type and user data
-function getPhaseForQuestionType(questionType: string, onboardingData: any): string {
+function getPhaseForQuestionType(questionType: string, onboardingData: any, message?: string): string {
   // If user has period data, use actual phase calculation
   if (onboardingData?.lastPeriodDate) {
-    return calculateCurrentPhase(onboardingData);
+    return calculateCurrentPhase(onboardingData, message);
   }
   
   // For users without period data, map question types to appropriate phases
@@ -652,19 +652,29 @@ function getPhaseForQuestionType(questionType: string, onboardingData: any): str
   
   const possiblePhases = questionTypeToPhase[questionType] || questionTypeToPhase['general'];
   
-  // Add time-based randomization for variety
+  // Create a more robust random seed using multiple entropy sources
   const now = new Date();
+  const timestamp = Date.now();
+  const messageHash = message ? message.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 0;
   const timeOfDay = now.getHours();
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
-  const randomSeed = (timeOfDay + dayOfYear) % possiblePhases.length;
+  const milliseconds = now.getMilliseconds();
+  const userHash = onboardingData?.age ? parseInt(onboardingData.age) : 0;
+  
+  // Combine multiple entropy sources for better randomization
+  const randomSeed = (timestamp + messageHash + timeOfDay + dayOfYear + milliseconds + userHash) % possiblePhases.length;
   
   const selectedPhase = possiblePhases[randomSeed];
   
   console.log('DEBUG: Question type phase selection:', {
     questionType,
     possiblePhases,
+    timestamp,
+    messageHash,
     timeOfDay,
     dayOfYear,
+    milliseconds,
+    userHash,
     randomSeed,
     selectedPhase
   });
@@ -673,10 +683,10 @@ function getPhaseForQuestionType(questionType: string, onboardingData: any): str
 }
 
 // Calculate current menstrual phase based on user's cycle data
-function calculateCurrentPhase(onboardingData: any): string {
+function calculateCurrentPhase(onboardingData: any, message?: string): string {
   if (!onboardingData?.lastPeriodDate) {
     console.log('DEBUG: No last period date, using lunar cycle');
-    return getLunarCyclePhase();
+    return getLunarCyclePhase(message);
   }
 
   const lastPeriod = new Date(onboardingData.lastPeriodDate);
@@ -694,7 +704,7 @@ function calculateCurrentPhase(onboardingData: any): string {
   // If period data is very old (>60 days), use lunar cycle
   if (daysSinceLastPeriod > 60) {
     console.log('DEBUG: Old period data, using lunar cycle');
-    return getLunarCyclePhase();
+    return getLunarCyclePhase(message);
   }
 
   // Handle case where we're in the current cycle
@@ -729,7 +739,7 @@ function calculateCurrentPhase(onboardingData: any): string {
 }
 
 // Get lunar cycle phase as fallback with better randomization
-function getLunarCyclePhase(): string {
+function getLunarCyclePhase(message?: string): string {
   const today = new Date();
   const lunarMonth = 29.53; // Average lunar month in days
   
@@ -738,10 +748,16 @@ function getLunarCyclePhase(): string {
   const daysSinceNewMoon = Math.floor((today.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24));
   const lunarDay = daysSinceNewMoon % lunarMonth;
   
-  // Add some randomization based on current time to prevent always returning same phase
+  // Create multiple entropy sources for better randomization
+  const timestamp = Date.now();
+  const messageHash = message ? message.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 0;
   const timeOfDay = today.getHours();
   const dayOfWeek = today.getDay();
-  const randomFactor = (timeOfDay + dayOfWeek) % 4;
+  const milliseconds = today.getMilliseconds();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Combine all entropy sources for maximum variety
+  const randomFactor = (timestamp + messageHash + timeOfDay + dayOfWeek + milliseconds + dayOfYear) % 4;
   
   // Map lunar phases to menstrual phases for women's natural rhythm
   let basePhase: string;
@@ -763,8 +779,12 @@ function getLunarCyclePhase(): string {
   console.log('DEBUG: Lunar cycle phase calculation:', {
     lunarDay,
     basePhase,
+    timestamp,
+    messageHash,
     timeOfDay,
     dayOfWeek,
+    milliseconds,
+    dayOfYear,
     randomFactor,
     finalPhase: phases[shiftedIndex]
   });
@@ -2142,7 +2162,7 @@ Generated with love for your health journey! 💖
       const results = testQuestions.map(question => {
         const lowerQuestion = question.toLowerCase();
         const questionType = getQuestionType(lowerQuestion);
-        const phase = getPhaseForQuestionType(questionType, onboardingData);
+        const phase = getPhaseForQuestionType(questionType, onboardingData, question);
         const foods = getDefaultFoodsForPhase(phase);
         const message = generatePersonalizedPhaseMessage(phase, onboardingData, foods.length);
         
@@ -2190,7 +2210,7 @@ Generated with love for your health journey! 💖
       const results = testMessages.map(testMessage => {
         const lowerMessage = testMessage.toLowerCase();
         const questionType = getQuestionType(lowerMessage);
-        const phase = getPhaseForQuestionType(questionType, {});
+        const phase = getPhaseForQuestionType(questionType, {}, testMessage);
         const foods = getDefaultFoodsForPhase(phase, testMessage);
         const message = generatePersonalizedPhaseMessage(phase, { age: '28', diet: 'balanced' }, foods.length, testMessage);
         
@@ -2215,6 +2235,51 @@ Generated with love for your health journey! 💖
     } catch (error) {
       console.error('Randomization test error:', error);
       res.status(500).json({ error: 'Failed to test randomization' });
+    }
+  });
+
+  // Debug endpoint to test response variety
+  app.get('/api/debug/variety-test', async (req, res) => {
+    try {
+      const testMessage = req.query.message as string || 'What should I eat?';
+      const results = [];
+      
+      // Test multiple rapid requests to see variety
+      for (let i = 0; i < 5; i++) {
+        const lowerMessage = testMessage.toLowerCase();
+        const questionType = getQuestionType(lowerMessage);
+        const phase = getPhaseForQuestionType(questionType, { age: '28', diet: 'balanced' }, testMessage);
+        const foods = getDefaultFoodsForPhase(phase, testMessage);
+        const message = generatePersonalizedPhaseMessage(phase, { age: '28', diet: 'balanced' }, foods.length, testMessage);
+        
+        results.push({
+          request: i + 1,
+          questionType,
+          phase,
+          foodCount: foods.length,
+          foodNames: foods.map(f => f.name),
+          messagePreview: message.substring(0, 100) + '...',
+          timestamp: Date.now()
+        });
+        
+        // Small delay to ensure different timestamps
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      
+      res.json({
+        success: true,
+        testMessage,
+        results,
+        variety: {
+          uniquePhases: [...new Set(results.map(r => r.phase))],
+          uniqueFoods: [...new Set(results.flatMap(r => r.foodNames))],
+          phaseVariety: results.map(r => r.phase).filter((v, i, a) => a.indexOf(v) === i).length,
+          foodVariety: results.flatMap(r => r.foodNames).filter((v, i, a) => a.indexOf(v) === i).length
+        }
+      });
+    } catch (error) {
+      console.error('Variety test error:', error);
+      res.status(500).json({ success: false, error: 'Variety test failed' });
     }
   });
 
