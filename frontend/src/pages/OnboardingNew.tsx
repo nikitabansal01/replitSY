@@ -87,41 +87,36 @@ export default function OnboardingNew() {
     return input;
   };
 
-  // Handle other condition changes
-  useEffect(() => {
-    if (formData.medicalConditions.includes("Other") && otherCondition) {
+  const handleNext = () => {
+    // Process "Other" entries before moving to next step
+    if (currentStep === 3 && formData.medicalConditions.includes("Other") && otherCondition) {
       const classified = classifyCondition(otherCondition);
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         medicalConditions: [
-          ...prev.medicalConditions.filter((c) => c !== "Other"),
-          classified,
-        ],
+          ...prev.medicalConditions.filter(c => c !== "Other"),
+          classified
+        ]
       }));
+      setOtherCondition(""); // Clear the input
     }
-  }, [otherCondition]);
-
-  // Handle other diet changes
-  useEffect(() => {
-    if (formData.diet.includes('Other') && otherDiet) {
-      setFormData((prev) => ({
+    
+    if (currentStep === 8 && formData.diet.includes('Other') && otherDiet) {
+      setFormData(prev => ({
         ...prev,
-        diet: [...prev.diet.filter((d) => d !== 'Other'), otherDiet],
+        diet: [...prev.diet.filter(d => d !== 'Other'), otherDiet]
       }));
+      setOtherDiet(""); // Clear the input
     }
-  }, [otherDiet]);
-
-  // Handle other exercise changes
-  useEffect(() => {
-    if (formData.exerciseLevel.includes('Other') && otherExercise) {
-      setFormData((prev) => ({
+    
+    if (currentStep === 9 && formData.exerciseLevel.includes('Other') && otherExercise) {
+      setFormData(prev => ({
         ...prev,
-        exerciseLevel: [...prev.exerciseLevel.filter((e) => e !== 'Other'), otherExercise],
+        exerciseLevel: [...prev.exerciseLevel.filter(e => e !== 'Other'), otherExercise]
       }));
+      setOtherExercise(""); // Clear the input
     }
-  }, [otherExercise]);
-
-  const handleNext = () => {
+    
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -250,11 +245,15 @@ export default function OnboardingNew() {
                   <input
                     type="checkbox"
                     id={condition}
-                    checked={formData.medicalConditions.includes(condition) || (condition === "Other" && !!otherCondition)}
+                    checked={formData.medicalConditions.includes(condition) || (condition === "Other" && (formData.medicalConditions.includes("Other") || !!otherCondition))}
                     onChange={() => {
                       if (condition === "Other") {
                         if (!formData.medicalConditions.includes("Other")) {
                           setFormData({ ...formData, medicalConditions: [...formData.medicalConditions, "Other"] });
+                        } else {
+                          // Remove "Other" and clear the text
+                          setFormData({ ...formData, medicalConditions: formData.medicalConditions.filter(c => c !== "Other") });
+                          setOtherCondition("");
                         }
                       } else {
                         handleArrayToggle('medicalConditions', condition);
@@ -589,10 +588,16 @@ export default function OnboardingNew() {
                   <input
                     type="checkbox"
                     id={diet}
-                    checked={formData.diet.includes(diet) || (diet === 'Other' && !!otherDiet)}
+                    checked={formData.diet.includes(diet) || (diet === 'Other' && (formData.diet.includes('Other') || !!otherDiet))}
                     onChange={() => {
                       if (diet === 'Other') {
-                        setFormData({ ...formData, diet: [...formData.diet, 'Other'] });
+                        if (!formData.diet.includes('Other')) {
+                          setFormData({ ...formData, diet: [...formData.diet, 'Other'] });
+                        } else {
+                          // Remove "Other" and clear the text
+                          setFormData({ ...formData, diet: formData.diet.filter(d => d !== 'Other') });
+                          setOtherDiet("");
+                        }
                       } else {
                         handleArrayToggle('diet', diet);
                       }
@@ -629,10 +634,16 @@ export default function OnboardingNew() {
                   <input
                     type="checkbox"
                     id={level}
-                    checked={formData.exerciseLevel.includes(level) || (level === 'Other' && !!otherExercise)}
+                    checked={formData.exerciseLevel.includes(level) || (level === 'Other' && (formData.exerciseLevel.includes('Other') || !!otherExercise))}
                     onChange={() => {
                       if (level === 'Other') {
-                        setFormData({ ...formData, exerciseLevel: [...formData.exerciseLevel, 'Other'] });
+                        if (!formData.exerciseLevel.includes('Other')) {
+                          setFormData({ ...formData, exerciseLevel: [...formData.exerciseLevel, 'Other'] });
+                        } else {
+                          // Remove "Other" and clear the text
+                          setFormData({ ...formData, exerciseLevel: formData.exerciseLevel.filter(e => e !== 'Other') });
+                          setOtherExercise("");
+                        }
                       } else {
                         handleArrayToggle('exerciseLevel', level);
                       }
