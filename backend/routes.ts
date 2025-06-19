@@ -344,7 +344,7 @@ function extractFoodsFromResearch(researchMatches: any[], phase: string): Ingred
 }
 
 // Get default foods for each phase when research extraction fails
-function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
+function getDefaultFoodsForPhase(phase: string, message?: string): IngredientRecommendation[] {
   const allFoods: Record<string, IngredientRecommendation[]> = {
     'Luteal Phase': [
       {
@@ -518,15 +518,27 @@ function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
   
   const foods = allFoods[phase] || allFoods['Luteal Phase'];
   
-  // Use timestamp-based randomization for better variety
+  // Use more robust randomization with message content and timestamp
   const timestamp = Date.now();
-  const randomSeed = timestamp % 1000;
+  const messageHash = message ? message.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 0;
+  const phaseHash = phase.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const randomSeed = (timestamp + messageHash + phaseHash) % 1000;
   
-  // Create a deterministic but varied shuffle based on timestamp
+  // Create a deterministic but varied shuffle based on multiple factors
   const shuffled = [...foods].sort((a, b) => {
-    const aHash = a.name.charCodeAt(0) + randomSeed;
-    const bHash = b.name.charCodeAt(0) + randomSeed;
+    const aHash = a.name.charCodeAt(0) + randomSeed + messageHash;
+    const bHash = b.name.charCodeAt(0) + randomSeed + messageHash;
     return (aHash % 100) - (bHash % 100);
+  });
+  
+  console.log('DEBUG: Food randomization:', {
+    phase,
+    timestamp,
+    messageHash,
+    phaseHash,
+    randomSeed,
+    foodCount: foods.length,
+    selectedFoods: shuffled.slice(0, 3).map(f => f.name)
   });
   
   return shuffled.slice(0, 3);
@@ -590,10 +602,10 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
 
   // Use research-informed defaults directly for faster response
   console.log('Using research-informed ingredient cards for', phase);
-  const researchFoods = getDefaultFoodsForPhase(phase);
+  const researchFoods = getDefaultFoodsForPhase(phase, message);
   
   // Generate personalized message based on user profile
-  const personalizedMessage = generatePersonalizedPhaseMessage(phase, onboardingData, researchFoods.length);
+  const personalizedMessage = generatePersonalizedPhaseMessage(phase, onboardingData, researchFoods.length, message);
   
   return {
     message: personalizedMessage,
@@ -761,13 +773,15 @@ function getLunarCyclePhase(): string {
 }
 
 // Generate personalized message based on user profile and phase
-function generatePersonalizedPhaseMessage(phase: string, onboardingData: any, foodCount: number): string {
+function generatePersonalizedPhaseMessage(phase: string, onboardingData: any, foodCount: number, message?: string): string {
   const age = onboardingData?.age || 'your age group';
   const diet = onboardingData?.diet || 'your dietary preferences';
   
-  // Add timestamp-based randomization to prevent repetitive responses
+  // Create a more robust random seed using message content, timestamp, and other factors
   const timestamp = Date.now();
-  const randomSeed = timestamp % 1000;
+  const messageHash = message ? message.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 0;
+  const userHash = onboardingData?.age ? parseInt(onboardingData.age) : 0;
+  const randomSeed = (timestamp + messageHash + userHash) % 1000;
   
   const phaseMessages = {
     'Menstrual Phase': [
@@ -794,6 +808,17 @@ function generatePersonalizedPhaseMessage(phase: string, onboardingData: any, fo
   
   const messages = phaseMessages[phase as keyof typeof phaseMessages] || phaseMessages['Luteal Phase'];
   const randomIndex = randomSeed % messages.length;
+  
+  console.log('DEBUG: Message randomization:', {
+    phase,
+    timestamp,
+    messageHash,
+    userHash,
+    randomSeed,
+    randomIndex,
+    messageCount: messages.length,
+    selectedMessage: messages[randomIndex].substring(0, 50) + '...'
+  });
   
   return messages[randomIndex];
 }
@@ -2145,6 +2170,51 @@ Generated with love for your health journey! 💖
     } catch (error) {
       console.error('Question phase mapping test error:', error);
       res.status(500).json({ error: 'Failed to test question phase mapping' });
+    }
+  });
+
+  // Simple test endpoint for randomization
+  app.get('/api/debug/randomization-test', requireAuth, async (req: any, res: any) => {
+    try {
+      const testMessages = [
+        "I'm tired",
+        "I have cramps", 
+        "I'm bloated",
+        "I want energy",
+        "I can't sleep",
+        "What should I eat?",
+        "Help with nutrition",
+        "Food recommendations"
+      ];
+      
+      const results = testMessages.map(testMessage => {
+        const lowerMessage = testMessage.toLowerCase();
+        const questionType = getQuestionType(lowerMessage);
+        const phase = getPhaseForQuestionType(questionType, {});
+        const foods = getDefaultFoodsForPhase(phase, testMessage);
+        const message = generatePersonalizedPhaseMessage(phase, { age: '28', diet: 'balanced' }, foods.length, testMessage);
+        
+        return {
+          testMessage,
+          questionType,
+          phase,
+          foods: foods.map(f => f.name),
+          message: message.substring(0, 80) + '...'
+        };
+      });
+      
+      res.json({
+        success: true,
+        results,
+        analysis: {
+          uniquePhases: new Set(results.map(r => r.phase)).size,
+          uniqueMessages: new Set(results.map(r => r.message)).size,
+          uniqueFoodSets: new Set(results.map(r => r.foods.join(', '))).size
+        }
+      });
+    } catch (error) {
+      console.error('Randomization test error:', error);
+      res.status(500).json({ error: 'Failed to test randomization' });
     }
   });
 
