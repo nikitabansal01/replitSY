@@ -63,6 +63,11 @@ export default function OnboardingNew() {
     exerciseLevel: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // State for "Other" options
+  const [otherCondition, setOtherCondition] = useState("");
+  const [otherDiet, setOtherDiet] = useState("");
+  const [otherExercise, setOtherExercise] = useState("");
 
   const totalSteps = 10;
   const progressPercentage = (currentStep / totalSteps) * 100;
@@ -72,6 +77,49 @@ export default function OnboardingNew() {
       setLocation('/');
     }
   }, [user, loading, setLocation]);
+
+  // Simple NLP for custom entry
+  const classifyCondition = (input: string) => {
+    const val = input.toLowerCase();
+    if (val.includes("thyroid")) return "Hypothyroidism";
+    if (val.includes("pcos") || val.includes("pcod")) return "PCOS";
+    if (val.includes("endo")) return "Endometriosis";
+    return input;
+  };
+
+  // Handle other condition changes
+  useEffect(() => {
+    if (formData.medicalConditions.includes("Other") && otherCondition) {
+      const classified = classifyCondition(otherCondition);
+      setFormData((prev) => ({
+        ...prev,
+        medicalConditions: [
+          ...prev.medicalConditions.filter((c) => c !== "Other"),
+          classified,
+        ],
+      }));
+    }
+  }, [otherCondition]);
+
+  // Handle other diet changes
+  useEffect(() => {
+    if (formData.diet.includes('Other') && otherDiet) {
+      setFormData((prev) => ({
+        ...prev,
+        diet: [...prev.diet.filter((d) => d !== 'Other'), otherDiet],
+      }));
+    }
+  }, [otherDiet]);
+
+  // Handle other exercise changes
+  useEffect(() => {
+    if (formData.exerciseLevel.includes('Other') && otherExercise) {
+      setFormData((prev) => ({
+        ...prev,
+        exerciseLevel: [...prev.exerciseLevel.filter((e) => e !== 'Other'), otherExercise],
+      }));
+    }
+  }, [otherExercise]);
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -187,29 +235,6 @@ export default function OnboardingNew() {
         );
 
       case 3:
-        const hasOtherCondition = formData.medicalConditions.includes("Other");
-        const [otherCondition, setOtherCondition] = useState("");
-        // Simple NLP for custom entry
-        const classifyCondition = (input: string) => {
-          const val = input.toLowerCase();
-          if (val.includes("thyroid")) return "Hypothyroidism";
-          if (val.includes("pcos") || val.includes("pcod")) return "PCOS";
-          if (val.includes("endo")) return "Endometriosis";
-          return input;
-        };
-        useEffect(() => {
-          if (hasOtherCondition && otherCondition) {
-            const classified = classifyCondition(otherCondition);
-            setFormData((prev) => ({
-              ...prev,
-              medicalConditions: [
-                ...prev.medicalConditions.filter((c) => c !== "Other"),
-                classified,
-              ],
-            }));
-          }
-          // eslint-disable-next-line
-        }, [otherCondition]);
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Medical Conditions</h2>
@@ -228,7 +253,9 @@ export default function OnboardingNew() {
                     checked={formData.medicalConditions.includes(condition) || (condition === "Other" && !!otherCondition)}
                     onChange={() => {
                       if (condition === "Other") {
-                        setFormData({ ...formData, medicalConditions: [...formData.medicalConditions, "Other"] });
+                        if (!formData.medicalConditions.includes("Other")) {
+                          setFormData({ ...formData, medicalConditions: [...formData.medicalConditions, "Other"] });
+                        }
                       } else {
                         handleArrayToggle('medicalConditions', condition);
                       }
@@ -240,7 +267,7 @@ export default function OnboardingNew() {
                   </label>
                 </div>
               ))}
-              {hasOtherCondition && (
+              {formData.medicalConditions.includes("Other") && (
                 <div className="mt-2">
                   <Input
                     type="text"
@@ -553,17 +580,6 @@ export default function OnboardingNew() {
         );
 
       case 8:
-        const hasOtherDiet = formData.diet.includes('Other');
-        const [otherDiet, setOtherDiet] = useState('');
-        useEffect(() => {
-          if (hasOtherDiet && otherDiet) {
-            setFormData((prev) => ({
-              ...prev,
-              diet: [...prev.diet.filter((d) => d !== 'Other'), otherDiet],
-            }));
-          }
-          // eslint-disable-next-line
-        }, [otherDiet]);
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Diet Preferences</h2>
@@ -588,7 +604,7 @@ export default function OnboardingNew() {
                   </label>
                 </div>
               ))}
-              {hasOtherDiet && (
+              {formData.diet.includes('Other') && (
                 <div className="mt-2">
                   <Input
                     type="text"
@@ -604,17 +620,6 @@ export default function OnboardingNew() {
         );
 
       case 9:
-        const hasOtherExercise = formData.exerciseLevel.includes('Other');
-        const [otherExercise, setOtherExercise] = useState('');
-        useEffect(() => {
-          if (hasOtherExercise && otherExercise) {
-            setFormData((prev) => ({
-              ...prev,
-              exerciseLevel: [...prev.exerciseLevel.filter((e) => e !== 'Other'), otherExercise],
-            }));
-          }
-          // eslint-disable-next-line
-        }, [otherExercise]);
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Exercise Frequency</h2>
@@ -639,7 +644,7 @@ export default function OnboardingNew() {
                   </label>
                 </div>
               ))}
-              {hasOtherExercise && (
+              {formData.exerciseLevel.includes('Other') && (
                 <div className="mt-2">
                   <Input
                     type="text"
