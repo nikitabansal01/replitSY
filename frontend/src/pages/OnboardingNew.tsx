@@ -294,7 +294,7 @@ export default function OnboardingNew() {
             "Pelvic pain", "Painful periods", "Heavy bleeding", "Pain during intercourse", "Infertility", "Fatigue"
           ],
           default: [
-            "Irregular periods", "Heavy bleeding", "Painful periods", "Mood swings", "Weight gain or difficulty losing weight", "Fatigue and low energy", "Hair loss or thinning", "Acne or skin issues", "Bloating and digestive issues", "Food cravings", "Sleep problems", "Stress and anxiety", "Hot flashes", "Brain fog or memory issues", "Joint pain or stiffness"
+            "Irregular periods", "Heavy bleeding", "Painful periods", "Mood swings", "Weight gain or difficulty losing weight", "Fatigue and low energy", "Hair loss or thinning", "Acne or skin issues", "Bloating and digestive issues", "Food cravings", "Sleep problems", "Stress and anxiety", "Hot flashes", "Brain fog or memory issues"
           ]
         };
         // Determine which symptoms to show
