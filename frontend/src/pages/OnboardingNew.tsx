@@ -474,62 +474,6 @@ export default function OnboardingNew() {
                     ))}
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-3">Do you experience irregular periods?</label>
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="irregularPeriods"
-                      checked={formData.menstrualCycle.irregularPeriods}
-                      onCheckedChange={(checked) => setFormData({
-                        ...formData,
-                        menstrualCycle: { ...formData.menstrualCycle, irregularPeriods: checked === true }
-                      })}
-                    />
-                    <label htmlFor="irregularPeriods" className="text-sm cursor-pointer">
-                      Yes, my periods are irregular
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Period Symptoms */}
-              <div>
-                <label className="block text-sm font-medium mb-3">Period symptoms (Select all that apply)</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {[
-                    'Heavy bleeding',
-                    'Severe cramps',
-                    'PMS symptoms',
-                    'Minimal symptoms',
-                    'Mood swings',
-                    'Bloating',
-                    'Breast tenderness',
-                    'Headaches',
-                    'Fatigue',
-                    'Back pain'
-                  ].map((symptom) => (
-                    <div key={symptom} className="flex items-center space-x-3">
-                      <Checkbox
-                        id={symptom}
-                        checked={formData.menstrualCycle.symptoms?.includes(symptom)}
-                        onCheckedChange={() => {
-                          const currentSymptoms = formData.menstrualCycle.symptoms || [];
-                          const newSymptoms = currentSymptoms.includes(symptom)
-                            ? currentSymptoms.filter((s: string) => s !== symptom)
-                            : [...currentSymptoms, symptom];
-                          setFormData({
-                            ...formData,
-                            menstrualCycle: { ...formData.menstrualCycle, symptoms: newSymptoms }
-                          });
-                        }}
-                      />
-                      <label htmlFor={symptom} className="text-sm cursor-pointer">
-                        {symptom}
-                      </label>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
