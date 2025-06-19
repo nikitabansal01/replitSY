@@ -579,6 +579,20 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
   // Check if this is a nutrition/diet question
   const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(question);
   
+  // Simple NLP for custom conditions
+  let customCondition = '';
+  if (onboardingData?.medicalConditions) {
+    for (const cond of onboardingData.medicalConditions) {
+      if (cond.toLowerCase().includes('thyroid')) customCondition = 'Hypothyroidism';
+      else if (cond.toLowerCase().includes('pcos') || cond.toLowerCase().includes('pcod')) customCondition = 'PCOS';
+      else if (cond.toLowerCase().includes('endo')) customCondition = 'Endometriosis';
+      // Add more mappings as needed
+    }
+  }
+
+  // Under 18 logic
+  const isUnder18 = onboardingData?.age === 'Below 18' || onboardingData?.age === '<18' || onboardingData?.age === 'under 18';
+
   // ALWAYS retrieve relevant research first
   let researchContext = '';
   let researchSources: string[] = [];
@@ -602,17 +616,21 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
     console.error('Error retrieving research papers:', error);
   }
 
-  let systemPrompt = `You are a women's health expert providing evidence-based information.
-IMPORTANT: You must ONLY use information from the provided research context. Do NOT add any information that is not directly supported by the research papers provided.
+  let systemPrompt = `You are a women's health expert providing evidence-based information.`;
+  if (isUnder18) {
+    systemPrompt += `\n\nIMPORTANT: The user is under 18. Do NOT provide any medical, supplement, or restrictive diet advice. Only provide general wellness, healthy eating, and lifestyle tips suitable for minors. Always recommend consulting a pediatrician or guardian for any health concerns.`;
+  }
+  systemPrompt += `\nIMPORTANT: You must ONLY use information from the provided research context. Do NOT add any information that is not directly supported by the research papers provided.`;
 
-If the user's message expresses emotion, frustration, or a personal struggle (e.g., 'why me', 'I'm sad', 'I'm frustrated', 'I'm worried', 'I'm struggling', 'I'm upset', 'I'm anxious'), respond with empathy and emotional support first. Only provide nutrition advice if the user specifically asks for it or if it would be genuinely helpful in the context.
+  if (customCondition) {
+    systemPrompt += `\n\nUser has a custom medical condition: ${customCondition}. Personalize your response accordingly.`;
+  }
 
-User Profile:
-- Age: ${onboardingData?.age || 'Not specified'}
-- Diet: ${onboardingData?.diet || 'Not specified'}
-- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}
+  systemPrompt += `\n\nIf the user's message expresses emotion, frustration, or a personal struggle (e.g., 'why me', 'I'm sad', 'I'm frustrated', 'I'm worried', 'I'm struggling', 'I'm upset', 'I'm anxious'), respond with empathy and emotional support first. Only provide nutrition advice if the user specifically asks for it or if it would be genuinely helpful in the context.`;
 
-CRITICAL: Your response must be valid JSON with this exact structure:`;
+  systemPrompt += `\n\nUser Profile:\n- Age: ${onboardingData?.age || 'Not specified'}\n- Diet: ${onboardingData?.diet || 'Not specified'}\n- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}\n- Medical Conditions: ${onboardingData?.medicalConditions?.join(', ') || 'None specified'}`;
+
+  systemPrompt += `\n\nCRITICAL: Your response must be valid JSON with this exact structure:`;
 
   if (isDietQuestion) {
     systemPrompt += `
