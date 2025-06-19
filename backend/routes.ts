@@ -574,6 +574,13 @@ function capitalizeWords(str: string): string {
 
 // Research-based cycle response with improved performance
 async function generateResearchBasedCycleResponse(message: string, onboardingData: any, openai: OpenAI): Promise<ChatResponse> {
+  console.log('DEBUG: generateResearchBasedCycleResponse called with:', {
+    message: message.substring(0, 50) + '...',
+    hasOnboardingData: !!onboardingData,
+    userAge: onboardingData?.age,
+    userDiet: onboardingData?.diet
+  });
+
   const lowerMessage = message.toLowerCase();
   
   // Determine which cycle phase is being asked about
@@ -589,6 +596,7 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
   } else {
     // For general questions, add variety based on question type and time
     const questionType = getQuestionType(lowerMessage);
+    console.log('DEBUG: General question detected, question type:', questionType);
     phase = getPhaseForQuestionType(questionType, onboardingData, message);
   }
   
@@ -604,8 +612,21 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
   console.log('Using research-informed ingredient cards for', phase);
   const researchFoods = getDefaultFoodsForPhase(phase, message);
   
+  console.log('DEBUG: Foods selected:', {
+    phase,
+    foodCount: researchFoods.length,
+    foodNames: researchFoods.map(f => f.name)
+  });
+  
   // Generate personalized message based on user profile
   const personalizedMessage = generatePersonalizedPhaseMessage(phase, onboardingData, researchFoods.length, message);
+  
+  console.log('DEBUG: Final response:', {
+    phase,
+    messageLength: personalizedMessage.length,
+    messagePreview: personalizedMessage.substring(0, 100) + '...',
+    foodCount: researchFoods.length
+  });
   
   return {
     message: personalizedMessage,
@@ -1268,6 +1289,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if this is a health-related question that should use research
       const isHealthQuestion = /\b(bloating|digestion|pms|symptoms|pain|cramps|fatigue|mood|weight|acne|hair|skin|thyroid|pcos|endometriosis|hormones|nutrition|diet|food|eat|supplement|vitamin|mineral|exercise|stress|sleep|anxiety|depression|energy|tired|irregular|fertility|pregnancy|menopause)\b/i.test(message);
       
+      console.log('DEBUG: Message classification:', {
+        originalMessage: message,
+        lowerMessage,
+        isSpecificPhaseQuery,
+        isHealthQuestion,
+        matchedHealthTerms: message.match(/\b(bloating|digestion|pms|symptoms|pain|cramps|fatigue|mood|weight|acne|hair|skin|thyroid|pcos|endometriosis|hormones|nutrition|diet|food|eat|supplement|vitamin|mineral|exercise|stress|sleep|anxiety|depression|energy|tired|irregular|fertility|pregnancy|menopause)\b/gi)
+      });
+      
       let response;
       
       // Use research-based response for cycle phase queries OR health-related questions
@@ -1291,7 +1320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('DEBUG: Chat response generated:', {
         messageLength: response.message.length,
         ingredientsCount: response.ingredients?.length || 0,
-        firstIngredient: response.ingredients?.[0]?.name || 'none'
+        firstIngredient: response.ingredients?.[0]?.name || 'none',
+        responsePreview: response.message.substring(0, 100) + '...'
       });
 
       await storage.saveChatMessage({
@@ -2280,6 +2310,36 @@ Generated with love for your health journey! 💖
     } catch (error) {
       console.error('Variety test error:', error);
       res.status(500).json({ success: false, error: 'Variety test failed' });
+    }
+  });
+
+  // Simple test endpoint to verify randomization
+  app.get('/api/debug/test-randomization', async (req, res) => {
+    try {
+      const testMessage = req.query.message as string || 'What should I eat?';
+      const testOnboarding = { age: '28', diet: 'balanced' };
+      
+      console.log('DEBUG: Testing randomization with message:', testMessage);
+      
+      const lowerMessage = testMessage.toLowerCase();
+      const questionType = getQuestionType(lowerMessage);
+      const phase = getPhaseForQuestionType(questionType, testOnboarding, testMessage);
+      const foods = getDefaultFoodsForPhase(phase, testMessage);
+      const message = generatePersonalizedPhaseMessage(phase, testOnboarding, foods.length, testMessage);
+      
+      res.json({
+        success: true,
+        testMessage,
+        questionType,
+        phase,
+        foodCount: foods.length,
+        foodNames: foods.map(f => f.name),
+        message,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('Randomization test error:', error);
+      res.status(500).json({ success: false, error: 'Randomization test failed' });
     }
   });
 
