@@ -144,14 +144,14 @@ export default function OnboardingNew() {
             <div>
               <label className="block text-sm font-medium mb-3">What's your age range? (Select one)</label>
               <div className="grid grid-cols-2 gap-3">
-                {['18-25', '26-35', '36-45', '46-55', '55+'].map((age) => (
+                {["Below 18", "18-25", "26-35", "36-45", "46-55", "55+"].map((age) => (
                   <Button
                     key={age}
                     variant={formData.age === age ? "default" : "outline"}
-                    onClick={() => setFormData({...formData, age})}
+                    onClick={() => setFormData({ ...formData, age })}
                     className="text-sm"
                   >
-                    {age} years
+                    {age === "Below 18" ? "Below 18" : `${age} years`}
                   </Button>
                 ))}
               </div>
@@ -187,23 +187,52 @@ export default function OnboardingNew() {
         );
 
       case 3:
+        const hasOtherCondition = formData.medicalConditions.includes("Other");
+        const [otherCondition, setOtherCondition] = useState("");
+        // Simple NLP for custom entry
+        const classifyCondition = (input: string) => {
+          const val = input.toLowerCase();
+          if (val.includes("thyroid")) return "Hypothyroidism";
+          if (val.includes("pcos") || val.includes("pcod")) return "PCOS";
+          if (val.includes("endo")) return "Endometriosis";
+          return input;
+        };
+        useEffect(() => {
+          if (hasOtherCondition && otherCondition) {
+            const classified = classifyCondition(otherCondition);
+            setFormData((prev) => ({
+              ...prev,
+              medicalConditions: [
+                ...prev.medicalConditions.filter((c) => c !== "Other"),
+                classified,
+              ],
+            }));
+          }
+          // eslint-disable-next-line
+        }, [otherCondition]);
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Medical Conditions</h2>
             <p className="text-sm text-gray-600 text-center">Have you ever been diagnosed with any of these conditions? (Select all that apply)</p>
             <div className="grid grid-cols-1 gap-3">
               {[
-                'PCOS (Polycystic Ovary Syndrome) / PCOD (Polycystic Ovary Disorder)',
-                'Endometriosis',
-                'Thyroid disorders (Hypo/Hyperthyroidism)',
-                'Other'
+                "PCOS (Polycystic Ovary Syndrome) / PCOD (Polycystic Ovary Disorder)",
+                "Endometriosis",
+                "Thyroid disorders (Hypo/Hyperthyroidism)",
+                "Other"
               ].map((condition) => (
                 <div key={condition} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
                   <input
                     type="checkbox"
                     id={condition}
-                    checked={formData.medicalConditions.includes(condition)}
-                    onChange={() => handleArrayToggle('medicalConditions', condition)}
+                    checked={formData.medicalConditions.includes(condition) || (condition === "Other" && !!otherCondition)}
+                    onChange={() => {
+                      if (condition === "Other") {
+                        setFormData({ ...formData, medicalConditions: [...formData.medicalConditions, "Other"] });
+                      } else {
+                        handleArrayToggle('medicalConditions', condition);
+                      }
+                    }}
                     className="form-checkbox h-5 w-5 text-pink-600"
                   />
                   <label htmlFor={condition} className="text-sm font-medium cursor-pointer flex-1">
@@ -211,33 +240,50 @@ export default function OnboardingNew() {
                   </label>
                 </div>
               ))}
+              {hasOtherCondition && (
+                <div className="mt-2">
+                  <Input
+                    type="text"
+                    placeholder="Please specify your condition"
+                    value={otherCondition}
+                    onChange={(e) => setOtherCondition(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              )}
             </div>
           </div>
         );
 
       case 4:
+        // Map conditions to symptoms
+        const conditionSymptomMap: Record<string, string[]> = {
+          PCOS: [
+            "Irregular periods", "Acne", "Weight gain", "Hair loss", "Ovarian cysts", "Infertility", "Mood swings"
+          ],
+          Hypothyroidism: [
+            "Fatigue", "Weight gain", "Cold sensitivity", "Constipation", "Dry skin", "Hair loss", "Depression"
+          ],
+          Endometriosis: [
+            "Pelvic pain", "Painful periods", "Heavy bleeding", "Pain during intercourse", "Infertility", "Fatigue"
+          ],
+          default: [
+            "Irregular periods", "Heavy bleeding", "Painful periods", "Mood swings", "Weight gain or difficulty losing weight", "Fatigue and low energy", "Hair loss or thinning", "Acne or skin issues", "Bloating and digestive issues", "Food cravings", "Sleep problems", "Stress and anxiety", "Hot flashes", "Brain fog or memory issues", "Joint pain or stiffness"
+          ]
+        };
+        // Determine which symptoms to show
+        let symptomOptions: string[] = [];
+        if (formData.medicalConditions.some((c) => c.includes("PCOS"))) symptomOptions = conditionSymptomMap.PCOS;
+        else if (formData.medicalConditions.some((c) => c.includes("Hypothyroidism"))) symptomOptions = conditionSymptomMap.Hypothyroidism;
+        else if (formData.medicalConditions.some((c) => c.includes("Endometriosis"))) symptomOptions = conditionSymptomMap.Endometriosis;
+        else if (formData.medicalConditions.length > 0) symptomOptions = conditionSymptomMap.default;
+        else symptomOptions = conditionSymptomMap.default;
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Current Symptoms</h2>
             <p className="text-sm text-gray-600 text-center">What symptoms are you currently experiencing? (Select all that apply)</p>
             <div className="grid grid-cols-1 gap-3">
-              {[
-                'Irregular periods',
-                'Heavy bleeding',
-                'Painful periods',
-                'Mood swings',
-                'Weight gain or difficulty losing weight',
-                'Fatigue and low energy',
-                'Hair loss or thinning',
-                'Acne or skin issues',
-                'Bloating and digestive issues',
-                'Food cravings',
-                'Sleep problems',
-                'Stress and anxiety',
-                'Hot flashes',
-                'Brain fog or memory issues',
-                'Joint pain or stiffness'
-              ].map((symptom) => (
+              {symptomOptions.map((symptom) => (
                 <div key={symptom} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
                   <input
                     type="checkbox"
@@ -507,58 +553,108 @@ export default function OnboardingNew() {
         );
 
       case 8:
+        const hasOtherDiet = formData.diet.includes('Other');
+        const [otherDiet, setOtherDiet] = useState('');
+        useEffect(() => {
+          if (hasOtherDiet && otherDiet) {
+            setFormData((prev) => ({
+              ...prev,
+              diet: [...prev.diet.filter((d) => d !== 'Other'), otherDiet],
+            }));
+          }
+          // eslint-disable-next-line
+        }, [otherDiet]);
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center text-pink-600">Diet & Exercise</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-3">What best describes your current diet? (Select all that apply)</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {[
-                    'Standard/Balanced',
-                    'Mediterranean',
-                    'Low-carb/Keto',
-                    'Plant-based/Vegetarian',
-                    'Vegan',
-                    'Paleo',
-                    'Anti-inflammatory',
-                    'Other/Custom'
-                  ].map((diet) => (
-                    <div key={diet} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                      <Checkbox
-                        id={diet}
-                        checked={formData.diet.includes(diet)}
-                        onCheckedChange={() => handleArrayToggle('diet', diet)}
-                      />
-                      <label htmlFor={diet} className="text-sm font-medium cursor-pointer flex-1">
-                        {diet}
-                      </label>
-                    </div>
-                  ))}
+            <h2 className="text-2xl font-bold text-center text-pink-600">Diet Preferences</h2>
+            <div className="grid grid-cols-1 gap-3">
+              {["Vegetarian", "Vegan", "Pescatarian", "Omnivore", "Other"].map((diet) => (
+                <div key={diet} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    id={diet}
+                    checked={formData.diet.includes(diet) || (diet === 'Other' && !!otherDiet)}
+                    onChange={() => {
+                      if (diet === 'Other') {
+                        setFormData({ ...formData, diet: [...formData.diet, 'Other'] });
+                      } else {
+                        handleArrayToggle('diet', diet);
+                      }
+                    }}
+                    className="form-checkbox h-5 w-5 text-pink-600"
+                  />
+                  <label htmlFor={diet} className="text-sm font-medium cursor-pointer flex-1">
+                    {diet}
+                  </label>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-3">Exercise frequency (Select all that apply)</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {['Sedentary', 'Light (1-2x/week)', 'Moderate (3-4x/week)', 'Active (5+ times/week)'].map((level) => (
-                    <div key={level} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                      <Checkbox
-                        id={level}
-                        checked={formData.exerciseLevel.includes(level)}
-                        onCheckedChange={() => handleArrayToggle('exerciseLevel', level)}
-                      />
-                      <label htmlFor={level} className="text-sm font-medium cursor-pointer flex-1">
-                        {level}
-                      </label>
-                    </div>
-                  ))}
+              ))}
+              {hasOtherDiet && (
+                <div className="mt-2">
+                  <Input
+                    type="text"
+                    placeholder="Please specify your diet preference"
+                    value={otherDiet}
+                    onChange={(e) => setOtherDiet(e.target.value)}
+                    className="w-full"
+                  />
                 </div>
-              </div>
+              )}
             </div>
           </div>
         );
 
       case 9:
+        const hasOtherExercise = formData.exerciseLevel.includes('Other');
+        const [otherExercise, setOtherExercise] = useState('');
+        useEffect(() => {
+          if (hasOtherExercise && otherExercise) {
+            setFormData((prev) => ({
+              ...prev,
+              exerciseLevel: [...prev.exerciseLevel.filter((e) => e !== 'Other'), otherExercise],
+            }));
+          }
+          // eslint-disable-next-line
+        }, [otherExercise]);
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-center text-pink-600">Exercise Frequency</h2>
+            <div className="grid grid-cols-1 gap-3">
+              {['Sedentary', 'Light (1-2x/week)', 'Moderate (3-4x/week)', 'Active (5+ times/week)', 'Other'].map((level) => (
+                <div key={level} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    id={level}
+                    checked={formData.exerciseLevel.includes(level) || (level === 'Other' && !!otherExercise)}
+                    onChange={() => {
+                      if (level === 'Other') {
+                        setFormData({ ...formData, exerciseLevel: [...formData.exerciseLevel, 'Other'] });
+                      } else {
+                        handleArrayToggle('exerciseLevel', level);
+                      }
+                    }}
+                    className="form-checkbox h-5 w-5 text-pink-600"
+                  />
+                  <label htmlFor={level} className="text-sm font-medium cursor-pointer flex-1">
+                    {level}
+                  </label>
+                </div>
+              ))}
+              {hasOtherExercise && (
+                <div className="mt-2">
+                  <Input
+                    type="text"
+                    placeholder="Please specify your exercise frequency"
+                    value={otherExercise}
+                    onChange={(e) => setOtherExercise(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 10:
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-center text-pink-600">Health Goals</h2>
