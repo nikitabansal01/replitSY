@@ -212,7 +212,7 @@ function extractFoodsFromResearch(researchMatches: any[], phase: string): Ingred
 
 // Get default foods for each phase when research extraction fails
 function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
-  const defaults: Record<string, IngredientRecommendation[]> = {
+  const allFoods: Record<string, IngredientRecommendation[]> = {
     'Luteal Phase': [
       {
         name: "Sesame Seeds",
@@ -237,6 +237,22 @@ function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
         lazy: "Add pre-washed spinach to smoothies or grab bagged salad mixes",
         tasty: "Make green smoothies with spinach, banana, and almond butter",
         healthy: "Consume 2-3 cups dark leafy greens daily for 200mg+ magnesium"
+      },
+      {
+        name: "Dark Chocolate",
+        description: "Studies show magnesium and antioxidants help reduce PMS symptoms",
+        emoji: "🍫",
+        lazy: "Have 1-2 squares of 70%+ dark chocolate daily",
+        tasty: "Make hot chocolate with dark cocoa powder and almond milk",
+        healthy: "Consume 1-2 oz dark chocolate (70%+) daily for magnesium and antioxidants"
+      },
+      {
+        name: "Pumpkin Seeds",
+        description: "Research indicates zinc and magnesium support hormone balance",
+        emoji: "🎃",
+        lazy: "Snack on 1/4 cup raw pumpkin seeds or add to yogurt",
+        tasty: "Toast with sea salt and herbs, or add to energy balls",
+        healthy: "Eat 1-2 tbsp raw pumpkin seeds daily for zinc and magnesium"
       }
     ],
     'Follicular Phase': [
@@ -263,6 +279,22 @@ function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
         lazy: "Eat 1-2 fresh oranges or grapefruits daily, or drink fresh citrus juice",
         tasty: "Make citrus salads with orange, grapefruit, and fresh mint",
         healthy: "Consume 2-3 servings of fresh citrus daily for vitamin C and folate"
+      },
+      {
+        name: "Quinoa",
+        description: "Studies show complete protein and iron support energy and hormone production",
+        emoji: "🌾",
+        lazy: "Cook quinoa in bulk and add to salads or bowls throughout the week",
+        tasty: "Make quinoa bowls with roasted vegetables and tahini dressing",
+        healthy: "Consume 1/2 cup cooked quinoa daily for complete protein and iron"
+      },
+      {
+        name: "Almonds",
+        description: "Research indicates vitamin E and healthy fats support estrogen balance",
+        emoji: "🥜",
+        lazy: "Snack on 1/4 cup raw almonds or add almond butter to smoothies",
+        tasty: "Make almond energy balls or add to homemade granola",
+        healthy: "Eat 1/4 cup raw almonds daily for vitamin E and healthy fats"
       }
     ],
     'Menstrual Phase': [
@@ -289,6 +321,22 @@ function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
         lazy: "Choose lean ground beef or canned lentils for quick meals",
         tasty: "Make beef stir-fry or hearty lentil curry with warming spices",
         healthy: "Include 3-4oz lean red meat or 1 cup cooked lentils daily during menstruation"
+      },
+      {
+        name: "Chamomile Tea",
+        description: "Studies show anti-inflammatory and calming properties help with menstrual discomfort",
+        emoji: "🌼",
+        lazy: "Drink 2-3 cups chamomile tea daily, especially before bed",
+        tasty: "Make chamomile tea with honey and lemon, or add to smoothies",
+        healthy: "Consume 2-3 cups chamomile tea daily for anti-inflammatory benefits"
+      },
+      {
+        name: "Sweet Potatoes",
+        description: "Research indicates beta-carotene and complex carbs support energy and mood",
+        emoji: "🍠",
+        lazy: "Microwave sweet potatoes or buy pre-cooked for quick meals",
+        tasty: "Roast with cinnamon and maple syrup, or make sweet potato fries",
+        healthy: "Consume 1 medium sweet potato daily for beta-carotene and complex carbs"
       }
     ],
     'Ovulation Phase': [
@@ -315,11 +363,31 @@ function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
         lazy: "Eat 2-3 Brazil nuts daily as a quick snack",
         tasty: "Add chopped Brazil nuts to granola, yogurt, or energy balls",
         healthy: "Consume 2-3 Brazil nuts daily for 200mcg selenium - optimal for fertility support"
+      },
+      {
+        name: "Berries",
+        description: "Studies show antioxidants and vitamin C support egg quality and hormone balance",
+        emoji: "🫐",
+        lazy: "Add frozen berries to smoothies or yogurt for quick nutrition",
+        tasty: "Make berry parfaits, smoothie bowls, or fresh berry salads",
+        healthy: "Consume 1-2 cups mixed berries daily for antioxidants and vitamin C"
+      },
+      {
+        name: "Eggs",
+        description: "Research indicates choline and protein support egg quality and hormone production",
+        emoji: "🥚",
+        lazy: "Hard-boil eggs in bulk for quick protein or add to salads",
+        tasty: "Make vegetable omelets, egg muffins, or poached eggs on toast",
+        healthy: "Consume 1-2 whole eggs daily for choline, protein, and essential nutrients"
       }
     ]
   };
   
-  return defaults[phase] || defaults['Luteal Phase'];
+  const foods = allFoods[phase] || allFoods['Luteal Phase'];
+  
+  // Randomly select 3 foods from the available options for variety
+  const shuffled = [...foods].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3);
 }
 
 // Get benefits and preparation methods for specific foods
@@ -356,21 +424,148 @@ async function generateResearchBasedCycleResponse(message: string, onboardingDat
   
   // Determine which cycle phase is being asked about
   let phase = '';
-  if (lowerMessage.includes('luteal')) phase = 'Luteal Phase';
-  else if (lowerMessage.includes('follicular')) phase = 'Follicular Phase'; 
-  else if (lowerMessage.includes('menstrual')) phase = 'Menstrual Phase';
-  else if (lowerMessage.includes('ovulation')) phase = 'Ovulation Phase';
-  else phase = 'Luteal Phase'; // default
+  if (lowerMessage.includes('luteal')) {
+    phase = 'Luteal Phase';
+  } else if (lowerMessage.includes('follicular')) {
+    phase = 'Follicular Phase'; 
+  } else if (lowerMessage.includes('menstrual') || lowerMessage.includes('period')) {
+    phase = 'Menstrual Phase';
+  } else if (lowerMessage.includes('ovulation') || lowerMessage.includes('ovulatory')) {
+    phase = 'Ovulation Phase';
+  } else {
+    // Calculate current phase based on user's cycle data
+    phase = calculateCurrentPhase(onboardingData);
+  }
   
-  console.log('Processing', phase, 'query:', message);
+  console.log('DEBUG: Phase detection:', {
+    message: lowerMessage,
+    detectedPhase: phase,
+    hasOnboardingData: !!onboardingData,
+    lastPeriodDate: onboardingData?.lastPeriodDate,
+    cycleLength: onboardingData?.cycleLength
+  });
 
   // Use research-informed defaults directly for faster response
   console.log('Using research-informed ingredient cards for', phase);
   const researchFoods = getDefaultFoodsForPhase(phase);
+  
+  // Generate personalized message based on user profile
+  const personalizedMessage = generatePersonalizedPhaseMessage(phase, onboardingData, researchFoods.length);
+  
   return {
-    message: `Here are the top ${researchFoods.length} research-backed foods for your ${phase.toLowerCase()}:`,
+    message: personalizedMessage,
     ingredients: researchFoods
   };
+}
+
+// Calculate current menstrual phase based on user's cycle data
+function calculateCurrentPhase(onboardingData: any): string {
+  if (!onboardingData?.lastPeriodDate) {
+    console.log('DEBUG: No last period date, using lunar cycle');
+    return getLunarCyclePhase();
+  }
+
+  const lastPeriod = new Date(onboardingData.lastPeriodDate);
+  const today = new Date();
+  const daysSinceLastPeriod = Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24));
+  const cycleLength = parseInt(onboardingData.cycleLength) || 28;
+
+  console.log('DEBUG: Phase calculation:', {
+    lastPeriod: lastPeriod.toISOString(),
+    today: today.toISOString(),
+    daysSinceLastPeriod,
+    cycleLength
+  });
+
+  // If period data is very old (>60 days), use lunar cycle
+  if (daysSinceLastPeriod > 60) {
+    console.log('DEBUG: Old period data, using lunar cycle');
+    return getLunarCyclePhase();
+  }
+
+  // Handle case where we're in the current cycle
+  const currentCycleDay = daysSinceLastPeriod % cycleLength;
+  
+  // Define phase boundaries based on typical cycle patterns
+  const menstrualPhaseEnd = 5; // Days 1-5
+  const follicularPhaseEnd = Math.floor(cycleLength * 0.5); // Usually around day 14 for 28-day cycle
+  const ovulatoryPhaseEnd = Math.floor(cycleLength * 0.6); // Usually around day 16-17 for 28-day cycle
+  
+  console.log('DEBUG: Phase boundaries:', {
+    currentCycleDay,
+    menstrualPhaseEnd,
+    follicularPhaseEnd,
+    ovulatoryPhaseEnd
+  });
+  
+  // Determine phase based on current cycle day
+  let phase: string;
+  if (currentCycleDay >= 1 && currentCycleDay <= menstrualPhaseEnd) {
+    phase = 'Menstrual Phase';
+  } else if (currentCycleDay > menstrualPhaseEnd && currentCycleDay <= follicularPhaseEnd) {
+    phase = 'Follicular Phase';
+  } else if (currentCycleDay > follicularPhaseEnd && currentCycleDay <= ovulatoryPhaseEnd) {
+    phase = 'Ovulation Phase';
+  } else {
+    phase = 'Luteal Phase';
+  }
+  
+  console.log('DEBUG: Determined current phase:', phase);
+  return phase;
+}
+
+// Get lunar cycle phase as fallback
+function getLunarCyclePhase(): string {
+  const today = new Date();
+  const lunarMonth = 29.53; // Average lunar month in days
+  const knownNewMoon = new Date('2024-01-11'); // Known new moon date
+  const daysSinceNewMoon = Math.floor((today.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24));
+  const lunarDay = daysSinceNewMoon % lunarMonth;
+  
+  // Map lunar phases to menstrual phases for women's natural rhythm
+  if (lunarDay <= 7) {
+    return 'Menstrual Phase'; // New moon = menstruation (rest and renewal)
+  } else if (lunarDay <= 14) {
+    return 'Follicular Phase'; // Waxing moon = follicular (energy building)
+  } else if (lunarDay <= 21) {
+    return 'Ovulation Phase'; // Full moon = ovulation (peak energy)
+  } else {
+    return 'Luteal Phase'; // Waning moon = luteal (preparation and reflection)
+  }
+}
+
+// Generate personalized message based on user profile and phase
+function generatePersonalizedPhaseMessage(phase: string, onboardingData: any, foodCount: number): string {
+  const age = onboardingData?.age || 'your age group';
+  const diet = onboardingData?.diet || 'your dietary preferences';
+  
+  const phaseMessages = {
+    'Menstrual Phase': [
+      `Based on your ${age} and ${diet} preferences, here are the top ${foodCount} research-backed foods for your menstrual phase to support iron replenishment and comfort:`,
+      `For your current menstrual phase, these ${foodCount} foods are particularly beneficial for your ${age} age group and ${diet} diet:`,
+      `During menstruation, your body needs extra support. Here are ${foodCount} foods tailored for your ${diet} preferences and ${age}:`
+    ],
+    'Follicular Phase': [
+      `Perfect timing! For your follicular phase, here are ${foodCount} foods that support energy building, especially beneficial for your ${age} and ${diet} diet:`,
+      `As you enter your follicular phase, these ${foodCount} foods will help support healthy estrogen levels for your ${age} age group:`,
+      `Your follicular phase is ideal for building energy. Here are ${foodCount} foods optimized for your ${diet} preferences:`
+    ],
+    'Ovulation Phase': [
+      `Peak energy time! For your ovulation phase, here are ${foodCount} foods that support egg quality and hormone production, perfect for your ${age}:`,
+      `During ovulation, your body needs specific nutrients. These ${foodCount} foods are ideal for your ${diet} diet and ${age} age group:`,
+      `Your ovulation phase is about peak performance. Here are ${foodCount} foods to support your energy and fertility:`
+    ],
+    'Luteal Phase': [
+      `For your luteal phase, here are ${foodCount} foods that support progesterone production and reduce PMS symptoms, tailored for your ${age} and ${diet} diet:`,
+      `As you approach your period, these ${foodCount} foods will help balance hormones and reduce symptoms for your ${age} age group:`,
+      `Your luteal phase needs specific support. Here are ${foodCount} foods optimized for your ${diet} preferences and hormonal balance:`
+    ]
+  };
+  
+  const messages = phaseMessages[phase as keyof typeof phaseMessages] || phaseMessages['Luteal Phase'];
+  const randomIndex = Math.floor(Math.random() * messages.length);
+  
+  return messages[randomIndex];
 }
 
 // OpenAI ChatGPT integration for personalized health responses
@@ -509,6 +704,119 @@ const DAILY_TIPS = [
   }
 ];
 
+// Test cases for phase detection and response generation
+function runPhaseDetectionTests() {
+  console.log('🧪 Running Phase Detection Tests...');
+  
+  const testCases = [
+    {
+      name: 'Menstrual Phase - Day 2',
+      lastPeriodDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      cycleLength: '28',
+      expectedPhase: 'Menstrual Phase'
+    },
+    {
+      name: 'Follicular Phase - Day 10',
+      lastPeriodDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      cycleLength: '28',
+      expectedPhase: 'Follicular Phase'
+    },
+    {
+      name: 'Ovulation Phase - Day 15',
+      lastPeriodDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      cycleLength: '28',
+      expectedPhase: 'Ovulation Phase'
+    },
+    {
+      name: 'Luteal Phase - Day 22',
+      lastPeriodDate: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000).toISOString(),
+      cycleLength: '28',
+      expectedPhase: 'Luteal Phase'
+    },
+    {
+      name: 'No Period Data - Should use lunar cycle',
+      lastPeriodDate: null,
+      cycleLength: '28',
+      expectedPhase: 'Any phase (lunar-based)'
+    }
+  ];
+  
+  testCases.forEach(testCase => {
+    const mockOnboardingData = {
+      lastPeriodDate: testCase.lastPeriodDate,
+      cycleLength: testCase.cycleLength
+    };
+    
+    const detectedPhase = calculateCurrentPhase(mockOnboardingData);
+    const passed = testCase.expectedPhase === 'Any phase (lunar-based)' ? 
+      ['Menstrual Phase', 'Follicular Phase', 'Ovulation Phase', 'Luteal Phase'].includes(detectedPhase) :
+      detectedPhase === testCase.expectedPhase;
+    
+    console.log(`  ${passed ? '✅' : '❌'} ${testCase.name}: Expected ${testCase.expectedPhase}, Got ${detectedPhase}`);
+  });
+  
+  console.log('🧪 Phase Detection Tests Complete\n');
+}
+
+// Test response generation with different user profiles
+function runResponseGenerationTests() {
+  console.log('🧪 Running Response Generation Tests...');
+  
+  const testProfiles = [
+    {
+      name: 'Young Vegetarian',
+      age: '22',
+      diet: 'vegetarian',
+      symptoms: ['irregular_periods']
+    },
+    {
+      name: 'Mid-age Mediterranean',
+      age: '35',
+      diet: 'mediterranean',
+      symptoms: ['fatigue_and_low_energy', 'mood_swings']
+    },
+    {
+      name: 'Older Balanced',
+      age: '45',
+      diet: 'balanced',
+      symptoms: ['hot_flashes', 'weight_gain']
+    },
+    {
+      name: 'No Profile Data',
+      age: null,
+      diet: null,
+      symptoms: null
+    }
+  ];
+  
+  const phases = ['Menstrual Phase', 'Follicular Phase', 'Ovulation Phase', 'Luteal Phase'];
+  
+  testProfiles.forEach(profile => {
+    phases.forEach(phase => {
+      const mockOnboardingData = {
+        age: profile.age,
+        diet: profile.diet,
+        symptoms: profile.symptoms
+      };
+      
+      const message = generatePersonalizedPhaseMessage(phase, mockOnboardingData, 3);
+      const foods = getDefaultFoodsForPhase(phase);
+      
+      console.log(`  📝 ${profile.name} - ${phase}:`);
+      console.log(`     Message: ${message.substring(0, 80)}...`);
+      console.log(`     Foods: ${foods.map(f => f.name).join(', ')}`);
+    });
+  });
+  
+  console.log('🧪 Response Generation Tests Complete\n');
+}
+
+// Run tests when in development mode
+if (process.env.NODE_ENV === 'development') {
+  runPhaseDetectionTests();
+  runResponseGenerationTests();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   let openai: OpenAI | null = null;
 
@@ -548,20 +856,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create demo onboarding data
           await storage.saveOnboardingData({
             userId: demoUser.id,
-            age: '25',
-            diet: 'Mediterranean',
+            age: process.env.DEMO_USER_AGE || '28', // Configurable demo age
+            diet: process.env.DEMO_USER_DIET || 'balanced', // Configurable demo diet
             symptoms: ['irregular_periods', 'fatigue_and_low_energy'],
-            goals: ['regulate_menstrual_cycle', 'improve_energy_levels'],
-            lifestyle: { stressLevel: 'Moderate', sleepHours: '7-8' } as Record<string, any>,
-            height: '165cm',
-            weight: '60kg',
-            stressLevel: 'Moderate',
-            sleepHours: '7-8',
-            waterIntake: '8 glasses',
-            medications: [],
-            allergies: [],
-            lastPeriodDate: new Date().toISOString().split('T')[0],
-            cycleLength: '28'
+            lastPeriodDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+            cycleLength: '28', // Default 28-day cycle
+            currentMedications: 'None',
+            healthGoals: ['hormone_balance', 'energy_improvement'],
+            activityLevel: 'moderate',
+            stressLevel: 'moderate',
+            sleepQuality: 'good',
+            waterIntake: '6-8 glasses daily'
           });
         }
         req.user = demoUser;
@@ -667,24 +972,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const onboardingData = await storage.getOnboardingData(req.user.id);
       
-      // Check if this is a luteal phase query that should use demo response with ingredient cards
+      console.log('DEBUG: Chat request:', {
+        userId: req.user.id,
+        message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+        hasOnboardingData: !!onboardingData,
+        userAge: onboardingData?.age,
+        userDiet: onboardingData?.diet,
+        lastPeriodDate: onboardingData?.lastPeriodDate,
+        cycleLength: onboardingData?.cycleLength
+      });
+      
+      // Check if this is a specific phase query
       const lowerMessage = message.toLowerCase();
-      const isLutealPhaseQuery = lowerMessage.includes('luteal') || lowerMessage.includes('luteal phase');
-      const isFollicularPhaseQuery = lowerMessage.includes('follicular') || lowerMessage.includes('follicular phase');
-      const isMenstrualPhaseQuery = lowerMessage.includes('menstrual') || lowerMessage.includes('menstrual phase');
-      const isOvulationPhaseQuery = lowerMessage.includes('ovulation') || lowerMessage.includes('ovulation phase');
+      const isSpecificPhaseQuery = lowerMessage.includes('luteal') || 
+                                  lowerMessage.includes('follicular') || 
+                                  lowerMessage.includes('menstrual') || 
+                                  lowerMessage.includes('ovulation') ||
+                                  lowerMessage.includes('period');
       
       // Check if this is a health-related question that should use research
-      const isHealthQuestion = /\b(bloating|digestion|pms|symptoms|pain|cramps|fatigue|mood|weight|acne|hair|skin|thyroid|pcos|endometriosis|hormones|nutrition|diet|food|eat|supplement|vitamin|mineral|exercise|stress|sleep|anxiety|depression|energy|tired|irregular|period|menstrual|fertility|pregnancy|menopause)\b/i.test(message);
+      const isHealthQuestion = /\b(bloating|digestion|pms|symptoms|pain|cramps|fatigue|mood|weight|acne|hair|skin|thyroid|pcos|endometriosis|hormones|nutrition|diet|food|eat|supplement|vitamin|mineral|exercise|stress|sleep|anxiety|depression|energy|tired|irregular|fertility|pregnancy|menopause)\b/i.test(message);
       
       let response;
       
       // Use research-based response for cycle phase queries OR health-related questions
-      if (isLutealPhaseQuery || isFollicularPhaseQuery || isMenstrualPhaseQuery || isOvulationPhaseQuery || isHealthQuestion) {
+      if (isSpecificPhaseQuery || isHealthQuestion) {
+        console.log('DEBUG: Using research-based response for:', isSpecificPhaseQuery ? 'phase query' : 'health question');
         response = await generateResearchBasedCycleResponse(message, onboardingData, getOpenAI());
       } else {
         // Try ChatGPT with fast timeout, fallback to demo if needed
         try {
+          console.log('DEBUG: Using ChatGPT response for general query');
           response = await Promise.race([
             generateChatGPTResponse(getOpenAI(), message, onboardingData),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
@@ -694,6 +1012,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           response = generateDemoResponse(message, onboardingData);
         }
       }
+
+      console.log('DEBUG: Chat response generated:', {
+        messageLength: response.message.length,
+        ingredientsCount: response.ingredients?.length || 0,
+        firstIngredient: response.ingredients?.[0]?.name || 'none'
+      });
 
       await storage.saveChatMessage({
         userId: req.user.id,
@@ -1407,6 +1731,98 @@ Generated with love for your health journey! 💖
         error: error.message,
         query: req.params.query
       });
+    }
+  });
+
+  // Debug endpoint for phase detection testing
+  app.get('/api/debug/phase-detection', requireAuth, async (req: any, res: any) => {
+    try {
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      // Test different scenarios
+      const testScenarios = [
+        {
+          name: 'Current User Data',
+          data: onboardingData,
+          description: 'Using actual user onboarding data'
+        },
+        {
+          name: 'Menstrual Phase Test',
+          data: {
+            ...onboardingData,
+            lastPeriodDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            cycleLength: '28'
+          },
+          description: 'Simulating day 2 of cycle'
+        },
+        {
+          name: 'Follicular Phase Test',
+          data: {
+            ...onboardingData,
+            lastPeriodDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            cycleLength: '28'
+          },
+          description: 'Simulating day 10 of cycle'
+        },
+        {
+          name: 'Ovulation Phase Test',
+          data: {
+            ...onboardingData,
+            lastPeriodDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+            cycleLength: '28'
+          },
+          description: 'Simulating day 15 of cycle'
+        },
+        {
+          name: 'Luteal Phase Test',
+          data: {
+            ...onboardingData,
+            lastPeriodDate: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000).toISOString(),
+            cycleLength: '28'
+          },
+          description: 'Simulating day 22 of cycle'
+        },
+        {
+          name: 'No Period Data Test',
+          data: {
+            ...onboardingData,
+            lastPeriodDate: null,
+            cycleLength: null
+          },
+          description: 'Using lunar cycle fallback'
+        }
+      ];
+      
+      const results = testScenarios.map(scenario => {
+        const detectedPhase = calculateCurrentPhase(scenario.data);
+        const foods = getDefaultFoodsForPhase(detectedPhase);
+        const message = generatePersonalizedPhaseMessage(detectedPhase, scenario.data, foods.length);
+        
+        return {
+          scenario: scenario.name,
+          description: scenario.description,
+          detectedPhase,
+          foodCount: foods.length,
+          foods: foods.map(f => f.name),
+          sampleMessage: message.substring(0, 100) + '...',
+          testData: {
+            lastPeriodDate: scenario.data?.lastPeriodDate,
+            cycleLength: scenario.data?.cycleLength,
+            age: scenario.data?.age,
+            diet: scenario.data?.diet
+          }
+        };
+      });
+      
+      res.json({
+        success: true,
+        userId: req.user.id,
+        currentTime: new Date().toISOString(),
+        results
+      });
+    } catch (error) {
+      console.error('Phase detection debug error:', error);
+      res.status(500).json({ error: 'Failed to test phase detection' });
     }
   });
 
