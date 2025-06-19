@@ -23,6 +23,11 @@ interface AuthenticatedRequest extends Request {
 function generateDemoResponse(message: string, onboardingData: any): ChatResponse {
   const lowerMessage = message.toLowerCase();
   const diet = onboardingData?.diet || 'balanced';
+  const age = onboardingData?.age || 'your age group';
+  
+  // Add timestamp-based randomization to prevent repetitive responses
+  const timestamp = Date.now();
+  const randomSeed = timestamp % 1000;
   
   // Check if this is a diet/nutrition question vs general health information
   const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(message);
@@ -32,26 +37,31 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
       lowerMessage.includes('food plan') || lowerMessage.includes('diet plan') ||
       lowerMessage.includes('recipes for') || lowerMessage.includes('meals for')) {
     
+    const mealPlanMessages = [
+      `I can create a personalized meal plan for you! Based on your ${age} age group and ${diet} preferences, I'll design meals that address your specific health needs. Use the meal plan generator in your dashboard to select your preferred cuisine and get complete meal plans with recipes, shopping lists, and nutritional guidance.`,
+      `Perfect! Let me help you with meal planning. Since you prefer a ${diet} diet, I can create customized meal plans that work for your ${age} age group. The meal plan generator offers daily, weekly, or monthly plans with downloadable PDFs - just choose your favorite cuisine style!`,
+      `Great question! I'll design meal plans specifically for your ${diet} diet and ${age} age group. The meal plan generator in your dashboard lets you pick from Indian, Mediterranean, Japanese, Mexican, or American cuisines with evidence-based nutritional guidance.`
+    ];
+    
     return {
-      message: `I can create a personalized meal plan for you! Based on your profile, I'll design meals that address your specific health needs. Use the meal plan generator in your dashboard to select your preferred cuisine (Indian, Mediterranean, Japanese, Mexican, or American) and choose from daily, weekly, or monthly plans with downloadable PDFs. I'll create complete meal plans with recipes, shopping lists, and nutritional guidance tailored to your conditions.`,
+      message: mealPlanMessages[randomSeed % mealPlanMessages.length],
       ingredients: [
         {
           name: "Personalized Meal Planning",
           description: "AI-generated meal plans based on your health conditions and cuisine preferences",
           emoji: "🍽️",
           lazy: "Use the meal plan generator with one-click cuisine selection",
-          tasty: "Choose from 4 authentic cuisines with flavorful, culturally-relevant recipes",
+          tasty: "Choose from 5 authentic cuisines with flavorful, culturally-relevant recipes",
           healthy: "Get evidence-based meal timing, portion guidance, and therapeutic food combinations"
         }
       ]
     };
   }
 
-  // Handle general health information questions (no food recommendations)
-  if (!isDietQuestion) {
-    if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
-      return {
-        message: `## PCOS (Polycystic Ovary Syndrome)
+  // Handle specific health conditions with varied responses
+  if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
+    const pcosMessages = [
+      `## PCOS (Polycystic Ovary Syndrome)
 
 PCOS is a hormonal disorder affecting reproductive-aged women, characterized by irregular periods and elevated androgen levels.
 
@@ -75,13 +85,39 @@ PCOS is a hormonal disorder affecting reproductive-aged women, characterized by 
 • **Fertility support** - Specialized treatments when planning pregnancy
 
 *💡 For personalized nutritional support, ask about "foods for PCOS" or "PCOS meal plans"*`,
-        ingredients: []
-      };
-    }
+      `## Understanding PCOS
 
-    if (lowerMessage.includes('endometriosis')) {
-      return {
-        message: `## Endometriosis
+Polycystic Ovary Syndrome affects many women and can impact various aspects of health.
+
+### 🎯 What is PCOS?
+PCOS is a complex hormonal condition that affects how your ovaries work, leading to irregular menstrual cycles and other symptoms.
+
+### 🔍 Common Signs
+• Irregular or absent periods
+• Excess hair growth (hirsutism)
+• Acne and oily skin
+• Weight gain, especially around the waist
+• Difficulty losing weight
+• Dark patches of skin (acanthosis nigricans)
+
+### 🌿 Natural Support Strategies
+• **Blood sugar management** - Focus on low-glycemic foods
+• **Anti-inflammatory diet** - Include omega-3 rich foods
+• **Regular exercise** - Both cardio and strength training
+• **Stress reduction** - Meditation, yoga, or other relaxation techniques
+
+*💡 Ask me about "PCOS-friendly foods" or "meal plans for PCOS" for specific nutrition guidance*`
+    ];
+    
+    return {
+      message: pcosMessages[randomSeed % pcosMessages.length],
+      ingredients: []
+    };
+  }
+
+  if (lowerMessage.includes('endometriosis')) {
+    const endoMessages = [
+      `## Endometriosis
 
 Endometriosis is a chronic condition where tissue similar to the uterine lining grows outside the uterus, causing inflammation and pain.
 
@@ -105,13 +141,39 @@ Endometriosis is a chronic condition where tissue similar to the uterine lining 
 • **Quality sleep** - Consistent sleep schedule and restful environment
 
 *💡 For anti-inflammatory nutrition support, ask about "foods for endometriosis" or "anti-inflammatory meal plans"*`,
-        ingredients: []
-      };
-    }
+      `## Living with Endometriosis
 
-    if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia')) {
-      return {
-        message: `Sleep quality is crucial for hormonal balance and overall women's health.
+This chronic inflammatory condition affects many women and can significantly impact quality of life.
+
+### 🎯 Understanding the Condition
+Endometriosis occurs when tissue similar to the uterine lining grows outside the uterus, causing inflammation, pain, and sometimes fertility issues.
+
+### 🔍 Symptoms to Watch For
+• Pelvic pain that worsens during periods
+• Pain during intercourse
+• Heavy or irregular menstrual bleeding
+• Digestive symptoms during menstruation
+• Fatigue and mood changes
+• Difficulty getting pregnant
+
+### 🌿 Holistic Management
+• **Anti-inflammatory diet** - Focus on omega-3s and antioxidants
+• **Pain management** - Heat therapy, gentle exercise, and stress reduction
+• **Hormone balance** - Work with healthcare providers on treatment options
+• **Support systems** - Connect with others who understand the condition
+
+*💡 For specific dietary guidance, ask about "anti-inflammatory foods" or "endometriosis meal plans"*`
+    ];
+    
+    return {
+      message: endoMessages[randomSeed % endoMessages.length],
+      ingredients: []
+    };
+  }
+
+  if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia')) {
+    const sleepMessages = [
+      `Sleep quality is crucial for hormonal balance and overall women's health.
 
 **Sleep Hygiene Tips:**
 - Maintain consistent bedtime and wake times
@@ -131,45 +193,116 @@ Endometriosis is a chronic condition where tissue similar to the uterine lining 
 - Temperature regulation (cool room, breathable bedding)
 
 For specific sleep-supporting foods, ask about foods for better sleep or evening nutrition.`,
-        ingredients: []
-      };
-    }
+      `## Sleep and Women's Health
 
+Quality sleep is essential for hormonal balance, mood regulation, and overall wellness.
+
+### 🌙 Why Sleep Matters for Women
+• **Hormone regulation** - Sleep affects estrogen, progesterone, and cortisol levels
+• **Mood stability** - Poor sleep can worsen PMS and menopausal symptoms
+• **Metabolic health** - Sleep quality impacts insulin sensitivity and weight management
+• **Immune function** - Adequate rest supports your body's natural defenses
+
+### 💤 Sleep Optimization Tips
+• **Consistent schedule** - Go to bed and wake up at the same time daily
+• **Sleep environment** - Keep your bedroom cool, dark, and quiet
+• **Digital detox** - Avoid screens 1-2 hours before bedtime
+• **Relaxation routine** - Develop calming pre-sleep rituals
+
+### 🍃 Natural Sleep Aids
+• **Magnesium-rich foods** - Dark chocolate, nuts, and leafy greens
+• **Herbal teas** - Chamomile, valerian root, or passionflower
+• **Aromatherapy** - Lavender essential oil for relaxation
+• **Gentle movement** - Yoga or stretching before bed
+
+*💡 Ask about "sleep-supporting foods" or "evening nutrition" for specific dietary tips*`
+    ];
+    
     return {
-      message: `I'm here to help with women's health questions! I can provide information about conditions like PCOS, endometriosis, thyroid disorders, and menstrual health, plus create personalized meal plans and nutritional guidance. What specific health topic would you like to learn about?`,
+      message: sleepMessages[randomSeed % sleepMessages.length],
       ingredients: []
     };
   }
 
-  // Generate diet-specific recommendations for nutrition questions
+  // Handle general health information questions (no food recommendations)
+  if (!isDietQuestion) {
+    const generalMessages = [
+      `I'm here to help with women's health questions! I can provide information about conditions like PCOS, endometriosis, thyroid disorders, and menstrual health, plus create personalized meal plans and nutritional guidance. What specific health topic would you like to learn about?`,
+      `Welcome! I'm your women's health assistant. I can help with information about hormonal conditions, menstrual health, nutrition, and wellness. Feel free to ask about specific conditions or request personalized meal plans tailored to your needs.`,
+      `Hi there! I specialize in women's health and nutrition. Whether you have questions about hormonal balance, menstrual health, or need personalized dietary guidance, I'm here to help. What would you like to know more about?`
+    ];
+    
+    return {
+      message: generalMessages[randomSeed % generalMessages.length],
+      ingredients: []
+    };
+  }
+
+  // Generate diet-specific recommendations for nutrition questions with variety
+  const nutritionMessages = [
+    `Based on your ${diet} diet preferences and ${age} age group, here are some nutritional suggestions to support your health goals. For more specific guidance, try asking about foods for your cycle phase (like "luteal phase foods") or request a personalized meal plan.`,
+    `Great question! For your ${diet} diet and ${age} age group, I recommend focusing on these key nutrients. You can also ask about phase-specific nutrition or get a customized meal plan through the dashboard.`,
+    `Perfect timing! Here are some ${diet}-friendly nutrition tips for your ${age} age group. For more personalized recommendations, ask about cycle-specific foods or use the meal plan generator.`
+  ];
+
+  const allIngredients = [
+    {
+      name: "Leafy Greens",
+      description: "Rich in folate, iron, and magnesium for hormone production and energy",
+      emoji: "🥬",
+      lazy: "Add pre-washed spinach to smoothies or grab ready-to-eat salad mixes",
+      tasty: "Sauté with garlic and lemon, or blend into green smoothies with fruits",
+      healthy: "Aim for 2-3 cups daily, vary types (spinach, kale, arugula) for different nutrients"
+    },
+    {
+      name: "Omega-3 Rich Fish",
+      description: "Essential fatty acids reduce inflammation and support brain health",
+      emoji: "🐟",
+      lazy: "Choose canned wild salmon or sardines for quick meals",
+      tasty: "Grill with herbs, make fish tacos, or add to salads and pasta",
+      healthy: "Include 2-3 servings per week, prioritize wild-caught varieties"
+    },
+    {
+      name: "Complex Carbohydrates",
+      description: "Stable blood sugar and sustained energy for hormonal balance",
+      emoji: "🌾",
+      lazy: "Choose quinoa, oats, or sweet potatoes for easy preparation",
+      tasty: "Make overnight oats, quinoa bowls, or roasted sweet potato with toppings",
+      healthy: "Fill 1/4 of your plate with whole grains, avoid refined carbohydrates"
+    },
+    {
+      name: "Nuts and Seeds",
+      description: "Healthy fats, protein, and minerals for hormone support",
+      emoji: "🥜",
+      lazy: "Keep a mix of almonds, walnuts, and pumpkin seeds for quick snacks",
+      tasty: "Make homemade trail mix or add to yogurt and oatmeal",
+      healthy: "Aim for 1/4 cup daily, choose raw or dry-roasted varieties"
+    },
+    {
+      name: "Colorful Vegetables",
+      description: "Antioxidants and phytonutrients for cellular health and inflammation reduction",
+      emoji: "🥕",
+      lazy: "Buy pre-cut vegetables or frozen mixed vegetables for convenience",
+      tasty: "Roast with olive oil and herbs, or add to stir-fries and soups",
+      healthy: "Fill half your plate with colorful vegetables at each meal"
+    },
+    {
+      name: "Fermented Foods",
+      description: "Probiotics support gut health, which is linked to hormone regulation",
+      emoji: "🥛",
+      lazy: "Include yogurt, kefir, or sauerkraut in your daily routine",
+      tasty: "Make smoothie bowls with yogurt or add kimchi to rice dishes",
+      healthy: "Include 1-2 servings of fermented foods daily for gut health"
+    }
+  ];
+
+  // Randomly select 3 ingredients for variety
+  const shuffledIngredients = [...allIngredients].sort(() => 0.5 - Math.random());
+  const selectedIngredients = shuffledIngredients.slice(0, 3);
+
   return {
-    message: `Based on your ${diet} diet preferences, here are some nutritional suggestions to support your health goals. For more specific guidance, try asking about foods for your cycle phase (like "luteal phase foods") or request a personalized meal plan.`,
-    ingredients: [
-      {
-        name: "Leafy Greens",
-        description: "Rich in folate, iron, and magnesium for hormone production and energy",
-        emoji: "🥬",
-        lazy: "Add pre-washed spinach to smoothies or grab ready-to-eat salad mixes",
-        tasty: "Sauté with garlic and lemon, or blend into green smoothies with fruits",
-        healthy: "Aim for 2-3 cups daily, vary types (spinach, kale, arugula) for different nutrients"
-      },
-      {
-        name: "Omega-3 Rich Fish",
-        description: "Essential fatty acids reduce inflammation and support brain health",
-        emoji: "🐟",
-        lazy: "Choose canned wild salmon or sardines for quick meals",
-        tasty: "Grill with herbs, make fish tacos, or add to salads and pasta",
-        healthy: "Include 2-3 servings per week, prioritize wild-caught varieties"
-      },
-      {
-        name: "Complex Carbohydrates",
-        description: "Stable blood sugar and sustained energy for hormonal balance",
-        emoji: "🌾",
-        lazy: "Choose quinoa, oats, or sweet potatoes for easy preparation",
-        tasty: "Make overnight oats, quinoa bowls, or roasted sweet potato with toppings",
-        healthy: "Fill 1/4 of your plate with whole grains, avoid refined carbohydrates"
-      }
-    ]
+    message: nutritionMessages[randomSeed % nutritionMessages.length],
+    ingredients: selectedIngredients
   };
 }
 
@@ -385,8 +518,17 @@ function getDefaultFoodsForPhase(phase: string): IngredientRecommendation[] {
   
   const foods = allFoods[phase] || allFoods['Luteal Phase'];
   
-  // Randomly select 3 foods from the available options for variety
-  const shuffled = [...foods].sort(() => 0.5 - Math.random());
+  // Use timestamp-based randomization for better variety
+  const timestamp = Date.now();
+  const randomSeed = timestamp % 1000;
+  
+  // Create a deterministic but varied shuffle based on timestamp
+  const shuffled = [...foods].sort((a, b) => {
+    const aHash = a.name.charCodeAt(0) + randomSeed;
+    const bHash = b.name.charCodeAt(0) + randomSeed;
+    return (aHash % 100) - (bHash % 100);
+  });
+  
   return shuffled.slice(0, 3);
 }
 
@@ -539,6 +681,10 @@ function generatePersonalizedPhaseMessage(phase: string, onboardingData: any, fo
   const age = onboardingData?.age || 'your age group';
   const diet = onboardingData?.diet || 'your dietary preferences';
   
+  // Add timestamp-based randomization to prevent repetitive responses
+  const timestamp = Date.now();
+  const randomSeed = timestamp % 1000;
+  
   const phaseMessages = {
     'Menstrual Phase': [
       `Based on your ${age} and ${diet} preferences, here are the top ${foodCount} research-backed foods for your menstrual phase to support iron replenishment and comfort:`,
@@ -563,7 +709,7 @@ function generatePersonalizedPhaseMessage(phase: string, onboardingData: any, fo
   };
   
   const messages = phaseMessages[phase as keyof typeof phaseMessages] || phaseMessages['Luteal Phase'];
-  const randomIndex = Math.floor(Math.random() * messages.length);
+  const randomIndex = randomSeed % messages.length;
   
   return messages[randomIndex];
 }
@@ -1823,6 +1969,45 @@ Generated with love for your health journey! 💖
     } catch (error) {
       console.error('Phase detection debug error:', error);
       res.status(500).json({ error: 'Failed to test phase detection' });
+    }
+  });
+
+  // Debug endpoint for testing response variety
+  app.get('/api/debug/response-variety', requireAuth, async (req: any, res: any) => {
+    try {
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      // Test the same question multiple times to see variety
+      const testMessage = "What foods should I eat during my follicular phase?";
+      const results = [];
+      
+      for (let i = 0; i < 5; i++) {
+        // Add a small delay to ensure different timestamps
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const response = await generateResearchBasedCycleResponse(testMessage, onboardingData, getOpenAI());
+        results.push({
+          attempt: i + 1,
+          timestamp: Date.now(),
+          message: response.message,
+          ingredients: response.ingredients.map(ing => ing.name),
+          messageLength: response.message.length
+        });
+      }
+      
+      res.json({
+        success: true,
+        testMessage,
+        results,
+        analysis: {
+          uniqueMessages: new Set(results.map(r => r.message)).size,
+          uniqueIngredientSets: new Set(results.map(r => r.ingredients.join(', '))).size,
+          averageMessageLength: results.reduce((sum, r) => sum + r.messageLength, 0) / results.length
+        }
+      });
+    } catch (error) {
+      console.error('Response variety test error:', error);
+      res.status(500).json({ error: 'Failed to test response variety' });
     }
   });
 
