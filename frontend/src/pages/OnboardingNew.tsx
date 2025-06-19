@@ -91,8 +91,8 @@ export default function OnboardingNew() {
     if (!token) return;
     setIsSubmitting(true);
     try {
-      // Transform fields to match backend schema
-      const menstrualCycle = formData.menstrualCycle || {};
+      // Always default to correct structure
+      const menstrualCycle = formData.menstrualCycle || { lastPeriodDate: '', periodLength: [], length: [], irregularPeriods: false, symptoms: [] };
       const payload = {
         ...formData,
         diet: Array.isArray(formData.diet) ? formData.diet[0] || '' : formData.diet,
@@ -196,7 +196,6 @@ export default function OnboardingNew() {
                 'PCOS (Polycystic Ovary Syndrome) / PCOD (Polycystic Ovary Disorder)',
                 'Endometriosis',
                 'Thyroid disorders (Hypo/Hyperthyroidism)',
-                'None of the above',
                 'Other'
               ].map((condition) => (
                 <div key={condition} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
