@@ -627,7 +627,16 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
 
   // Exercise-specific persona
   if (isExerciseQuestion) {
-    systemPrompt = `You are an experienced women's fitness trainer specializing in hormonal health and cycle-synced workouts. You understand how exercise affects women's hormones, energy levels, and menstrual cycles. You provide personalized, safe, and effective exercise recommendations.`;
+    systemPrompt = `You are an experienced women's fitness trainer specializing in hormonal health and cycle-synced workouts. You understand how exercise affects women's hormones, energy levels, and menstrual cycles. You provide personalized, safe, and effective exercise recommendations based on your extensive knowledge of women's fitness and health.
+
+You have deep knowledge of:
+- Women's hormonal cycles and how they affect energy and performance
+- Safe and effective exercises for different fitness levels
+- Exercise modifications for various health conditions
+- Cycle-synced workout principles
+- General fitness and wellness best practices
+
+You can provide exercise recommendations based on your expertise, even when specific research studies aren't available.`;
     
     if (isUnder18) {
       systemPrompt += `\n\nIMPORTANT: The user is under 18. Focus on age-appropriate activities like walking, swimming, dancing, and gentle yoga. Avoid intense strength training or high-impact exercises. Always recommend consulting a pediatrician or guardian.`;
@@ -696,11 +705,11 @@ Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relev
   } else if (isExerciseQuestion) {
     systemPrompt += `
 {
-  "message": "Your empathetic, exercise-focused response (2-3 sentences max with clear actionable advice)",
+  "message": "Your empathetic, exercise-focused response with clear actionable advice in bullet points",
   "ingredients": [
     {
       "name": "Specific exercise/activity name",
-      "description": "Brief benefit with scientific rationale from research",
+      "description": "Brief benefit and why it's good for the user's situation",
       "emoji": "💪",
       "lazy": "Easiest way to do it (be specific)",
       "tasty": "Most enjoyable way to do it (be specific)", 
@@ -709,7 +718,23 @@ Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relev
   ]
 }
 
-Focus on evidence-based exercise recommendations for women's hormonal health. Include 1-3 relevant exercises with specific implementation methods. ONLY recommend exercises that are mentioned in the research context. Be encouraging and supportive in your tone.`;
+EXERCISE RESPONSE GUIDELINES:
+- Provide 3-5 specific exercise recommendations in bullet points
+- Consider the user's menstrual cycle phase, fitness level, and health conditions
+- Include both cardio and strength training options
+- Suggest modifications for different energy levels
+- Be encouraging and supportive
+- Use your expertise as a women's fitness trainer
+- Don't rely solely on research context - use your knowledge of women's fitness
+
+EXAMPLE FORMAT:
+"Great question! Here are some exercises perfect for your situation:
+
+• **Walking (20-30 minutes)** - Gentle cardio that boosts energy without overexertion
+• **Yoga flow (15-20 minutes)** - Reduces stress and improves flexibility
+• **Bodyweight squats (3 sets of 10)** - Builds strength safely
+• **Swimming (if available)** - Low-impact full-body workout
+• **Dancing to your favorite music** - Fun cardio that lifts your mood"`;
   } else {
     systemPrompt += `
 {
@@ -722,9 +747,13 @@ Provide health information based ONLY on the research context. If the research d
 
   // Add research context to the prompt
   if (researchContext) {
-    systemPrompt += `\n\nRESEARCH CONTEXT (Use ONLY this information):\n${researchContext}\n\nRemember: Only use information from the research context above. Do not add any external knowledge.`;
+    systemPrompt += `\n\nRESEARCH CONTEXT (Use this information when available):\n${researchContext}\n\nRemember: You can use this research context to enhance your recommendations, but you can also rely on your expertise as a fitness trainer.`;
   } else {
-    systemPrompt += `\n\nNo specific research context available. If you cannot provide a helpful response based on your training data, say so clearly and offer general wellness guidance.`;
+    if (isExerciseQuestion) {
+      systemPrompt += `\n\nNo specific research context available, but that's okay! Use your expertise as a women's fitness trainer to provide practical, safe, and effective exercise recommendations based on the user's profile and situation.`;
+    } else {
+      systemPrompt += `\n\nNo specific research context available. If you cannot provide a helpful response based on your training data, say so clearly and offer general wellness guidance.`;
+    }
   }
 
   const completion = await openai.chat.completions.create({
