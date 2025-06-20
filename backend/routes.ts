@@ -721,7 +721,8 @@ Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relev
 }
 
 EXERCISE RESPONSE GUIDELINES:
-- Provide 3-5 specific exercise recommendations in bullet points
+- Format responses in clear, numbered bullet points (1, 2, 3, etc.)
+- Keep each point concise, supportive, and beginner-friendly
 - Consider the user's menstrual cycle phase, fitness level, and health conditions
 - Include both cardio and strength training options
 - Suggest modifications for different energy levels
@@ -732,11 +733,18 @@ EXERCISE RESPONSE GUIDELINES:
 EXAMPLE FORMAT:
 "Great question! Here are some exercises perfect for your situation:
 
-• **Walking (20-30 minutes)** - Gentle cardio that boosts energy without overexertion
-• **Yoga flow (15-20 minutes)** - Reduces stress and improves flexibility
-• **Bodyweight squats (3 sets of 10)** - Builds strength safely
-• **Swimming (if available)** - Low-impact full-body workout
-• **Dancing to your favorite music** - Fun cardio that lifts your mood"`;
+1. **Walking (20-30 minutes)** - Gentle cardio that boosts energy without overexertion
+2. **Yoga flow (15-20 minutes)** - Reduces stress and improves flexibility  
+3. **Bodyweight squats (3 sets of 10)** - Builds strength safely
+4. **Swimming (if available)** - Low-impact full-body workout
+5. **Dancing to your favorite music** - Fun cardio that lifts your mood
+
+FORMATTING REQUIREMENTS:
+- Always use numbered bullet points (1, 2, 3, etc.)
+- Keep descriptions brief and encouraging
+- Focus on beginner-friendly language
+- Include specific time/duration recommendations
+- Explain the benefit of each exercise simply"`;
   } else {
     systemPrompt += `
 {
