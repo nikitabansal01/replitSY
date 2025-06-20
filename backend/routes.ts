@@ -577,7 +577,7 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
   const lowerQuestion = question.toLowerCase();
   
   // Check if this is a nutrition/diet question
-  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion)\b/i.test(question);
+  const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion|cramps|period|menstrual|pms)\b/i.test(question);
   
   // Simple NLP for custom conditions
   let customCondition = '';
@@ -616,17 +616,30 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
     console.error('Error retrieving research papers:', error);
   }
 
-  let systemPrompt = `You are a women's health expert providing evidence-based information.`;
+  let systemPrompt = `You are a warm, supportive women's health coach with deep knowledge of nutrition and hormonal health. You're like a best friend who happens to be a nutrition expert.`;
+
   if (isUnder18) {
     systemPrompt += `\n\nIMPORTANT: The user is under 18. Do NOT provide any medical, supplement, or restrictive diet advice. Only provide general wellness, healthy eating, and lifestyle tips suitable for minors. Always recommend consulting a pediatrician or guardian for any health concerns.`;
   }
-  systemPrompt += `\nIMPORTANT: You must ONLY use information from the provided research context. Do NOT add any information that is not directly supported by the research papers provided.`;
+
+  systemPrompt += `\n\nRESPONSE FORMAT REQUIREMENTS:
+1. Start with an empathetic opening that acknowledges their concern or situation
+2. Give clear, actionable advice in 2-3 sentences maximum
+3. Include scientific rationale from the research (cite specific studies when possible)
+4. Use a warm, supportive tone throughout
+5. Be specific about which foods, why they help, and how to use them
+6. If research is inconclusive, state that gently and offer general wellness guidance
+
+EXAMPLE RESPONSES:
+- "Sorry you're feeling this way — period cramps can be really tough. Research shows that magnesium-rich foods like spinach, dark chocolate, and almonds can help relax uterine muscles and reduce pain. Try sipping warm ginger tea too — it's been shown to have anti-inflammatory effects similar to ibuprofen in some studies."
+- "I understand how frustrating irregular periods can be. Studies suggest that omega-3 fatty acids from fatty fish and flaxseeds may help regulate menstrual cycles by reducing inflammation. Try adding salmon or chia seeds to your meals 2-3 times per week."
+- "Bloating before your period is so uncomfortable, I get it! Research indicates that reducing salt and increasing potassium-rich foods like bananas and sweet potatoes can help balance fluid retention. Stay hydrated with herbal teas like peppermint or chamomile."
+
+IMPORTANT: You must ONLY use information from the provided research context. Do NOT add any information that is not directly supported by the research papers provided.`;
 
   if (customCondition) {
     systemPrompt += `\n\nUser has a custom medical condition: ${customCondition}. Personalize your response accordingly.`;
   }
-
-  systemPrompt += `\n\nIf the user's message expresses emotion, frustration, or a personal struggle (e.g., 'why me', 'I'm sad', 'I'm frustrated', 'I'm worried', 'I'm struggling', 'I'm upset', 'I'm anxious'), respond with empathy and emotional support first. Only provide nutrition advice if the user specifically asks for it or if it would be genuinely helpful in the context.`;
 
   systemPrompt += `\n\nUser Profile:\n- Age: ${onboardingData?.age || 'Not specified'}\n- Diet: ${onboardingData?.diet || 'Not specified'}\n- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}\n- Medical Conditions: ${onboardingData?.medicalConditions?.join(', ') || 'None specified'}`;
 
@@ -635,35 +648,35 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
   if (isDietQuestion) {
     systemPrompt += `
 {
-  "message": "Your helpful nutrition response based ONLY on the research provided",
+  "message": "Your empathetic, research-based response (2-3 sentences max with clear actionable advice)",
   "ingredients": [
     {
-      "name": "Ingredient Name",
-      "description": "Brief health benefit description from research",
+      "name": "Specific food/supplement name",
+      "description": "Brief health benefit with scientific rationale from research",
       "emoji": "🌿",
-      "lazy": "Easiest way to consume it",
-      "tasty": "Most delicious preparation method", 
-      "healthy": "Optimal daily amount and timing"
+      "lazy": "Easiest way to consume it (be specific)",
+      "tasty": "Most delicious preparation method (be specific)", 
+      "healthy": "Optimal daily amount and timing (be specific)"
     }
   ]
 }
 
-Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relevant ingredients with specific implementation methods. ONLY recommend ingredients that are mentioned in the research context.`;
+Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relevant ingredients with specific implementation methods. ONLY recommend ingredients that are mentioned in the research context. Be warm and supportive in your tone.`;
   } else {
     systemPrompt += `
 {
-  "message": "Your helpful health information response based ONLY on the research provided",
+  "message": "Your empathetic, research-based response (2-3 sentences max with clear actionable advice)",
   "ingredients": []
 }
 
-Provide health information based ONLY on the research context. If the research doesn't contain relevant information, say so clearly. For nutrition advice, suggest the user ask specifically about foods or diet.`;
+Provide health information based ONLY on the research context. If the research doesn't contain relevant information, say so clearly and offer general wellness guidance. For nutrition advice, suggest the user ask specifically about foods or diet. Be warm and supportive in your tone.`;
   }
 
   // Add research context to the prompt
   if (researchContext) {
     systemPrompt += `\n\nRESEARCH CONTEXT (Use ONLY this information):\n${researchContext}\n\nRemember: Only use information from the research context above. Do not add any external knowledge.`;
   } else {
-    systemPrompt += `\n\nNo specific research context available. If you cannot provide a helpful response based on your training data, say so clearly.`;
+    systemPrompt += `\n\nNo specific research context available. If you cannot provide a helpful response based on your training data, say so clearly and offer general wellness guidance.`;
   }
 
   const completion = await openai.chat.completions.create({
@@ -672,8 +685,8 @@ Provide health information based ONLY on the research context. If the research d
         { role: "system", content: systemPrompt },
         { role: "user", content: question }
       ],
-      temperature: 0.3, // Lower temperature for more consistent, research-based responses
-      max_tokens: 1200,
+      temperature: 0.4, // Slightly higher for more empathetic, varied responses
+      max_tokens: 800, // Shorter for more concise responses
       response_format: { type: "json_object" },
     });
 
