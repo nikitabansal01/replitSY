@@ -673,6 +673,8 @@ IMPORTANT: You must ONLY use information from the provided research context. Do 
 - Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}
 - Last Period Date: ${onboardingData?.lastPeriodDate || 'Not specified'}
 - Cycle Length: ${onboardingData?.cycleLength || 'Not specified'}
+- Stress Level: ${onboardingData?.stressLevel || 'Not specified'}
+- Sleep Hours: ${onboardingData?.sleepHours || 'Not specified'}
 
 EXERCISE GUIDELINES:
 - If user has PCOS: Recommend low-impact cardio, strength training, and stress-reducing activities
@@ -682,7 +684,29 @@ EXERCISE GUIDELINES:
 - If user is in menstrual phase: Recommend gentle, restorative activities like walking or gentle stretching
 - Always consider the user's current exercise level and medical conditions`;
   } else {
-    systemPrompt += `\n\nUser Profile:\n- Age: ${onboardingData?.age || 'Not specified'}\n- Diet: ${onboardingData?.diet || 'Not specified'}\n- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}\n- Medical Conditions: ${onboardingData?.medicalConditions?.join(', ') || 'None specified'}`;
+    systemPrompt += `\n\nUser Profile:
+- Age: ${onboardingData?.age || 'Not specified'}
+- Diet: ${onboardingData?.diet || 'Not specified'}
+- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}
+- Medical Conditions: ${onboardingData?.medicalConditions?.join(', ') || 'None specified'}
+- Medications: ${onboardingData?.medications?.join(', ') || 'None specified'}
+- Allergies: ${onboardingData?.allergies?.join(', ') || 'None specified'}
+- Last Period Date: ${onboardingData?.lastPeriodDate || 'Not specified'}
+- Cycle Length: ${onboardingData?.cycleLength || 'Not specified'}
+- Stress Level: ${onboardingData?.stressLevel || 'Not specified'}
+- Sleep Hours: ${onboardingData?.sleepHours || 'Not specified'}
+- Exercise Level: ${onboardingData?.exerciseLevel || 'Not specified'}
+- Water Intake: ${onboardingData?.waterIntake || 'Not specified'}
+
+PERSONALIZATION GUIDELINES:
+- If user has PCOS: Focus on blood sugar management, anti-inflammatory foods, and hormone balance
+- If user has thyroid issues: Emphasize iodine-rich foods, selenium, and avoiding goitrogens
+- If user has endometriosis: Recommend anti-inflammatory diet and pain management strategies
+- If user has irregular periods: Suggest cycle-regulating foods and stress management
+- If user has fatigue: Focus on energy-boosting foods and iron-rich options
+- If user has digestive issues: Recommend gut-friendly foods and proper meal timing
+- Always consider the user's dietary restrictions and allergies
+- Tailor recommendations to their specific symptoms and health goals`;
   }
 
   systemPrompt += `\n\nCRITICAL: Your response must be valid JSON with this exact structure:`;
@@ -1683,6 +1707,53 @@ Generated with love for your health journey! 💖
       nodeEnv: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
     });
+  });
+
+  // Debug endpoint to test user-specific chatbot responses
+  app.get('/api/debug/user-profile', requireAuth, async (req: any, res: any) => {
+    try {
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      // Test chatbot response with user data
+      let testResponse;
+      try {
+        testResponse = await generateChatGPTResponse(
+          getOpenAI(), 
+          "I'm feeling tired and bloated today. What should I eat?", 
+          onboardingData
+        );
+      } catch (error) {
+        testResponse = generateDemoResponse(
+          "I'm feeling tired and bloated today. What should I eat?", 
+          onboardingData
+        );
+      }
+      
+      res.json({
+        success: true,
+        user: req.user,
+        onboardingData,
+        testChatbotResponse: testResponse,
+        profileUtilization: {
+          hasProfile: !!onboardingData,
+          age: onboardingData?.age,
+          diet: onboardingData?.diet,
+          symptoms: onboardingData?.symptoms,
+          medicalConditions: onboardingData?.medicalConditions,
+          medications: onboardingData?.medications,
+          allergies: onboardingData?.allergies,
+          lastPeriodDate: onboardingData?.lastPeriodDate,
+          cycleLength: onboardingData?.cycleLength,
+          stressLevel: onboardingData?.stressLevel,
+          sleepHours: onboardingData?.sleepHours,
+          exerciseLevel: onboardingData?.exerciseLevel,
+          waterIntake: onboardingData?.waterIntake
+        }
+      });
+    } catch (error) {
+      console.error('Debug user profile error:', error);
+      res.status(500).json({ error: 'Failed to debug user profile' });
+    }
   });
 
   return server;
