@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, User, Heart, Pill, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Save, User, Heart, Pill, AlertTriangle, Activity } from 'lucide-react';
 import type { OnboardingData } from '@shared/schema';
 
 interface ProfileData {
@@ -36,33 +36,45 @@ const SYMPTOM_OPTIONS = [
   "Sleep problems",
   "Food cravings",
   "Hot flashes",
-  "Brain fog or memory issues",
-  "Joint pain or stiffness"
+  "Brain fog or memory issues"
 ];
 
 const MEDICAL_CONDITIONS = [
-  "PCOS (Polycystic Ovary Syndrome)",
+  "PCOS (Polycystic Ovary Syndrome) / PCOD (Polycystic Ovary Disorder)",
   "Endometriosis", 
   "Thyroid disorders (Hypo/Hyperthyroidism)",
-  "Diabetes or insulin resistance",
-  "Depression or anxiety disorders",
-  "IBS or other digestive disorders",
-  "Autoimmune conditions",
-  "High blood pressure",
-  "High cholesterol",
-  "None of the above"
+  "Other"
 ];
 
 const DIET_OPTIONS = [
-  { value: "Mediterranean", label: "Mediterranean" },
-  { value: "Indian", label: "Indian" },
-  { value: "Japanese", label: "Japanese" },
-  { value: "Mexican", label: "Mexican" },
-  { value: "American", label: "American" },
   { value: "Vegetarian", label: "Vegetarian" },
   { value: "Vegan", label: "Vegan" },
-  { value: "Keto", label: "Keto" },
-  { value: "Paleo", label: "Paleo" }
+  { value: "Pescatarian", label: "Pescatarian" },
+  { value: "Omnivore", label: "Omnivore" },
+  { value: "Other", label: "Other" }
+];
+
+const EXERCISE_OPTIONS = [
+  { value: "Sedentary", label: "Sedentary (Little to no exercise)" },
+  { value: "Light (1-2x/week)", label: "Light (1-2x/week)" },
+  { value: "Moderate (3-4x/week)", label: "Moderate (3-4x/week)" },
+  { value: "Active (5+ times/week)", label: "Active (5+ times/week)" },
+  { value: "Other", label: "Other" }
+];
+
+const STRESS_OPTIONS = [
+  { value: "Very Low", label: "Very Low" },
+  { value: "Low", label: "Low" },
+  { value: "Moderate", label: "Moderate" },
+  { value: "High", label: "High" },
+  { value: "Very High", label: "Very High" }
+];
+
+const SLEEP_OPTIONS = [
+  { value: "Less than 6", label: "Less than 6 hours" },
+  { value: "6-7 hours", label: "6-7 hours" },
+  { value: "7-8 hours", label: "7-8 hours" },
+  { value: "8+ hours", label: "8+ hours" }
 ];
 
 export default function Profile() {
@@ -73,6 +85,11 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [formData, setFormData] = useState<Partial<OnboardingData>>({});
+  
+  // State for "Other" options
+  const [otherCondition, setOtherCondition] = useState("");
+  const [otherDiet, setOtherDiet] = useState("");
+  const [otherExercise, setOtherExercise] = useState("");
 
   useEffect(() => {
     if (!user) {
@@ -112,13 +129,27 @@ export default function Profile() {
     if (!profileData?.user.id) return;
     setIsSaving(true);
     try {
-      const menstrualCycle = (formData as any).menstrualCycle || {};
+      // Process "Other" entries before saving
+      let processedFormData = { ...formData };
+      
+      if (formData.medicalConditions?.includes("Other") && otherCondition) {
+        processedFormData.medicalConditions = [
+          ...(formData.medicalConditions || []).filter(c => c !== "Other"),
+          otherCondition
+        ];
+      }
+      
+      if (formData.diet?.includes("Other") && otherDiet) {
+        processedFormData.diet = otherDiet;
+      }
+      
+      if (formData.exerciseLevel?.includes("Other") && otherExercise) {
+        processedFormData.exerciseLevel = otherExercise;
+      }
+
       const response = await apiRequest('POST', '/api/onboarding', {
-        ...formData,
+        ...processedFormData,
         userId: profileData.user.id,
-        lastPeriodDate: menstrualCycle.lastPeriodDate || formData.lastPeriodDate,
-        cycleLength: menstrualCycle.length || formData.cycleLength,
-        irregularPeriods: menstrualCycle.irregularPeriods ?? formData.irregularPeriods
       });
       if (response.ok) {
         toast({
@@ -306,20 +337,42 @@ export default function Profile() {
             <CardHeader>
               <CardTitle>Diet Preferences</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Label htmlFor="diet">Preferred Diet Style</Label>
-              <Select value={formData.diet || ''} onValueChange={(value) => setFormData({...formData, diet: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select diet preference" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIET_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="diet">Preferred Diet Style</Label>
+                <Select 
+                  value={formData.diet || ''} 
+                  onValueChange={(value) => {
+                    if (value === "Other") {
+                      setFormData({...formData, diet: "Other"});
+                    } else {
+                      setFormData({...formData, diet: value});
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select diet preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIET_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formData.diet === "Other" && (
+                  <div className="mt-2">
+                    <Input
+                      type="text"
+                      placeholder="Please specify your diet preference"
+                      value={otherDiet}
+                      onChange={(e) => setOtherDiet(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -360,13 +413,35 @@ export default function Profile() {
                     <div key={condition} className="flex items-center space-x-2">
                       <Checkbox
                         id={`condition-${condition}`}
-                        checked={(formData.medicalConditions || []).includes(condition)}
-                        onCheckedChange={() => handleArrayToggle('medicalConditions', condition)}
+                        checked={(formData.medicalConditions || []).includes(condition) || (condition === "Other" && !!otherCondition)}
+                        onCheckedChange={() => {
+                          if (condition === "Other") {
+                            if (!formData.medicalConditions?.includes("Other")) {
+                              setFormData({ ...formData, medicalConditions: [...(formData.medicalConditions || []), "Other"] });
+                            } else {
+                              setFormData({ ...formData, medicalConditions: (formData.medicalConditions || []).filter(c => c !== "Other") });
+                              setOtherCondition("");
+                            }
+                          } else {
+                            handleArrayToggle('medicalConditions', condition);
+                          }
+                        }}
                       />
                       <Label htmlFor={`condition-${condition}`} className="text-sm">{condition}</Label>
                     </div>
                   ))}
                 </div>
+                {formData.medicalConditions?.includes("Other") && (
+                  <div className="mt-2">
+                    <Input
+                      type="text"
+                      placeholder="Please specify your condition"
+                      value={otherCondition}
+                      onChange={(e) => setOtherCondition(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Medications */}
@@ -414,10 +489,11 @@ export default function Profile() {
                       <SelectValue placeholder="Select stress level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Moderate">Moderate</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Very High">Very High</SelectItem>
+                      {STRESS_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -428,27 +504,48 @@ export default function Profile() {
                       <SelectValue placeholder="Select sleep hours" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Less than 6">Less than 6 hours</SelectItem>
-                      <SelectItem value="6-7 hours">6-7 hours</SelectItem>
-                      <SelectItem value="7-8 hours">7-8 hours</SelectItem>
-                      <SelectItem value="8+ hours">8+ hours</SelectItem>
+                      {SLEEP_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="exerciseLevel">Exercise Level</Label>
-                  <Select value={formData.exerciseLevel || ''} onValueChange={(value) => setFormData({...formData, exerciseLevel: value})}>
+                  <Select 
+                    value={formData.exerciseLevel || ''} 
+                    onValueChange={(value) => {
+                      if (value === "Other") {
+                        setFormData({...formData, exerciseLevel: "Other"});
+                      } else {
+                        setFormData({...formData, exerciseLevel: value});
+                      }
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select exercise level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Sedentary">Sedentary (Little to no exercise)</SelectItem>
-                      <SelectItem value="Light">Light (1-2x/week)</SelectItem>
-                      <SelectItem value="Moderate">Moderate (3-4x/week)</SelectItem>
-                      <SelectItem value="Active">Active (5-6x/week)</SelectItem>
-                      <SelectItem value="Very Active">Very Active (Daily)</SelectItem>
+                      {EXERCISE_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {formData.exerciseLevel === "Other" && (
+                    <div className="mt-2">
+                      <Input
+                        type="text"
+                        placeholder="Please specify your exercise frequency"
+                        value={otherExercise}
+                        onChange={(e) => setOtherExercise(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="waterIntake">Daily Water Intake</Label>

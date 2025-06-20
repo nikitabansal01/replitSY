@@ -579,6 +579,9 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
   // Check if this is a nutrition/diet question
   const isDietQuestion = /\b(eat|food|diet|nutrition|meal|recipe|cook|supplement|ingredient|consume|drink|take|add|help with|bloating|digestion|cramps|period|menstrual|pms)\b/i.test(question);
   
+  // Check if this is an exercise question
+  const isExerciseQuestion = /\b(exercise|workout|training|cardio|strength|yoga|pilates|running|walking|gym|fitness|movement|activity|sport|dance|swimming|cycling|weight|lifting|squat|pushup|plank|stretch|flexibility|endurance|energy|tired|fatigue)\b/i.test(question);
+  
   // Simple NLP for custom conditions
   let customCondition = '';
   if (onboardingData?.medicalConditions) {
@@ -622,12 +625,21 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
     systemPrompt += `\n\nIMPORTANT: The user is under 18. Do NOT provide any medical, supplement, or restrictive diet advice. Only provide general wellness, healthy eating, and lifestyle tips suitable for minors. Always recommend consulting a pediatrician or guardian for any health concerns.`;
   }
 
+  // Exercise-specific persona
+  if (isExerciseQuestion) {
+    systemPrompt = `You are an experienced women's fitness trainer specializing in hormonal health and cycle-synced workouts. You understand how exercise affects women's hormones, energy levels, and menstrual cycles. You provide personalized, safe, and effective exercise recommendations.`;
+    
+    if (isUnder18) {
+      systemPrompt += `\n\nIMPORTANT: The user is under 18. Focus on age-appropriate activities like walking, swimming, dancing, and gentle yoga. Avoid intense strength training or high-impact exercises. Always recommend consulting a pediatrician or guardian.`;
+    }
+  }
+
   systemPrompt += `\n\nRESPONSE FORMAT REQUIREMENTS:
 1. Start with an empathetic opening that acknowledges their concern or situation
 2. Give clear, actionable advice in 2-3 sentences maximum
 3. Include scientific rationale from the research (cite specific studies when possible)
 4. Use a warm, supportive tone throughout
-5. Be specific about which foods, why they help, and how to use them
+5. Be specific about which foods/exercises, why they help, and how to use them
 6. If research is inconclusive, state that gently and offer general wellness guidance
 
 EXAMPLE RESPONSES:
@@ -641,7 +653,26 @@ IMPORTANT: You must ONLY use information from the provided research context. Do 
     systemPrompt += `\n\nUser has a custom medical condition: ${customCondition}. Personalize your response accordingly.`;
   }
 
-  systemPrompt += `\n\nUser Profile:\n- Age: ${onboardingData?.age || 'Not specified'}\n- Diet: ${onboardingData?.diet || 'Not specified'}\n- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}\n- Medical Conditions: ${onboardingData?.medicalConditions?.join(', ') || 'None specified'}`;
+  // Enhanced user profile context for exercise questions
+  if (isExerciseQuestion) {
+    systemPrompt += `\n\nEXERCISE CONTEXT - User Profile:
+- Age: ${onboardingData?.age || 'Not specified'}
+- Exercise Level: ${onboardingData?.exerciseLevel || 'Not specified'}
+- Medical Conditions: ${onboardingData?.medicalConditions?.join(', ') || 'None specified'}
+- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}
+- Last Period Date: ${onboardingData?.lastPeriodDate || 'Not specified'}
+- Cycle Length: ${onboardingData?.cycleLength || 'Not specified'}
+
+EXERCISE GUIDELINES:
+- If user has PCOS: Recommend low-impact cardio, strength training, and stress-reducing activities
+- If user has fatigue: Suggest gentle, energizing activities like walking, yoga, or swimming
+- If user is in follicular phase: Recommend higher intensity workouts, strength training, and cardio
+- If user is in luteal phase: Suggest moderate intensity, stress-reducing activities like yoga or pilates
+- If user is in menstrual phase: Recommend gentle, restorative activities like walking or gentle stretching
+- Always consider the user's current exercise level and medical conditions`;
+  } else {
+    systemPrompt += `\n\nUser Profile:\n- Age: ${onboardingData?.age || 'Not specified'}\n- Diet: ${onboardingData?.diet || 'Not specified'}\n- Symptoms: ${onboardingData?.symptoms?.join(', ') || 'None specified'}\n- Medical Conditions: ${onboardingData?.medicalConditions?.join(', ') || 'None specified'}`;
+  }
 
   systemPrompt += `\n\nCRITICAL: Your response must be valid JSON with this exact structure:`;
 
@@ -662,6 +693,23 @@ IMPORTANT: You must ONLY use information from the provided research context. Do 
 }
 
 Focus on evidence-based nutrition for women's hormonal health. Include 1-3 relevant ingredients with specific implementation methods. ONLY recommend ingredients that are mentioned in the research context. Be warm and supportive in your tone.`;
+  } else if (isExerciseQuestion) {
+    systemPrompt += `
+{
+  "message": "Your empathetic, exercise-focused response (2-3 sentences max with clear actionable advice)",
+  "ingredients": [
+    {
+      "name": "Specific exercise/activity name",
+      "description": "Brief benefit with scientific rationale from research",
+      "emoji": "💪",
+      "lazy": "Easiest way to do it (be specific)",
+      "tasty": "Most enjoyable way to do it (be specific)", 
+      "healthy": "Optimal frequency and duration (be specific)"
+    }
+  ]
+}
+
+Focus on evidence-based exercise recommendations for women's hormonal health. Include 1-3 relevant exercises with specific implementation methods. ONLY recommend exercises that are mentioned in the research context. Be encouraging and supportive in your tone.`;
   } else {
     systemPrompt += `
 {
@@ -702,7 +750,7 @@ Provide health information based ONLY on the research context. If the research d
       return {
         name: ing.name || 'Unknown',
         description: ing.description || 'Natural ingredient',
-        emoji: ing.emoji || '🌿',
+        emoji: ing.emoji || (isExerciseQuestion ? '💪' : '🌿'),
         lazy: ing.lazy || 'Take as supplement with breakfast daily',
         tasty: ing.tasty || 'Mix into smoothies with fruit and honey',
         healthy: ing.healthy || 'Follow evidence-based dosage guidelines'
