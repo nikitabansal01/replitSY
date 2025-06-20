@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
+import { useProfile } from '@/context/ProfileContext';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,15 +13,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User, Heart, Pill, AlertTriangle, Activity } from 'lucide-react';
 import type { OnboardingData } from '@shared/schema';
-
-interface ProfileData {
-  user: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  onboarding: OnboardingData | null;
-}
 
 const SYMPTOM_OPTIONS = [
   "Irregular periods",
@@ -80,10 +72,9 @@ const SLEEP_OPTIONS = [
 export default function Profile() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { profile, loading, updateProfile } = useProfile();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [formData, setFormData] = useState<Partial<OnboardingData>>({});
   
   // State for "Other" options
@@ -96,37 +87,17 @@ export default function Profile() {
       setLocation('/');
       return;
     }
-    
-    fetchProfileData();
-  }, [user]);
+  }, [user, setLocation]);
 
-  const fetchProfileData = async () => {
-    try {
-      const response = await apiRequest('GET', '/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setProfileData(data);
-        if (data.onboarding) {
-          setFormData(data.onboarding);
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to load profile data');
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch profile:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to load profile data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+  // Load form data when profile is available
+  useEffect(() => {
+    if (profile?.onboarding) {
+      setFormData(profile.onboarding);
     }
-  };
+  }, [profile]);
 
   const handleSave = async () => {
-    if (!profileData?.user.id) return;
+    if (!profile?.user.id) return;
     setIsSaving(true);
     try {
       // Process "Other" entries before saving
@@ -147,20 +118,12 @@ export default function Profile() {
         processedFormData.exerciseLevel = otherExercise;
       }
 
-      const response = await apiRequest('POST', '/api/onboarding', {
-        ...processedFormData,
-        userId: profileData.user.id,
+      await updateProfile(processedFormData);
+      
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!"
       });
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Profile updated successfully!"
-        });
-        await fetchProfileData(); // Refresh data
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update profile');
-      }
     } catch (error: any) {
       toast({
         title: "Error", 
@@ -181,7 +144,7 @@ export default function Profile() {
     setFormData({ ...formData, [field]: newArray });
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
@@ -189,7 +152,7 @@ export default function Profile() {
     );
   }
 
-  if (!profileData) {
+  if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-96">
@@ -241,7 +204,7 @@ export default function Profile() {
                   <Label htmlFor="name">Name</Label>
                   <Input 
                     id="name"
-                    value={profileData.user.name} 
+                    value={profile.user.name} 
                     disabled
                     className="bg-gray-50"
                   />
@@ -251,7 +214,7 @@ export default function Profile() {
                   <Label htmlFor="email">Email</Label>
                   <Input 
                     id="email"
-                    value={profileData.user.email} 
+                    value={profile.user.email} 
                     disabled
                     className="bg-gray-50"
                   />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
+import { useProfile } from '@/context/ProfileContext';
 import { apiRequest } from '@/lib/queryClient';
 import { signOutUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -20,18 +21,6 @@ interface Message {
   content: string;
   ingredients?: IngredientRecommendation[];
   timestamp: Date;
-}
-
-interface UserProfile {
-  user: {
-    name: string;
-    email: string;
-  };
-  onboarding?: {
-    age: string;
-    diet: string;
-    symptoms: string[];
-  };
 }
 
 // Daily tips array for frontend rotation
@@ -61,40 +50,25 @@ const DAILY_TIPS = [
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, token, loading } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const { toast } = useToast();
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-
 
   useEffect(() => {
     if (!loading && !user) {
       setLocation('/');
       return;
     }
-  }, [user, loading, profile, setLocation]);
+  }, [user, loading, setLocation]);
 
   useEffect(() => {
     if (token) {
-      loadProfile();
       loadChatHistory();
     }
   }, [token]);
-
-  const loadProfile = async () => {
-    if (!token || loading) return;
-    try {
-      const response = await apiRequest('GET', '/api/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
-      }
-    } catch (error) {
-      // Silently handle auth transitions - backend is working correctly
-    }
-  };
 
   const loadChatHistory = async () => {
     if (!token || loading) return;
@@ -186,24 +160,23 @@ export default function Dashboard() {
   const handleRemoveSymptom = async (symptomToRemove: string) => {
     if (!profile?.onboarding) return;
     const updatedSymptoms = profile.onboarding.symptoms.filter(s => s !== symptomToRemove);
-    const updatedProfile = {
-      ...profile,
-      onboarding: {
-        ...profile.onboarding,
-        symptoms: updatedSymptoms,
-      },
-    };
-    setProfile(updatedProfile);
+    
     try {
-      await apiRequest('PUT', '/api/profile', {
+      await apiRequest('POST', '/api/onboarding', {
         ...profile.onboarding,
         symptoms: updatedSymptoms,
       });
+      
+      // Profile will be automatically refreshed by ProfileContext
+      toast({
+        title: "Success",
+        description: "Symptom removed successfully!",
+      });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update focus areas.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to remove symptom. Please try again.",
+        variant: "destructive",
       });
     }
   };

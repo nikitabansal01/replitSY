@@ -267,10 +267,10 @@ class NutritionistService {
       if (!process.env.OPENAI_API_KEY) {
         throw new Error('OPENAI_API_KEY environment variable is required for AI features');
       }
-      this.openai = new OpenAI({ 
-        apiKey: process.env.OPENAI_API_KEY,
-        timeout: 45000
-      });
+    this.openai = new OpenAI({ 
+      apiKey: process.env.OPENAI_API_KEY,
+      timeout: 45000
+    });
     }
     return this.openai;
   }

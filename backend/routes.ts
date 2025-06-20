@@ -59,7 +59,7 @@ function generateDemoResponse(message: string, onboardingData: any): ChatRespons
   }
 
   // Handle specific health conditions with varied responses
-  if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
+    if (lowerMessage.includes('pcos') || lowerMessage.includes('polycystic')) {
     const pcosMessages = [
       `## PCOS (Polycystic Ovary Syndrome)
 
@@ -111,11 +111,11 @@ PCOS is a complex hormonal condition that affects how your ovaries work, leading
     
     return {
       message: pcosMessages[randomSeed % pcosMessages.length],
-      ingredients: []
-    };
-  }
+        ingredients: []
+      };
+    }
 
-  if (lowerMessage.includes('endometriosis')) {
+    if (lowerMessage.includes('endometriosis')) {
     const endoMessages = [
       `## Endometriosis
 
@@ -167,11 +167,11 @@ Endometriosis occurs when tissue similar to the uterine lining grows outside the
     
     return {
       message: endoMessages[randomSeed % endoMessages.length],
-      ingredients: []
-    };
-  }
+        ingredients: []
+      };
+    }
 
-  if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia')) {
+    if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia')) {
     const sleepMessages = [
       `Sleep quality is crucial for hormonal balance and overall women's health.
 
@@ -220,9 +220,9 @@ Quality sleep is essential for hormonal balance, mood regulation, and overall we
     
     return {
       message: sleepMessages[randomSeed % sleepMessages.length],
-      ingredients: []
-    };
-  }
+        ingredients: []
+      };
+    }
 
   // Handle general health information questions (no food recommendations)
   if (!isDietQuestion) {
@@ -231,7 +231,7 @@ Quality sleep is essential for hormonal balance, mood regulation, and overall we
       `Welcome! I'm your women's health assistant. I can help with information about hormonal conditions, menstrual health, nutrition, and wellness. Feel free to ask about specific conditions or request personalized meal plans tailored to your needs.`,
       `Hi there! I specialize in women's health and nutrition. Whether you have questions about hormonal balance, menstrual health, or need personalized dietary guidance, I'm here to help. What would you like to know more about?`
     ];
-    
+
     return {
       message: generalMessages[randomSeed % generalMessages.length],
       ingredients: []
@@ -246,29 +246,29 @@ Quality sleep is essential for hormonal balance, mood regulation, and overall we
   ];
 
   const allIngredients = [
-    {
-      name: "Leafy Greens",
-      description: "Rich in folate, iron, and magnesium for hormone production and energy",
-      emoji: "🥬",
-      lazy: "Add pre-washed spinach to smoothies or grab ready-to-eat salad mixes",
-      tasty: "Sauté with garlic and lemon, or blend into green smoothies with fruits",
-      healthy: "Aim for 2-3 cups daily, vary types (spinach, kale, arugula) for different nutrients"
-    },
-    {
-      name: "Omega-3 Rich Fish",
-      description: "Essential fatty acids reduce inflammation and support brain health",
-      emoji: "🐟",
-      lazy: "Choose canned wild salmon or sardines for quick meals",
-      tasty: "Grill with herbs, make fish tacos, or add to salads and pasta",
-      healthy: "Include 2-3 servings per week, prioritize wild-caught varieties"
-    },
-    {
-      name: "Complex Carbohydrates",
-      description: "Stable blood sugar and sustained energy for hormonal balance",
-      emoji: "🌾",
-      lazy: "Choose quinoa, oats, or sweet potatoes for easy preparation",
-      tasty: "Make overnight oats, quinoa bowls, or roasted sweet potato with toppings",
-      healthy: "Fill 1/4 of your plate with whole grains, avoid refined carbohydrates"
+      {
+        name: "Leafy Greens",
+        description: "Rich in folate, iron, and magnesium for hormone production and energy",
+        emoji: "🥬",
+        lazy: "Add pre-washed spinach to smoothies or grab ready-to-eat salad mixes",
+        tasty: "Sauté with garlic and lemon, or blend into green smoothies with fruits",
+        healthy: "Aim for 2-3 cups daily, vary types (spinach, kale, arugula) for different nutrients"
+      },
+      {
+        name: "Omega-3 Rich Fish",
+        description: "Essential fatty acids reduce inflammation and support brain health",
+        emoji: "🐟",
+        lazy: "Choose canned wild salmon or sardines for quick meals",
+        tasty: "Grill with herbs, make fish tacos, or add to salads and pasta",
+        healthy: "Include 2-3 servings per week, prioritize wild-caught varieties"
+      },
+      {
+        name: "Complex Carbohydrates",
+        description: "Stable blood sugar and sustained energy for hormonal balance",
+        emoji: "🌾",
+        lazy: "Choose quinoa, oats, or sweet potatoes for easy preparation",
+        tasty: "Make overnight oats, quinoa bowls, or roasted sweet potato with toppings",
+        healthy: "Fill 1/4 of your plate with whole grains, avoid refined carbohydrates"
     },
     {
       name: "Nuts and Seeds",
@@ -293,7 +293,7 @@ Quality sleep is essential for hormonal balance, mood regulation, and overall we
       lazy: "Include yogurt, kefir, or sauerkraut in your daily routine",
       tasty: "Make smoothie bowls with yogurt or add kimchi to rice dishes",
       healthy: "Include 1-2 servings of fermented foods daily for gut health"
-    }
+      }
   ];
 
   // Randomly select 3 ingredients for variety
@@ -617,7 +617,7 @@ async function generateChatGPTResponse(openai: OpenAI, question: string, onboard
     }
   } catch (error) {
     console.error('Error retrieving research papers:', error);
-  }
+}
 
   let systemPrompt = `You are a highly supportive, empathetic, and intelligent women's health assistant who deeply knows each user's health profile and provides personalized recommendations. You have a warm, understanding, and professional tone, like a compassionate women's health expert who truly cares about their wellbeing.
 
@@ -859,8 +859,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error('OPENAI_API_KEY environment variable is required for AI features');
       }
       openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
+    apiKey: process.env.OPENAI_API_KEY,
+  });
     }
     return openai;
   };
@@ -1016,15 +1016,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       let response;
-      try {
-        response = await Promise.race([
+        try {
+          response = await Promise.race([
           generateChatGPTResponse(getOpenAI(), message, onboardingData),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 12000))
-        ]) as ChatResponse;
-      } catch (error) {
-        console.error('ChatGPT API failed, using demo response:', error);
-        response = generateDemoResponse(message, onboardingData);
-      }
+          ]) as ChatResponse;
+        } catch (error) {
+          console.error('ChatGPT API failed, using demo response:', error);
+          response = generateDemoResponse(message, onboardingData);
+        }
 
       console.log('DEBUG: Chat response generated:', {
         messageLength: response.message.length,
