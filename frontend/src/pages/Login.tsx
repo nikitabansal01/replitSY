@@ -156,6 +156,11 @@ export default function Login() {
     setIsLoading(true);
     try {
       const user = await signUpWithEmail(signupForm.email, signupForm.password, signupForm.name);
+      await apiRequest('POST', '/api/auth/register', {
+        firebaseUid: user.uid,
+        email: user.email,
+        name: user.displayName || signupForm.name
+      });
       toast({
         title: "Success",
         description: "Account created successfully!"
