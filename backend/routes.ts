@@ -894,11 +894,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             symptoms: ['irregular_periods', 'fatigue_and_low_energy'],
             lastPeriodDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
             cycleLength: '28', // Default 28-day cycle
-            currentMedications: 'None',
-            healthGoals: ['hormone_balance', 'energy_improvement'],
-            activityLevel: 'moderate',
+            medications: ['None'],
+            goals: ['hormone_balance', 'energy_improvement'],
+            exerciseLevel: 'moderate',
             stressLevel: 'moderate',
-            sleepQuality: 'good',
+            sleepHours: '7-8 hours',
             waterIntake: '6-8 glasses daily'
           });
         }
