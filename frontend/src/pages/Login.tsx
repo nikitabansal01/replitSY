@@ -37,10 +37,7 @@ export default function Login() {
 
   useEffect(() => {
     if (user && !loading) {
-      // Force navigation to dashboard after authentication
-      setTimeout(() => {
-        setLocation('/dashboard');
-      }, 100);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     }
   }, [user, loading, setLocation]);
 
@@ -66,9 +63,7 @@ export default function Login() {
         title: "Success",
         description: "Successfully signed in with Google!"
       });
-      setTimeout(() => {
-        setLocation('/dashboard');
-      }, 500);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     } catch (error: any) {
       console.error('Sign in failed:', error);
       let message = "Failed to sign in with Google";
@@ -103,9 +98,7 @@ export default function Login() {
         title: "Success",
         description: "Successfully signed in!"
       });
-      setTimeout(() => {
-        setLocation('/dashboard');
-      }, 500);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     } catch (error: any) {
       let message = "Failed to sign in";
       if (error.code === 'auth/user-not-found') {
@@ -161,11 +154,13 @@ export default function Login() {
         email: user.email,
         name: user.displayName || signupForm.name
       });
+      // Set a flag to indicate this is a new signup
+      localStorage.setItem('isNewSignup', 'true');
       toast({
         title: "Success",
         description: "Account created successfully!"
       });
-      setTimeout(() => setLocation('/onboarding'), 500);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     } catch (error: any) {
       let message = "Failed to create account";
       if (error.code === 'auth/email-already-in-use') {

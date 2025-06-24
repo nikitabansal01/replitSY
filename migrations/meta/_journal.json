@@ -8,6 +8,13 @@
       "when": 1749834648707,
       "tag": "0000_mixed_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1750738491130,
+      "tag": "0001_lucky_hex",
+      "breakpoints": true
     }
   ]
 }
