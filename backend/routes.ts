@@ -876,7 +876,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasToken: !!token,
         tokenType: token === 'demo-token' ? 'demo' : 'firebase',
         path: req.path,
-        method: req.method
+        method: req.method,
+        headers: {
+          authorization: req.headers.authorization ? 'present' : 'missing',
+          origin: req.headers.origin,
+          userAgent: req.headers['user-agent']?.substring(0, 50) + '...'
+        }
       });
       
       if (!token) {
@@ -885,34 +890,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (token === 'demo-token') {
-        console.log('DEBUG: Using demo token');
-        // Demo user for testing - ensure user exists in storage
-        let demoUser = await storage.getUserByFirebaseUid('demo');
-        if (!demoUser) {
-          console.log('DEBUG: Creating demo user');
-          demoUser = await storage.createUser({
-            firebaseUid: 'demo',
-            email: 'demo@example.com',
-            name: 'Demo User'
-          });
-          
-          // Create demo onboarding data
-          await storage.saveOnboardingData({
-            userId: demoUser.id,
-            age: process.env.DEMO_USER_AGE || '28', // Configurable demo age
-            diet: process.env.DEMO_USER_DIET || 'balanced', // Configurable demo diet
-            symptoms: ['irregular_periods', 'fatigue_and_low_energy'],
-            lastPeriodDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-            cycleLength: '28', // Default 28-day cycle
-            medications: ['None'],
-            goals: ['hormone_balance', 'energy_improvement'],
-            exerciseLevel: 'moderate',
-            stressLevel: 'moderate',
-            sleepHours: '7-8 hours'
-          });
+        console.log('DEBUG: Using demo token - checking database connection');
+        
+        // First check if database is available
+        if (!db) {
+          console.error('DEBUG: Database not available for demo user');
+          return res.status(500).json({ error: 'Database not available' });
         }
+        
+        // Demo user for testing - ensure user exists in storage
+        console.log('DEBUG: Looking up demo user in database');
+        let demoUser = await storage.getUserByFirebaseUid('demo');
+        
+        if (!demoUser) {
+          console.log('DEBUG: Demo user not found, creating new demo user');
+          try {
+            demoUser = await storage.createUser({
+              firebaseUid: 'demo',
+              email: 'demo@example.com',
+              name: 'Demo User'
+            });
+            console.log('DEBUG: Demo user created successfully:', demoUser.id);
+            
+            // Create demo onboarding data
+            console.log('DEBUG: Creating demo onboarding data');
+            await storage.saveOnboardingData({
+              userId: demoUser.id,
+              age: process.env.DEMO_USER_AGE || '28', // Configurable demo age
+              diet: process.env.DEMO_USER_DIET || 'balanced', // Configurable demo diet
+              symptoms: ['irregular_periods', 'fatigue_and_low_energy'],
+              lastPeriodDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+              cycleLength: '28', // Default 28-day cycle
+              medications: ['None'],
+              goals: ['hormone_balance', 'energy_improvement'],
+              exerciseLevel: 'moderate',
+              stressLevel: 'moderate',
+              sleepHours: '7-8 hours'
+            });
+            console.log('DEBUG: Demo onboarding data created successfully');
+          } catch (error) {
+            console.error('DEBUG: Failed to create demo user or onboarding data:', error);
+            throw error;
+          }
+        } else {
+          console.log('DEBUG: Demo user found:', demoUser.id);
+        }
+        
         req.user = demoUser;
-        console.log('DEBUG: Demo user authenticated:', demoUser.id);
+        console.log('DEBUG: Demo user authenticated successfully:', demoUser.id);
         next();
       } else {
         console.log('DEBUG: Verifying Firebase token');
@@ -938,7 +963,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Authentication error:', error);
       console.error('Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : 'Unknown'
       });
       res.status(401).json({ error: 'Invalid token' });
     }
@@ -1867,6 +1893,17 @@ Generated with love for your health journey! 💖
         timestamp: new Date().toISOString()
       });
     }
+  });
+
+  // Simple test endpoint without authentication
+  app.get('/api/test', (req, res) => {
+    res.json({ 
+      message: 'Backend is working!',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      hasDatabase: !!db,
+      hasDatabaseUrl: !!process.env.DATABASE_URL
+    });
   });
 
   return server;
