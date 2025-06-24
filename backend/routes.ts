@@ -872,14 +872,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const token = req.headers.authorization?.replace('Bearer ', '');
       
+      console.log('DEBUG: Auth attempt:', {
+        hasToken: !!token,
+        tokenType: token === 'demo-token' ? 'demo' : 'firebase',
+        path: req.path,
+        method: req.method
+      });
+      
       if (!token) {
+        console.log('DEBUG: No token provided');
         return res.status(401).json({ error: 'No token provided' });
       }
 
       if (token === 'demo-token') {
+        console.log('DEBUG: Using demo token');
         // Demo user for testing - ensure user exists in storage
         let demoUser = await storage.getUserByFirebaseUid('demo');
         if (!demoUser) {
+          console.log('DEBUG: Creating demo user');
           demoUser = await storage.createUser({
             firebaseUid: 'demo',
             email: 'demo@example.com',
@@ -902,14 +912,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         req.user = demoUser;
+        console.log('DEBUG: Demo user authenticated:', demoUser.id);
         next();
       } else {
+        console.log('DEBUG: Verifying Firebase token');
         // Verify Firebase token
         const decodedToken = await firebaseAuth.verifyIdToken(token);
         let user = await storage.getUserByFirebaseUid(decodedToken.uid);
         
         // If user doesn't exist, create them automatically
         if (!user) {
+          console.log('DEBUG: Creating new user for Firebase UID:', decodedToken.uid);
           user = await storage.createUser({
             firebaseUid: decodedToken.uid,
             email: decodedToken.email || '',
@@ -918,10 +931,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         req.user = user;
+        console.log('DEBUG: Firebase user authenticated:', user.id);
         next();
       }
     } catch (error) {
       console.error('Authentication error:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       res.status(401).json({ error: 'Invalid token' });
     }
   }
