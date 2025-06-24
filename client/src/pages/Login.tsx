@@ -48,10 +48,7 @@ export default function Login() {
         title: "Success",
         description: "Successfully signed in with Google!"
       });
-      // Force navigation to dashboard
-      setTimeout(() => {
-        setLocation('/dashboard');
-      }, 500);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     } catch (error: any) {
       console.error('Sign in failed:', error);
       toast({
@@ -76,10 +73,7 @@ export default function Login() {
         title: "Success",
         description: "Successfully signed in!"
       });
-      // Force navigation to dashboard
-      setTimeout(() => {
-        setLocation('/dashboard');
-      }, 500);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     } catch (error: any) {
       toast({
         title: "Error",
@@ -116,6 +110,8 @@ export default function Login() {
     
     try {
       const user = await signUpWithEmail(signupForm.email, signupForm.password, signupForm.name);
+      // Set a flag to indicate this is a new signup
+      localStorage.setItem('isNewSignup', 'true');
       toast({
         title: "Success",
         description: "Account created successfully!"

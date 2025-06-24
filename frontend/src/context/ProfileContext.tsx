@@ -43,6 +43,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     
     try {
       setLoading(true);
+      console.log('Attempting to load profile with token:', token.substring(0, 20) + '...');
       const response = await apiRequest('GET', '/api/profile');
       
       if (response.ok) {
@@ -50,11 +51,15 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         setProfile(data);
         console.log('Profile loaded successfully:', data);
       } else {
-        console.log('No profile data found for user');
+        console.log('Profile request failed with status:', response.status);
         setProfile(null);
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setProfile(null);
     } finally {
       setLoading(false);
