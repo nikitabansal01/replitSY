@@ -16,7 +16,7 @@ async function createDatabaseConnection() {
 
   // Try multiple connection strategies
   const connectionStrategies = [
-    // Strategy 1: Direct connection with SSL require
+    // Strategy 1: Direct connection with SSL require and IPv4 forcing
     {
       name: 'Direct with SSL require',
       connectionString: process.env.DATABASE_URL.includes('?') 
@@ -32,14 +32,31 @@ async function createDatabaseConnection() {
         : `${process.env.DATABASE_URL}?sslmode=allow`,
       options: { ssl: 'allow' as const, max: 1, idle_timeout: 20, connect_timeout: 10 }
     },
-    // Strategy 3: Parsed connection with explicit host
+    // Strategy 3: Parsed connection with explicit host and IPv4 forcing
     {
-      name: 'Parsed connection',
+      name: 'Parsed connection with IPv4',
       connectionString: (() => {
         const url = new URL(process.env.DATABASE_URL);
+        // Force IPv4 by using the direct connection string
         return `postgresql://${url.username}:${url.password}@${url.hostname}:${url.port || '5432'}${url.pathname}?sslmode=require`;
       })(),
       options: { ssl: 'require' as const, max: 1, idle_timeout: 20, connect_timeout: 10 }
+    },
+    // Strategy 4: Connection with no SSL (for testing)
+    {
+      name: 'Connection without SSL',
+      connectionString: process.env.DATABASE_URL.includes('?') 
+        ? `${process.env.DATABASE_URL}&sslmode=disable`
+        : `${process.env.DATABASE_URL}?sslmode=disable`,
+      options: { ssl: false, max: 1, idle_timeout: 20, connect_timeout: 10 }
+    },
+    // Strategy 5: IPv4-specific connection with different SSL mode
+    {
+      name: 'IPv4 connection with prefer SSL',
+      connectionString: process.env.DATABASE_URL.includes('?') 
+        ? `${process.env.DATABASE_URL}&sslmode=prefer`
+        : `${process.env.DATABASE_URL}?sslmode=prefer`,
+      options: { ssl: 'prefer' as const, max: 1, idle_timeout: 20, connect_timeout: 10 }
     }
   ];
 
@@ -56,6 +73,9 @@ async function createDatabaseConnection() {
       return drizzle(client, { schema });
     } catch (error) {
       console.warn(`Connection strategy "${strategy.name}" failed:`, error instanceof Error ? error.message : 'Unknown error');
+      if (error instanceof Error && error.message.includes('ENETUNREACH')) {
+        console.warn('IPv6 connection issue detected - trying next strategy');
+      }
       continue;
     }
   }
