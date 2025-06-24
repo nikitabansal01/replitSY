@@ -114,7 +114,6 @@ export class MemStorage implements IStorage {
       stressLevel: dataObj.stressLevel ?? null,
       sleepHours: dataObj.sleepHours ?? null,
       exerciseLevel: dataObj.exerciseLevel ?? null,
-      waterIntake: dataObj.waterIntake ?? null,
       completedAt: new Date(),
     };
     this.onboardingData.set(dataObj.userId, onboarding);
@@ -321,7 +320,6 @@ export class DatabaseStorage implements IStorage {
         stressLevel: null,
         sleepHours: null,
         exerciseLevel: null,
-        waterIntake: null,
         completedAt: new Date()
       };
     }

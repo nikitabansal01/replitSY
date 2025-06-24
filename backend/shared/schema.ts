@@ -69,7 +69,6 @@ export const onboardingData = pgTable("onboarding_data", {
   stressLevel: text("stress_level"),
   sleepHours: text("sleep_hours"),
   exerciseLevel: text("exercise_level"),
-  waterIntake: text("water_intake"),
   completedAt: timestamp("completed_at").defaultNow().notNull(),
 });
 
@@ -175,3 +174,26 @@ export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type SystemMetrics = typeof systemMetrics.$inferSelect;
 export type InsertSystemMetrics = z.infer<typeof insertSystemMetricsSchema>;
+
+export const onboardingDataSchema = z.object({
+  id: z.number().optional(),
+  userId: z.number(),
+  age: z.string(),
+  height: z.string().optional(),
+  weight: z.string().optional(),
+  diet: z.string(),
+  symptoms: z.array(z.string()),
+  goals: z.array(z.string()).optional(),
+  lifestyle: z.record(z.any()).optional(),
+  medicalConditions: z.array(z.string()).optional(),
+  medications: z.array(z.string()).optional(),
+  allergies: z.array(z.string()).optional(),
+  lastPeriodDate: z.string().optional(),
+  cycleLength: z.string().optional(),
+  periodLength: z.string().optional(),
+  irregularPeriods: z.boolean().optional(),
+  stressLevel: z.string().optional(),
+  sleepHours: z.string().optional(),
+  exerciseLevel: z.string().optional(),
+  completedAt: z.date().optional(),
+});

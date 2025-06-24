@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OnboardingData {
   age: string;
-  gender: string;
   height: string;
   weight: string;
   diet: string[];
@@ -41,7 +40,6 @@ export default function OnboardingNew() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>({
     age: '',
-    gender: '',
     height: '',
     weight: '',
     diet: [],

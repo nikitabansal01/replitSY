@@ -49,7 +49,7 @@ export const userSchema = z.object({
 });
 
 export const onboardingDataSchema = z.object({
-  id: z.number(),
+  id: z.number().optional(),
   userId: z.number(),
   age: z.string(),
   height: z.string().optional(),
@@ -64,12 +64,11 @@ export const onboardingDataSchema = z.object({
   lastPeriodDate: z.string().optional(),
   cycleLength: z.string().optional(),
   periodLength: z.string().optional(),
-  irregularPeriods: z.boolean().default(false),
+  irregularPeriods: z.boolean().optional(),
   stressLevel: z.string().optional(),
   sleepHours: z.string().optional(),
   exerciseLevel: z.string().optional(),
-  waterIntake: z.string().optional(),
-  completedAt: z.string(),
+  completedAt: z.date().optional(),
 });
 
 export const chatMessageSchema = z.object({

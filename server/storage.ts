@@ -232,7 +232,6 @@ export class DatabaseStorage implements IStorage {
         .update(onboardingData)
         .set({
           age: data.age,
-          gender: data.gender || 'Female',
           height: data.height || '',
           weight: data.weight || '',
           diet: data.diet,
@@ -246,7 +245,6 @@ export class DatabaseStorage implements IStorage {
           stressLevel: data.stressLevel || '',
           sleepHours: data.sleepHours || '',
           exerciseLevel: data.exerciseLevel || '',
-          waterIntake: data.waterIntake || '',
           completedAt: new Date()
         })
         .where(eq(onboardingData.userId, data.userId))

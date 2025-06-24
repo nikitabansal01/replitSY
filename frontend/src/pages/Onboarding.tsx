@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OnboardingData {
   age: string;
-  gender: string;
   height: string;
   weight: string;
   diet: string;
@@ -23,7 +22,6 @@ interface OnboardingData {
   stressLevel: string;
   sleepHours: string;
   exerciseLevel: string;
-  waterIntake: string;
 }
 
 export default function Onboarding() {
@@ -34,7 +32,6 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>({
     age: '',
-    gender: '',
     height: '',
     weight: '',
     diet: '',
@@ -47,8 +44,7 @@ export default function Onboarding() {
     menstrualCycle: {},
     stressLevel: '',
     sleepHours: '',
-    exerciseLevel: '',
-    waterIntake: ''
+    exerciseLevel: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 

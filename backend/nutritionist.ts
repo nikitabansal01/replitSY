@@ -117,23 +117,143 @@ export const HEALTH_CONDITIONS: Record<string, HealthCondition> = {
     name: "Acne (Hormonal/Inflammatory)",
     dietary_focus: ["anti_inflammatory", "glycemic_control", "skin_health"],
     foods_to_include: [
-      "zinc_rich_foods", // e.g., pumpkin seeds, lentils, chickpeas
-      "omega3_fats", // e.g., salmon, walnuts, chia seeds
-      "fiber_rich_foods", // e.g., whole grains, legumes
-      "antioxidant_rich_foods", // e.g., berries, green tea
-      "probiotic_foods", // e.g., yogurt, kefir, kimchi
-      "vitamin_a_rich_foods", // e.g., sweet potato, carrots
+      "zinc_rich_foods", "omega3_fats", "fiber_rich_foods",
+      "antioxidant_rich_foods", "probiotic_foods", "vitamin_a_rich_foods",
       "green_tea"
     ],
     foods_to_avoid: [
-      "high_glycemic_foods", // e.g., white bread, sugary snacks
-      "dairy_products", // especially skim milk
-      "excessive_sugar", // sodas, sweets
-      "processed_foods", // chips, fast food
-      "excessive_fats", // fried foods
+      "high_glycemic_foods", "dairy_products", "excessive_sugar",
+      "processed_foods", "excessive_fats"
     ],
     meal_timing_considerations: [
       "regular_meal_times", "avoid_large_sugar_spikes"
+    ]
+  },
+  iron_deficiency: {
+    name: "Iron Deficiency",
+    dietary_focus: ["iron_absorption", "vitamin_c_support", "nutrient_density"],
+    foods_to_include: [
+      "iron_rich_foods", "vitamin_c_foods", "lean_red_meat", "dark_leafy_greens",
+      "legumes", "fortified_cereals", "pumpkin_seeds"
+    ],
+    foods_to_avoid: [
+      "calcium_with_iron_meals", "coffee_with_meals", "phytate_rich_foods",
+      "excessive_fiber_with_iron"
+    ],
+    meal_timing_considerations: [
+      "take_iron_supplements_empty_stomach", "vitamin_c_with_iron_meals",
+      "avoid_calcium_2_hours_before_after_iron"
+    ]
+  },
+  digestive_health: {
+    name: "Digestive Health Support",
+    dietary_focus: ["gut_health", "fiber_balance", "probiotic_support"],
+    foods_to_include: [
+      "probiotic_foods", "prebiotic_foods", "fiber_rich_foods",
+      "ginger", "peppermint", "bone_broth", "fermented_foods"
+    ],
+    foods_to_avoid: [
+      "processed_foods", "excessive_sugar", "artificial_sweeteners",
+      "inflammatory_oils", "excessive_caffeine"
+    ],
+    meal_timing_considerations: [
+      "eat_slowly", "chew_thoroughly", "avoid_large_meals",
+      "include_probiotics_daily"
+    ]
+  },
+  hormone_imbalance: {
+    name: "Hormone Imbalance",
+    dietary_focus: ["hormone_balance", "liver_support", "detoxification"],
+    foods_to_include: [
+      "cruciferous_vegetables", "omega3_fats", "fiber_rich_foods",
+      "antioxidant_rich_foods", "liver_supporting_foods", "adaptogenic_herbs"
+    ],
+    foods_to_avoid: [
+      "processed_foods", "refined_sugars", "excessive_caffeine",
+      "alcohol", "inflammatory_oils"
+    ],
+    meal_timing_considerations: [
+      "regular_meal_times", "support_liver_detox", "include_fiber_each_meal"
+    ]
+  },
+  food_sensitivities: {
+    name: "Food Sensitivities",
+    dietary_focus: ["elimination_diet", "gut_healing", "anti_inflammatory"],
+    foods_to_include: [
+      "anti_inflammatory_foods", "gut_healing_foods", "easily_digestible_proteins",
+      "cooked_vegetables", "bone_broth", "ginger"
+    ],
+    foods_to_avoid: [
+      "common_allergens", "processed_foods", "artificial_additives",
+      "excessive_sugar", "inflammatory_oils"
+    ],
+    meal_timing_considerations: [
+      "elimination_diet_approach", "gradual_reintroduction",
+      "keep_food_diary", "avoid_trigger_foods"
+    ]
+  },
+  low_activity: {
+    name: "Low Activity Level",
+    dietary_focus: ["nutrient_density", "metabolism_support", "energy_optimization"],
+    foods_to_include: [
+      "lean_proteins", "complex_carbs", "healthy_fats", "fiber_rich_foods",
+      "vitamin_rich_foods", "mineral_rich_foods"
+    ],
+    foods_to_avoid: [
+      "excessive_calories", "refined_sugars", "processed_foods",
+      "excessive_fats", "large_portions"
+    ],
+    meal_timing_considerations: [
+      "smaller_frequent_meals", "protein_with_each_meal",
+      "avoid_large_meals", "regular_meal_times"
+    ]
+  },
+  sleep_deprivation: {
+    name: "Sleep Deprivation Support",
+    dietary_focus: ["sleep_support", "stress_reduction", "circadian_rhythm"],
+    foods_to_include: [
+      "tryptophan_rich_foods", "magnesium_rich_foods", "calming_herbs",
+      "complex_carbs", "healthy_fats", "cherries"
+    ],
+    foods_to_avoid: [
+      "caffeine_after_2pm", "alcohol", "heavy_meals_before_bed",
+      "excessive_sugar", "spicy_foods"
+    ],
+    meal_timing_considerations: [
+      "light_dinner_3_hours_before_bed", "include_sleep_supporting_foods",
+      "avoid_stimulants_late_day", "regular_meal_times"
+    ]
+  },
+  perimenopause_consideration: {
+    name: "Perimenopause Support",
+    dietary_focus: ["hormone_balance", "bone_health", "mood_support"],
+    foods_to_include: [
+      "phytoestrogen_foods", "calcium_rich_foods", "vitamin_d_foods",
+      "omega3_fats", "antioxidant_rich_foods", "magnesium_rich_foods"
+    ],
+    foods_to_avoid: [
+      "excessive_caffeine", "alcohol", "refined_sugars",
+      "processed_foods", "inflammatory_oils"
+    ],
+    meal_timing_considerations: [
+      "regular_meal_times", "include_phytoestrogens_daily",
+      "support_bone_health", "mood_supporting_foods"
+    ]
+  },
+  energy_optimization: {
+    name: "Energy Optimization",
+    dietary_focus: ["sustained_energy", "blood_sugar_stability", "nutrient_density"],
+    foods_to_include: [
+      "complex_carbs", "lean_proteins", "healthy_fats", "fiber_rich_foods",
+      "b_vitamin_sources", "iron_rich_foods", "antioxidant_rich_foods"
+    ],
+    foods_to_avoid: [
+      "refined_sugars", "processed_foods", "excessive_caffeine",
+      "skipping_meals", "large_sugar_spikes"
+    ],
+    meal_timing_considerations: [
+      "protein_with_each_meal", "regular_meal_times", "avoid_skipping_meals",
+      "include_complex_carbs"
     ]
   }
 };
@@ -369,6 +489,24 @@ class NutritionistService {
     const medicalConditions = userProfile.medicalConditions || [];
     const goals = userProfile.goals || [];
     const lifestyle = userProfile.lifestyle || {};
+    const medications = userProfile.medications || [];
+    const allergies = userProfile.allergies || [];
+    const exerciseLevel = userProfile.exerciseLevel || '';
+    const stressLevel = userProfile.stressLevel || '';
+    const sleepHours = userProfile.sleepHours || '';
+    const age = userProfile.age || '';
+
+    console.log('DEBUG: Extracting health conditions from profile:', {
+      symptoms,
+      medicalConditions,
+      goals,
+      medications,
+      allergies,
+      exerciseLevel,
+      stressLevel,
+      sleepHours,
+      age
+    });
 
     // Map diagnosed medical conditions directly
     medicalConditions.forEach((condition: string) => {
@@ -394,25 +532,34 @@ class NutritionistService {
       if (lowerCondition.includes('autoimmune')) {
         conditions.push('autoimmune');
       }
+      if (lowerCondition.includes('fibroid') || lowerCondition.includes('uterine')) {
+        conditions.push('uterine_health');
+      }
+      if (lowerCondition.includes('migraine') || lowerCondition.includes('headache')) {
+        conditions.push('migraine');
+      }
     });
 
     // Enhanced symptom mapping with actual onboarding symptom names
     const symptomMapping: Record<string, string[]> = {
       'irregular_periods': ['pcos'],
-      'heavy_bleeding': ['endometriosis', 'pcos'],
-      'painful_periods': ['endometriosis'],
+      'heavy_bleeding': ['endometriosis', 'pcos', 'uterine_health'],
+      'painful_periods': ['endometriosis', 'uterine_health'],
       'weight_gain_or_difficulty_losing_weight': ['pcos', 'thyroid_hypo'],
-      'fatigue_and_low_energy': ['thyroid_hypo', 'stress_adrenal'],
-      'mood_swings': ['pcos', 'stress_adrenal'],
-      'hair_loss_or_thinning': ['pcos', 'thyroid_hypo'],
-      'acne_or_skin_issues': ['acne', 'pcos'],
-      'bloating_and_digestive_issues': ['digestive_health'],
+      'fatigue_and_low_energy': ['thyroid_hypo', 'stress_adrenal', 'iron_deficiency'],
+      'mood_swings': ['pcos', 'stress_adrenal', 'hormone_imbalance'],
+      'hair_loss_or_thinning': ['pcos', 'thyroid_hypo', 'iron_deficiency'],
+      'acne_or_skin_issues': ['acne', 'pcos', 'hormone_imbalance'],
+      'bloating_and_digestive_issues': ['digestive_health', 'ibs'],
       'stress_and_anxiety': ['stress_adrenal'],
-      'sleep_problems': ['stress_adrenal'],
-      'food_cravings': ['pcos', 'stress_adrenal'],
-      'hot_flashes': ['hormone_imbalance'],
-      'brain_fog_or_memory_issues': ['thyroid_hypo', 'stress_adrenal'],
-      'joint_pain_or_stiffness': ['autoimmune', 'endometriosis']
+      'sleep_problems': ['stress_adrenal', 'hormone_imbalance'],
+      'food_cravings': ['pcos', 'stress_adrenal', 'blood_sugar_imbalance'],
+      'hot_flashes': ['hormone_imbalance', 'perimenopause'],
+      'brain_fog_or_memory_issues': ['thyroid_hypo', 'stress_adrenal', 'hormone_imbalance'],
+      'joint_pain_or_stiffness': ['autoimmune', 'endometriosis', 'inflammation'],
+      'breast_tenderness': ['hormone_imbalance', 'pms'],
+      'back_pain': ['endometriosis', 'uterine_health', 'posture_related'],
+      'nausea_or_digestive_discomfort': ['digestive_health', 'ibs', 'hormone_imbalance']
     };
 
     // Check symptoms against conditions
@@ -424,17 +571,73 @@ class NutritionistService {
       }
     });
 
-    // Check stress level from lifestyle data
-    if (userProfile.stressLevel === 'High' || userProfile.stressLevel === 'Very High') {
+    // Enhanced medication analysis
+    medications.forEach((medication: string) => {
+      const lowerMed = medication.toLowerCase();
+      if (lowerMed.includes('metformin') || lowerMed.includes('glucophage')) {
+        conditions.push('pcos', 'insulin_resistance');
+      }
+      if (lowerMed.includes('levothyroxine') || lowerMed.includes('synthroid') || lowerMed.includes('thyroid')) {
+        conditions.push('thyroid_hypo');
+      }
+      if (lowerMed.includes('birth control') || lowerMed.includes('oral contraceptive')) {
+        conditions.push('hormone_regulation');
+      }
+      if (lowerMed.includes('antidepressant') || lowerMed.includes('ssri') || lowerMed.includes('prozac')) {
+        conditions.push('mental_health');
+      }
+      if (lowerMed.includes('iron') || lowerMed.includes('ferrous')) {
+        conditions.push('iron_deficiency');
+      }
+      if (lowerMed.includes('vitamin d') || lowerMed.includes('d3')) {
+        conditions.push('vitamin_d_deficiency');
+      }
+      if (lowerMed.includes('magnesium')) {
+        conditions.push('magnesium_deficiency');
+      }
+    });
+
+    // Allergy-based condition detection
+    if (allergies.length > 0) {
+      conditions.push('food_sensitivities');
+      
+      allergies.forEach((allergy: string) => {
+        const lowerAllergy = allergy.toLowerCase();
+        if (lowerAllergy.includes('gluten') || lowerAllergy.includes('wheat')) {
+          conditions.push('gluten_sensitivity');
+        }
+        if (lowerAllergy.includes('dairy') || lowerAllergy.includes('lactose')) {
+          conditions.push('lactose_intolerance');
+        }
+        if (lowerAllergy.includes('nuts') || lowerAllergy.includes('peanut')) {
+          conditions.push('nut_allergy');
+        }
+      });
+    }
+
+    // Enhanced lifestyle analysis
+    if (stressLevel === 'High' || stressLevel === 'Very High') {
       conditions.push('stress_adrenal');
     }
 
-    // Check sleep quality
-    if (userProfile.sleepHours === 'Less than 6') {
-      conditions.push('stress_adrenal');
+    if (sleepHours === 'Less than 6') {
+      conditions.push('stress_adrenal', 'sleep_deprivation');
     }
 
-    // Check explicit mentions in goals
+    if (exerciseLevel === 'Sedentary' || exerciseLevel === 'Light') {
+      conditions.push('low_activity');
+    }
+
+    // Age-based considerations
+    if (age && parseInt(age) >= 40) {
+      conditions.push('perimenopause_consideration');
+    }
+
+    if (age && parseInt(age) >= 50) {
+      conditions.push('menopause_consideration');
+    }
+
+    // Enhanced goal analysis
     goals.forEach((goal: string) => {
       const lowerGoal = goal.toLowerCase();
       if (lowerGoal.includes('regulate menstrual') || lowerGoal.includes('pcos')) {
@@ -449,10 +652,25 @@ class NutritionistService {
       if (lowerGoal.includes('reduce inflammation')) {
         conditions.push('anti_inflammatory');
       }
+      if (lowerGoal.includes('energy') || lowerGoal.includes('vitality')) {
+        conditions.push('energy_optimization');
+      }
+      if (lowerGoal.includes('weight') || lowerGoal.includes('metabolism')) {
+        conditions.push('metabolism_support');
+      }
+      if (lowerGoal.includes('digestive') || lowerGoal.includes('gut')) {
+        conditions.push('digestive_health');
+      }
+      if (lowerGoal.includes('skin') || lowerGoal.includes('acne')) {
+        conditions.push('skin_health');
+      }
     });
 
     // Remove duplicates and return
     const uniqueConditions = Array.from(new Set(conditions));
+    
+    console.log('DEBUG: Extracted health conditions:', uniqueConditions);
+    
     return uniqueConditions.length > 0 ? uniqueConditions : ['general_wellness'];
   }
 
@@ -595,16 +813,36 @@ CUISINE ELEMENTS TO INCLUDE:
 - Cooking methods: ${cuisine.cooking_methods.join(', ')}
 - Healthy adaptations: ${cuisine.healthy_adaptations.join(', ')}
 
-USER PROFILE:
+COMPREHENSIVE USER PROFILE:
+- Age: ${userProfile.age || 'Not specified'}
 - Diet type: ${userProfile.diet || 'omnivore'}
-- Age: ${userProfile.age || 'adult'}
+- Medical conditions: ${(userProfile.medicalConditions || []).join(', ') || 'None'}
+- Current symptoms: ${(userProfile.symptoms || []).join(', ') || 'None'}
+- Medications: ${(userProfile.medications || []).join(', ') || 'None'}
+- Food allergies: ${(userProfile.allergies || []).join(', ') || 'None'}
+- Exercise level: ${userProfile.exerciseLevel || 'Not specified'}
+- Stress level: ${userProfile.stressLevel || 'Not specified'}
+- Sleep hours: ${userProfile.sleepHours || 'Not specified'}
+- Health goals: ${(userProfile.goals || []).join(', ') || 'General wellness'}
+- Height: ${userProfile.height || 'Not specified'}
+- Weight: ${userProfile.weight || 'Not specified'}
+
+SPECIAL CONSIDERATIONS:
+${userProfile.medications?.length > 0 ? `- MEDICATION INTERACTIONS: Consider interactions with ${userProfile.medications.join(', ')}` : ''}
+${userProfile.allergies?.length > 0 ? `- ALLERGY AVOIDANCE: Strictly avoid ${userProfile.allergies.join(', ')}` : ''}
+${userProfile.exerciseLevel === 'Sedentary' ? '- LOW ACTIVITY: Focus on nutrient-dense, easy-to-digest foods' : ''}
+${userProfile.stressLevel === 'High' || userProfile.stressLevel === 'Very High' ? '- HIGH STRESS: Include stress-reducing foods and adaptogens' : ''}
+${userProfile.sleepHours === 'Less than 6' ? '- SLEEP DEPRIVATION: Include sleep-supporting nutrients and avoid stimulants' : ''}
 
 Create a complete daily meal plan that is:
 1. Therapeutically appropriate for the health conditions
 2. Includes menstrual cycle phase-specific seed cycling recommendations
 3. Culturally authentic to ${cuisine.name} cuisine
-4. Practical and accessible
-5. Nutritionally balanced
+4. Practical and accessible for the user's lifestyle
+5. Nutritionally balanced and personalized
+6. Considers medication interactions and food allergies
+7. Supports the user's specific health goals
+8. Appropriate for their activity level and stress management needs
 
 CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no explanations. Use this exact format:
 
