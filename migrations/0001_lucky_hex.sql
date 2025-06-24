@@ -1,0 +1,1 @@
+ALTER TABLE "onboarding_data" DROP COLUMN "water_intake";
