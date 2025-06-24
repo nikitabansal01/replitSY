@@ -1831,5 +1831,43 @@ Generated with love for your health journey! 💖
     }
   });
 
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Database health check endpoint
+  app.get('/api/health/db', async (req, res) => {
+    try {
+      if (!db) {
+        return res.status(500).json({ 
+          status: 'error', 
+          message: 'Database not initialized',
+          hasDatabaseUrl: !!process.env.DATABASE_URL 
+        });
+      }
+      
+      // Test database connection by running a simple query
+      const result = await db.select().from(users).limit(1);
+      
+      res.json({ 
+        status: 'ok', 
+        message: 'Database connection successful',
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        userCount: result.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Database connection failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   return server;
 }
