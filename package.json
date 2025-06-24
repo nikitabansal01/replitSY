@@ -7,7 +7,7 @@
     "dev": "NODE_ENV=development tsx index.ts",
     "build": "tsc && esbuild index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build:simple": "tsc",
-    "start": "NODE_ENV=production node dist/index.js",
+    "start": "NODE_ENV=production NODE_OPTIONS='--dns-result-order=ipv4first' node dist/index.js",
     "start:simple": "NODE_ENV=production tsx index.ts",
     "start:railway": "npm run build && npm start",
     "check": "tsc",

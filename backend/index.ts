@@ -2,6 +2,38 @@ import 'dotenv/config';
 // or
 import dotenv from 'dotenv';
 dotenv.config();
+
+// Network configuration to bypass IPv6 issues
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+// Configure network to prefer IPv4
+async function configureNetwork() {
+  try {
+    console.log('Configuring network for IPv4 preference...');
+    
+    // Set Node.js to prefer IPv4
+    process.env.NODE_OPTIONS = '--dns-result-order=ipv4first';
+    
+    // Try to configure system-level IPv4 preference if possible
+    try {
+      await execAsync('echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf 2>/dev/null || true');
+      console.log('System-level IPv4 preference configured');
+    } catch (error) {
+      console.log('System-level IPv4 configuration not available (this is normal in containers)');
+    }
+    
+    console.log('Network configuration completed');
+  } catch (error) {
+    console.warn('Network configuration failed:', error);
+  }
+}
+
+// Configure network before importing other modules
+await configureNetwork();
+
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
