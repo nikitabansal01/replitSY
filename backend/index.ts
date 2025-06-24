@@ -5,6 +5,8 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
+import { db } from './db';
+import { users } from './shared-schema';
 
 const app = express();
 
@@ -88,8 +90,79 @@ app.use((req, res, next) => {
   });
 
   // Health check endpoint
-  app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  app.get('/health', async (req, res) => {
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      database: {
+        connected: false,
+        error: null,
+        connectionDetails: null
+      },
+      environment_variables: {
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseAnonKey: !!process.env.SUPABASE_ANON_KEY,
+        hasFirebaseProjectId: !!process.env.FIREBASE_PROJECT_ID,
+        hasOpenaiApiKey: !!process.env.OPENAI_API_KEY
+      }
+    };
+
+    try {
+      // Test database connection
+      if (db) {
+        try {
+          await db.select().from(users).limit(1);
+          health.database.connected = true;
+          health.database.connectionDetails = {
+            hostname: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).hostname : 'unknown',
+            database: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).pathname.replace('/', '') : 'unknown'
+          };
+        } catch (dbError) {
+          health.database.error = dbError instanceof Error ? dbError.message : 'Unknown database error';
+          health.status = 'degraded';
+        }
+      } else {
+        health.database.error = 'Database not initialized';
+        health.status = 'degraded';
+      }
+    } catch (error) {
+      health.database.error = error instanceof Error ? error.message : 'Unknown error';
+      health.status = 'error';
+    }
+
+    res.json(health);
+  });
+
+  // Database connection test endpoint
+  app.get('/test-db', async (req, res) => {
+    try {
+      if (!db) {
+        return res.status(500).json({ 
+          error: 'Database not initialized',
+          details: 'The database connection was not established during startup'
+        });
+      }
+
+      // Test basic query
+      const result = await db.select().from(users).limit(1);
+      
+      res.json({
+        success: true,
+        message: 'Database connection successful',
+        result: result,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Database test failed:', error);
+      res.status(500).json({
+        error: 'Database connection failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   // CORS debugging endpoint
