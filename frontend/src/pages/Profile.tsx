@@ -92,7 +92,24 @@ export default function Profile() {
   // Load form data when profile is available
   useEffect(() => {
     if (profile?.onboarding) {
-      setFormData(profile.onboarding);
+      const onboardingData = profile.onboarding;
+      
+      // Transform the data to match the profile form structure
+      setFormData({
+        ...onboardingData,
+        // Convert string fields back to arrays for the profile form
+        diet: onboardingData.diet ? [onboardingData.diet] : [],
+        stressLevel: onboardingData.stressLevel ? [onboardingData.stressLevel] : [],
+        sleepHours: onboardingData.sleepHours ? [onboardingData.sleepHours] : [],
+        exerciseLevel: onboardingData.exerciseLevel ? [onboardingData.exerciseLevel] : [],
+        
+        // Ensure arrays are properly handled
+        symptoms: Array.isArray(onboardingData.symptoms) ? onboardingData.symptoms : [],
+        goals: Array.isArray(onboardingData.goals) ? onboardingData.goals : [],
+        medicalConditions: Array.isArray(onboardingData.medicalConditions) ? onboardingData.medicalConditions : [],
+        medications: Array.isArray(onboardingData.medications) ? onboardingData.medications : [],
+        allergies: Array.isArray(onboardingData.allergies) ? onboardingData.allergies : [],
+      });
     }
   }, [profile]);
 
@@ -118,7 +135,24 @@ export default function Profile() {
         processedFormData.exerciseLevel = otherExercise;
       }
 
-      await updateProfile(processedFormData);
+      // Transform data to match database schema
+      const payload = {
+        ...processedFormData,
+        // Convert arrays to single values for database storage
+        diet: Array.isArray(processedFormData.diet) ? processedFormData.diet[0] || '' : processedFormData.diet,
+        stressLevel: Array.isArray(processedFormData.stressLevel) ? processedFormData.stressLevel[0] || '' : processedFormData.stressLevel,
+        sleepHours: Array.isArray(processedFormData.sleepHours) ? processedFormData.sleepHours[0] || '' : processedFormData.sleepHours,
+        exerciseLevel: Array.isArray(processedFormData.exerciseLevel) ? processedFormData.exerciseLevel[0] || '' : processedFormData.exerciseLevel,
+        
+        // Ensure arrays are properly formatted
+        symptoms: Array.isArray(processedFormData.symptoms) ? processedFormData.symptoms : [],
+        goals: Array.isArray(processedFormData.goals) ? processedFormData.goals : [],
+        medicalConditions: Array.isArray(processedFormData.medicalConditions) ? processedFormData.medicalConditions : [],
+        medications: Array.isArray(processedFormData.medications) ? processedFormData.medications : [],
+        allergies: Array.isArray(processedFormData.allergies) ? processedFormData.allergies : [],
+      };
+
+      await updateProfile(payload);
       
       toast({
         title: "Success",
@@ -304,12 +338,12 @@ export default function Profile() {
               <div>
                 <Label htmlFor="diet">Preferred Diet Style</Label>
                 <Select 
-                  value={formData.diet || ''} 
+                  value={Array.isArray(formData.diet) ? formData.diet[0] || '' : formData.diet || ''} 
                   onValueChange={(value) => {
                     if (value === "Other") {
-                      setFormData({...formData, diet: "Other"});
+                      setFormData({...formData, diet: ["Other"]});
                     } else {
-                      setFormData({...formData, diet: value});
+                      setFormData({...formData, diet: [value]});
                     }
                   }}
                 >
@@ -324,7 +358,7 @@ export default function Profile() {
                     ))}
                   </SelectContent>
                 </Select>
-                {formData.diet === "Other" && (
+                {Array.isArray(formData.diet) && formData.diet[0] === "Other" && (
                   <div className="mt-2">
                     <Input
                       type="text"
@@ -348,6 +382,31 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              
+              {/* Health Goals */}
+              <div>
+                <Label className="text-base font-medium">Health Goals</Label>
+                <p className="text-sm text-gray-600 mb-3">What are your primary health goals? (Select all that apply)</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {[
+                    'Regulate menstrual cycle',
+                    'Manage PCOS symptoms',
+                    'Improve fertility',
+                    'Weight management',
+                    'Improve thyroid function',
+                    'Improve mood and mental health',
+                  ].map((goal) => (
+                    <div key={goal} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`goal-${goal}`}
+                        checked={(formData.goals || []).includes(goal)}
+                        onCheckedChange={() => handleArrayToggle('goals', goal)}
+                      />
+                      <Label htmlFor={`goal-${goal}`} className="text-sm">{goal}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
               
               {/* Current Symptoms */}
               <div>
@@ -394,7 +453,7 @@ export default function Profile() {
                     </div>
                   ))}
                 </div>
-                {formData.medicalConditions?.includes("Other") && (
+                {(formData.medicalConditions || []).includes("Other") && (
                   <div className="mt-2">
                     <Input
                       type="text"
@@ -447,7 +506,7 @@ export default function Profile() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="stressLevel">Stress Level</Label>
-                  <Select value={formData.stressLevel || ''} onValueChange={(value) => setFormData({...formData, stressLevel: value})}>
+                  <Select value={Array.isArray(formData.stressLevel) ? formData.stressLevel[0] || '' : formData.stressLevel || ''} onValueChange={(value) => setFormData({...formData, stressLevel: [value]})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select stress level" />
                     </SelectTrigger>
@@ -462,7 +521,7 @@ export default function Profile() {
                 </div>
                 <div>
                   <Label htmlFor="sleepHours">Sleep Hours</Label>
-                  <Select value={formData.sleepHours || ''} onValueChange={(value) => setFormData({...formData, sleepHours: value})}>
+                  <Select value={Array.isArray(formData.sleepHours) ? formData.sleepHours[0] || '' : formData.sleepHours || ''} onValueChange={(value) => setFormData({...formData, sleepHours: [value]})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select sleep hours" />
                     </SelectTrigger>
@@ -478,12 +537,12 @@ export default function Profile() {
                 <div>
                   <Label htmlFor="exerciseLevel">Exercise Level</Label>
                   <Select 
-                    value={formData.exerciseLevel || ''} 
+                    value={Array.isArray(formData.exerciseLevel) ? formData.exerciseLevel[0] || '' : formData.exerciseLevel || ''} 
                     onValueChange={(value) => {
                       if (value === "Other") {
-                        setFormData({...formData, exerciseLevel: "Other"});
+                        setFormData({...formData, exerciseLevel: ["Other"]});
                       } else {
-                        setFormData({...formData, exerciseLevel: value});
+                        setFormData({...formData, exerciseLevel: [value]});
                       }
                     }}
                   >
@@ -498,7 +557,7 @@ export default function Profile() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {formData.exerciseLevel === "Other" && (
+                  {Array.isArray(formData.exerciseLevel) && formData.exerciseLevel[0] === "Other" && (
                     <div className="mt-2">
                       <Input
                         type="text"
@@ -509,20 +568,6 @@ export default function Profile() {
                       />
                     </div>
                   )}
-                </div>
-                <div>
-                  <Label htmlFor="waterIntake">Daily Water Intake</Label>
-                  <Select value={formData.waterIntake || ''} onValueChange={(value) => setFormData({...formData, waterIntake: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select water intake" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Less than 4 cups">Less than 4 cups</SelectItem>
-                      <SelectItem value="4-6 cups">4-6 cups</SelectItem>
-                      <SelectItem value="6-8 cups">6-8 cups</SelectItem>
-                      <SelectItem value="8+ cups">8+ cups</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </CardContent>

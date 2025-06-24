@@ -22,7 +22,6 @@ interface OnboardingData {
   stressLevel: string;
   sleepHours: string;
   exerciseLevel: string;
-  waterIntake: string;
 }
 
 export default function Onboarding() {
@@ -45,8 +44,7 @@ export default function Onboarding() {
     menstrualCycle: {},
     stressLevel: '',
     sleepHours: '',
-    exerciseLevel: '',
-    waterIntake: ''
+    exerciseLevel: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 

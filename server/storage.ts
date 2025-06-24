@@ -245,7 +245,6 @@ export class DatabaseStorage implements IStorage {
           stressLevel: data.stressLevel || '',
           sleepHours: data.sleepHours || '',
           exerciseLevel: data.exerciseLevel || '',
-          waterIntake: data.waterIntake || '',
           completedAt: new Date()
         })
         .where(eq(onboardingData.userId, data.userId))

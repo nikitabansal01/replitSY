@@ -69,7 +69,6 @@ export const onboardingData = pgTable("onboarding_data", {
   stressLevel: text("stress_level"),
   sleepHours: text("sleep_hours"),
   exerciseLevel: text("exercise_level"),
-  waterIntake: text("water_intake"),
   completedAt: timestamp("completed_at").defaultNow().notNull(),
 });
 

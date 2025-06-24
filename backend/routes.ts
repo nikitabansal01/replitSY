@@ -696,7 +696,6 @@ EXERCISE GUIDELINES:
 - Stress Level: ${onboardingData?.stressLevel || 'Not specified'}
 - Sleep Hours: ${onboardingData?.sleepHours || 'Not specified'}
 - Exercise Level: ${onboardingData?.exerciseLevel || 'Not specified'}
-- Water Intake: ${onboardingData?.waterIntake || 'Not specified'}
 
 PERSONALIZATION GUIDELINES:
 - If user has PCOS: Focus on blood sugar management, anti-inflammatory foods, and hormone balance
@@ -898,8 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             goals: ['hormone_balance', 'energy_improvement'],
             exerciseLevel: 'moderate',
             stressLevel: 'moderate',
-            sleepHours: '7-8 hours',
-            waterIntake: '6-8 glasses daily'
+            sleepHours: '7-8 hours'
           });
         }
         req.user = demoUser;
@@ -1746,8 +1744,7 @@ Generated with love for your health journey! 💖
           cycleLength: onboardingData?.cycleLength,
           stressLevel: onboardingData?.stressLevel,
           sleepHours: onboardingData?.sleepHours,
-          exerciseLevel: onboardingData?.exerciseLevel,
-          waterIntake: onboardingData?.waterIntake
+          exerciseLevel: onboardingData?.exerciseLevel
         }
       });
     } catch (error) {

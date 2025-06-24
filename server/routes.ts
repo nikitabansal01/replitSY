@@ -515,7 +515,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             weight: '60kg',
             stressLevel: 'Moderate',
             sleepHours: '7-8',
-            waterIntake: '8 glasses',
             medications: [],
             allergies: [],
             lastPeriodDate: new Date().toISOString().split('T')[0],

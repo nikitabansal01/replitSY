@@ -134,18 +134,33 @@ export default function OnboardingNew() {
     try {
       // Always default to correct structure
       const menstrualCycle = formData.menstrualCycle || { lastPeriodDate: '', periodLength: [], length: [], irregularPeriods: false, symptoms: [] };
+      
+      // Transform the data to match database schema
       const payload = {
         ...formData,
+        // Convert arrays to single values for database storage
         diet: Array.isArray(formData.diet) ? formData.diet[0] || '' : formData.diet,
         stressLevel: Array.isArray(formData.stressLevel) ? formData.stressLevel[0] || '' : formData.stressLevel,
         sleepHours: Array.isArray(formData.sleepHours) ? formData.sleepHours[0] || '' : formData.sleepHours,
         exerciseLevel: Array.isArray(formData.exerciseLevel) ? formData.exerciseLevel[0] || '' : formData.exerciseLevel,
+        
+        // Map menstrual cycle data to database fields
         lastPeriodDate: menstrualCycle.lastPeriodDate || '',
         cycleLength: Array.isArray(menstrualCycle.length) ? menstrualCycle.length[0] || '' : menstrualCycle.length || '',
         periodLength: Array.isArray(menstrualCycle.periodLength) ? menstrualCycle.periodLength[0] || '' : menstrualCycle.periodLength || '',
         irregularPeriods: menstrualCycle.irregularPeriods || false,
+        
+        // Ensure arrays are properly formatted
+        symptoms: Array.isArray(formData.symptoms) ? formData.symptoms : [],
+        goals: Array.isArray(formData.goals) ? formData.goals : [],
+        medicalConditions: Array.isArray(formData.medicalConditions) ? formData.medicalConditions : [],
+        medications: Array.isArray(formData.medications) ? formData.medications : [],
+        allergies: Array.isArray(formData.allergies) ? formData.allergies : [],
       } as any;
+      
+      // Remove the nested menstrualCycle object since we've mapped its fields
       if ('menstrualCycle' in payload) delete payload.menstrualCycle;
+      
       const response = await apiRequest('POST', '/api/onboarding', payload);
       if (response.ok) {
         toast({

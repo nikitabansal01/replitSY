@@ -453,20 +453,6 @@ export default function Profile() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="waterIntake">Daily Water Intake</Label>
-                  <Select value={formData.waterIntake || ''} onValueChange={(value) => setFormData({...formData, waterIntake: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select water intake" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Less than 4 cups">Less than 4 cups</SelectItem>
-                      <SelectItem value="4-6 cups">4-6 cups</SelectItem>
-                      <SelectItem value="6-8 cups">6-8 cups</SelectItem>
-                      <SelectItem value="8+ cups">8+ cups</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             </CardContent>
           </Card>
