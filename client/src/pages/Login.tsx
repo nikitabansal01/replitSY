@@ -112,12 +112,12 @@ export default function Login() {
       const user = await signUpWithEmail(signupForm.email, signupForm.password, signupForm.name);
       // Set a flag to indicate this is a new signup
       localStorage.setItem('isNewSignup', 'true');
+      console.log('Signup successful, isNewSignup flag set');
       toast({
         title: "Success",
         description: "Account created successfully!"
       });
-      // Force navigation after successful account creation
-      setTimeout(() => setLocation('/onboarding'), 500);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     } catch (error: any) {
       toast({
         title: "Error",

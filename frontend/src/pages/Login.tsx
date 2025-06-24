@@ -160,7 +160,7 @@ export default function Login() {
         title: "Success",
         description: "Account created successfully!"
       });
-      setTimeout(() => setLocation('/onboarding'), 500);
+      // Let the App.tsx routing logic handle the redirect based on onboarding status
     } catch (error: any) {
       let message = "Failed to create account";
       if (error.code === 'auth/email-already-in-use') {

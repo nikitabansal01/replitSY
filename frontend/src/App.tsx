@@ -18,24 +18,22 @@ function Router() {
   useEffect(() => {
     if (!loading && token && user) {
       // User is authenticated, check if they need onboarding or can go to dashboard
-      if (location === '/') {
-        // Check if this is a new signup
-        const isNewSignup = localStorage.getItem('isNewSignup') === 'true';
-        
-        if (isNewSignup) {
-          // New user, redirect to onboarding
-          localStorage.removeItem('isNewSignup'); // Clear the flag
-          setLocation('/onboarding');
-        } else {
-          // Existing user, check if they have completed onboarding
-          if (!profileLoading) {
-            if (profile && profile.onboarding) {
-              // User has completed onboarding, redirect to dashboard
-              setLocation('/dashboard');
-            } else {
-              // User hasn't completed onboarding, redirect to onboarding
-              setLocation('/onboarding');
-            }
+      // Check if this is a new signup
+      const isNewSignup = localStorage.getItem('isNewSignup') === 'true';
+      
+      if (isNewSignup) {
+        // New user, redirect to onboarding
+        localStorage.removeItem('isNewSignup'); // Clear the flag
+        setLocation('/onboarding');
+      } else if (location === '/') {
+        // Existing user on login page, check if they have completed onboarding
+        if (!profileLoading) {
+          if (profile && profile.onboarding) {
+            // User has completed onboarding, redirect to dashboard
+            setLocation('/dashboard');
+          } else {
+            // User hasn't completed onboarding, redirect to onboarding
+            setLocation('/onboarding');
           }
         }
       }
