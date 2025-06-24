@@ -14,6 +14,7 @@ import { pdfGeneratorService } from './pdf-generator';
 import { auth as firebaseAuth } from './firebase-admin';
 import { adaptiveMealPlannerService } from './adaptive-meal-planner';
 import { adminAuthService } from './admin-auth';
+import { HEALTH_CONDITIONS } from './nutritionist';
 
 interface AuthenticatedRequest extends Request {
   user: User;
