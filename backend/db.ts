@@ -12,6 +12,8 @@ async function createDatabaseConnection() {
     return null;
   }
 
+  console.log('Database URL hostname:', new URL(process.env.DATABASE_URL).hostname);
+
   // Try multiple connection strategies
   const connectionStrategies = [
     // Strategy 1: Direct connection with SSL require
@@ -44,6 +46,7 @@ async function createDatabaseConnection() {
   for (const strategy of connectionStrategies) {
     try {
       console.log(`Trying connection strategy: ${strategy.name}`);
+      console.log(`Connection string: ${strategy.connectionString.replace(/:[^:@]*@/, ':****@')}`); // Hide password
       const client = postgres(strategy.connectionString, strategy.options);
       
       // Test the connection
