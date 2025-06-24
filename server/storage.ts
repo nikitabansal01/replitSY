@@ -232,7 +232,6 @@ export class DatabaseStorage implements IStorage {
         .update(onboardingData)
         .set({
           age: data.age,
-          gender: data.gender || 'Female',
           height: data.height || '',
           weight: data.weight || '',
           diet: data.diet,
