@@ -1753,5 +1753,64 @@ Generated with love for your health journey! 💖
     }
   });
 
+  // Debug endpoint to test meal plan generation with user profile
+  app.get('/api/debug/meal-plan-profile', requireAuth, async (req: any, res: any) => {
+    try {
+      const onboardingData = await storage.getOnboardingData(req.user.id);
+      
+      if (!onboardingData) {
+        return res.status(400).json({ error: 'Complete onboarding first to test meal plan generation' });
+      }
+
+      // Extract health conditions from user profile
+      const healthConditions = nutritionistService.extractHealthConditions(onboardingData);
+      
+      // Test with a sample cuisine preference
+      const testCuisine = 'mediterranean';
+      
+      // Generate a test meal plan
+      const testMealPlan = await nutritionistService.generateMealPlan(
+        healthConditions,
+        testCuisine,
+        onboardingData
+      );
+      
+      res.json({
+        success: true,
+        user: req.user,
+        onboardingData,
+        extractedHealthConditions: healthConditions,
+        testMealPlan,
+        profileUtilization: {
+          hasProfile: !!onboardingData,
+          age: onboardingData?.age,
+          diet: onboardingData?.diet,
+          symptoms: onboardingData?.symptoms,
+          medicalConditions: onboardingData?.medicalConditions,
+          medications: onboardingData?.medications,
+          allergies: onboardingData?.allergies,
+          exerciseLevel: onboardingData?.exerciseLevel,
+          stressLevel: onboardingData?.stressLevel,
+          sleepHours: onboardingData?.sleepHours,
+          goals: onboardingData?.goals,
+          height: onboardingData?.height,
+          weight: onboardingData?.weight,
+          lastPeriodDate: onboardingData?.lastPeriodDate,
+          cycleLength: onboardingData?.cycleLength
+        },
+        healthConditionMapping: {
+          detectedConditions: healthConditions,
+          conditionDetails: healthConditions.map(condition => ({
+            condition,
+            details: HEALTH_CONDITIONS[condition] || 'Unknown condition'
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Debug meal plan profile error:', error);
+      res.status(500).json({ error: 'Failed to debug meal plan profile' });
+    }
+  });
+
   return server;
 }
